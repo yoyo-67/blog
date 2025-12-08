@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>JSX in Zig</title>
-    <link>http://localhost:1313/</link>
+    <link>http://localhost:51816/</link>
     <description>Recent content on JSX in Zig</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© 2025 Author</copyright>
-    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:51816/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Building UIs in Zig: Part 0 - What We&#39;re Building</title>
-      <link>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</link>
+      <link>http://localhost:51816/posts/jsx-zig-00-what-we-are-building/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</guid>
+      <guid>http://localhost:51816/posts/jsx-zig-00-what-we-are-building/</guid>
       <description>&lt;p&gt;Welcome to the &amp;ldquo;Building UIs in Zig&amp;rdquo; series. We&amp;rsquo;re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The End Result
@@ -57,10 +57,10 @@
     
     <item>
       <title>Building UIs in Zig: Part 1 - Imperative vs Declarative</title>
-      <link>http://localhost:1313/posts/jsx-zig-01-imperative-vs-declarative/</link>
+      <link>http://localhost:51816/posts/jsx-zig-01-imperative-vs-declarative/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-01-imperative-vs-declarative/</guid>
+      <guid>http://localhost:51816/posts/jsx-zig-01-imperative-vs-declarative/</guid>
       <description>&lt;p&gt;When I started building UIs, I wrote code like this:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -104,10 +104,10 @@
     
     <item>
       <title>Building UIs in Zig: Part 2 - Your First Counter App</title>
-      <link>http://localhost:1313/posts/jsx-zig-02-first-counter-app/</link>
+      <link>http://localhost:51816/posts/jsx-zig-02-first-counter-app/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-02-first-counter-app/</guid>
+      <guid>http://localhost:51816/posts/jsx-zig-02-first-counter-app/</guid>
       <description>&lt;p&gt;Let&amp;rsquo;s build a counter - the &amp;ldquo;Hello World&amp;rdquo; of UI programming. By the end, you&amp;rsquo;ll have a working app with buttons that increment and decrement a number.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Goal
@@ -141,10 +141,10 @@
     
     <item>
       <title>Building UIs in Zig: Part 3 - How the Renderer Works</title>
-      <link>http://localhost:1313/posts/jsx-zig-03-how-renderer-works/</link>
+      <link>http://localhost:51816/posts/jsx-zig-03-how-renderer-works/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-03-how-renderer-works/</guid>
+      <guid>http://localhost:51816/posts/jsx-zig-03-how-renderer-works/</guid>
       <description>&lt;p&gt;You&amp;rsquo;ve built a counter app. But how does &lt;code&gt;jsx.col(&amp;quot;gap-4&amp;quot;, &amp;amp;.{...})&lt;/code&gt; become pixels? Let&amp;rsquo;s peek behind the curtain.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Node Tree
@@ -181,10 +181,10 @@
     
     <item>
       <title>Building UIs in Zig: Part 4 - Comptime Tailwind Parser</title>
-      <link>http://localhost:1313/posts/jsx-zig-04-tailwind-parser/</link>
+      <link>http://localhost:51816/posts/jsx-zig-04-tailwind-parser/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-04-tailwind-parser/</guid>
+      <guid>http://localhost:51816/posts/jsx-zig-04-tailwind-parser/</guid>
       <description>&lt;p&gt;The magic of &lt;code&gt;jsx.col(&amp;quot;gap-4 p-6 bg-slate-800&amp;quot;, &amp;amp;.{...})&lt;/code&gt; is that those strings are parsed at &lt;strong&gt;compile time&lt;/strong&gt;. No runtime cost. Let&amp;rsquo;s build it.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Goal
@@ -240,10 +240,10 @@
     
     <item>
       <title>Building UIs in Zig: Part 5 - The Complete Architecture</title>
-      <link>http://localhost:1313/posts/jsx-zig-05-complete-architecture/</link>
+      <link>http://localhost:51816/posts/jsx-zig-05-complete-architecture/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-05-complete-architecture/</guid>
+      <guid>http://localhost:51816/posts/jsx-zig-05-complete-architecture/</guid>
       <description>&lt;p&gt;We&amp;rsquo;ve covered the pieces. Now let&amp;rsquo;s see how they fit together into a complete UI framework.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Big Picture
@@ -294,10 +294,10 @@
     
     <item>
       <title>Building UIs in Zig: Part 6 - Behind the Scenes</title>
-      <link>http://localhost:1313/posts/jsx-zig-06-behind-the-scenes/</link>
+      <link>http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-06-behind-the-scenes/</guid>
+      <guid>http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/</guid>
       <description>&lt;p&gt;You&amp;rsquo;ve seen the API. Now let&amp;rsquo;s look at the actual code. This is a sneak peek into how the JSX framework is built.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Node Struct

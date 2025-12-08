@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Series on JSX in Zig</title>
-    <link>http://localhost:1313/series/</link>
+    <link>http://localhost:51816/series/</link>
     <description>Recent content in Series on JSX in Zig</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© 2025 Author</copyright>
-    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/series/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:51816/series/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>JSX in Zig</title>
-      <link>http://localhost:1313/series/jsx-in-zig/</link>
+      <link>http://localhost:51816/series/jsx-in-zig/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/series/jsx-in-zig/</guid>
+      <guid>http://localhost:51816/series/jsx-in-zig/</guid>
       <description></description>
       
     </item>

@@ -8,6 +8,7 @@ tags = ["zig", "ui", "advanced", "internals"]
 
 You've seen the API. Now let's look at the actual code. This is a sneak peek into how the JSX framework is built.
 
+
 ## The Node Struct
 
 Everything starts with `Node`. Here's what it actually looks like:
@@ -563,3 +564,4 @@ No heap allocation. No virtual DOM. No diffing. Just struct construction and a t
 ---
 
 *The beauty is in the simplicity. Each piece does one thing well.*
+
