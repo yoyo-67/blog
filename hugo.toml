@@ -1,0 +1,50 @@
+baseURL = 'https://example.org/'
+languageCode = 'en-us'
+title = 'JSX in Zig'
+theme = 'blowfish'
+
+[params]
+  colorScheme = "ocean"
+  defaultAppearance = "dark"
+  autoSwitchAppearance = true
+  enableSearch = true
+  enableCodeCopy = true
+
+  [params.homepage]
+    layout = "profile"
+    showRecent = true
+    recentLimit = 5
+
+  [params.article]
+    showDate = true
+    showReadingTime = true
+    showTableOfContents = true
+    showRelatedContent = false
+    showPagination = true
+    showBreadcrumbs = true
+
+  [params.author]
+    name = "Author"
+    headline = "Building declarative UI in Zig"
+
+[markup]
+  [markup.highlight]
+    noClasses = false
+    lineNos = true
+    lineNumbersInTable = true
+    style = "dracula"
+
+[menu]
+  [[menu.main]]
+    name = "Posts"
+    pageRef = "posts"
+    weight = 10
+  [[menu.main]]
+    name = "Tags"
+    pageRef = "tags"
+    weight = 20
+
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+  series = "series"

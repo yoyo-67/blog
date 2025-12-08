@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Events on JSX in Zig</title>
+    <link>http://localhost:51816/tags/events/</link>
+    <description>Recent content in Events on JSX in Zig</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© 2025 Author</copyright>
+    <lastBuildDate>Sun, 07 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:51816/tags/events/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Building JSX-like UI in Zig: Part 3 - Event Handling and Complete Application</title>
+      <link>http://localhost:51816/posts/jsx-zig-part-3/</link>
+      <pubDate>Sun, 07 Dec 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:51816/posts/jsx-zig-part-3/</guid>
+      <description>&lt;p&gt;&lt;em&gt;This is the final part of our series on building a JSX-like declarative UI system in Zig. In Parts 1 and 2, we covered the Node architecture, modifier patterns, the Renderer, and layout algorithms. Now we&amp;rsquo;ll dive deep into event handling and build a complete, polished counter application.&lt;/em&gt;&lt;/p&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Table of Contents
+    &lt;div id=&#34;table-of-contents&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#table-of-contents&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#the-closure-problem-in-zig&#34;&gt;The Closure Problem in Zig&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#handler-array-pattern&#34;&gt;Handler Array Pattern&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#event-queue-architecture&#34;&gt;Event Queue Architecture&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#mouse-input-processing&#34;&gt;Mouse Input Processing&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#the-module-level-instance-pattern&#34;&gt;The Module-Level Instance Pattern&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#building-the-counter-application&#34;&gt;Building the Counter Application&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#advanced-patterns&#34;&gt;Advanced Patterns&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#performance-considerations&#34;&gt;Performance Considerations&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+  href=&#34;#conclusion&#34;&gt;Conclusion&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Closure Problem in Zig
+    &lt;div id=&#34;the-closure-problem-in-zig&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-closure-problem-in-zig&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;In JavaScript/React, event handlers are trivially simple:&lt;/p&gt;</description>
+      
+    </item>
+    
+  </channel>
+</rss>

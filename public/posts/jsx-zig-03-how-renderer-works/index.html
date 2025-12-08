@@ -1,0 +1,1360 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51816&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Building UIs in Zig: Part 3 - How the Renderer Works &middot; JSX in Zig</title>
+    <meta name="title" content="Building UIs in Zig: Part 3 - How the Renderer Works &middot; JSX in Zig">
+  
+
+  
+  
+  
+    <meta name="keywords" content="zig,ui,tutorial,">
+  
+  
+  
+  <link rel="canonical" href="http://localhost:51816/posts/jsx-zig-03-how-renderer-works/">
+  
+
+  
+  
+    <meta name="author" content="Author">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:51816/posts/jsx-zig-03-how-renderer-works/">
+  <meta property="og:site_name" content="JSX in Zig">
+  <meta property="og:title" content="Building UIs in Zig: Part 3 - How the Renderer Works">
+  <meta property="og:description" content="You’ve built a counter app. But how does jsx.col(&#34;gap-4&#34;, &amp;.{...}) become pixels? Let’s peek behind the curtain.
+The Node Tree # When you write:
+1 2 3 4 jsx.col(&#34;gap-4 p-6&#34;, &amp;.{ jsx.h1(&#34;Counter&#34;), jsx.button(&#34;&#43;&#34;, &#34;bg-green-500&#34;), }) You’re creating a tree of nodes:
+col (gap-4, p-6) ├── text &#34;Counter&#34; (text-3xl, font-bold) └── button &#34;&#43;&#34; (bg-green-500) Each node is a simple struct:">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-12-08T00:00:00+00:00">
+    <meta property="article:modified_time" content="2024-12-08T00:00:00+00:00">
+    <meta property="article:tag" content="Zig">
+    <meta property="article:tag" content="Ui">
+    <meta property="article:tag" content="Tutorial">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-01-imperative-vs-declarative/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-02-first-counter-app/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-04-tailwind-parser/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-05-complete-architecture/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Building UIs in Zig: Part 3 - How the Renderer Works">
+  <meta name="twitter:description" content="You’ve built a counter app. But how does jsx.col(&#34;gap-4&#34;, &amp;.{...}) become pixels? Let’s peek behind the curtain.
+The Node Tree # When you write:
+1 2 3 4 jsx.col(&#34;gap-4 p-6&#34;, &amp;.{ jsx.h1(&#34;Counter&#34;), jsx.button(&#34;&#43;&#34;, &#34;bg-green-500&#34;), }) You’re creating a tree of nodes:
+col (gap-4, p-6) ├── text &#34;Counter&#34; (text-3xl, font-bold) └── button &#34;&#43;&#34; (bg-green-500) Each node is a simple struct:">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Posts",
+    "name": "Building UIs in Zig: Part 3 - How the Renderer Works",
+    "headline": "Building UIs in Zig: Part 3 - How the Renderer Works",
+    
+    "abstract": "\u003cp\u003eYou\u0026rsquo;ve built a counter app. But how does \u003ccode\u003ejsx.col(\u0026quot;gap-4\u0026quot;, \u0026amp;.{...})\u003c\/code\u003e become pixels? Let\u0026rsquo;s peek behind the curtain.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe Node Tree\n    \u003cdiv id=\u0022the-node-tree\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-node-tree\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eWhen you write:\u003c\/p\u003e\n\u003cdiv class=\u0022highlight\u0022\u003e\u003cdiv class=\u0022chroma\u0022\u003e\n\u003ctable class=\u0022lntable\u0022\u003e\u003ctr\u003e\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode\u003e\u003cspan class=\u0022lnt\u0022\u003e1\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e2\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e3\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e4\n\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\n\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode class=\u0022language-zig\u0022 data-lang=\u0022zig\u0022\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ecol\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;gap-4 p-6\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026amp;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003eh1\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;Counter\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ebutton\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;\u002b\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;bg-green-500\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e})\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\u003c\/tr\u003e\u003c\/table\u003e\n\u003c\/div\u003e\n\u003c\/div\u003e\u003cp\u003eYou\u0026rsquo;re creating a \u003cstrong\u003etree of nodes\u003c\/strong\u003e:\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003ecol (gap-4, p-6)\n├── text \u0026#34;Counter\u0026#34; (text-3xl, font-bold)\n└── button \u0026#34;\u002b\u0026#34; (bg-green-500)\n\u003c\/code\u003e\u003c\/pre\u003e\u003cp\u003eEach node is a simple struct:\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:51816/posts/jsx-zig-03-how-renderer-works/",
+    "author" : {
+      "@type": "Person",
+      "name": "Author"
+    },
+    "copyrightYear": "2024",
+    "dateCreated": "2024-12-08T00:00:00\u002b00:00",
+    "datePublished": "2024-12-08T00:00:00\u002b00:00",
+    
+    "dateModified": "2024-12-08T00:00:00\u002b00:00",
+    
+    "keywords": ["zig","ui","tutorial"],
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "527"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          JSX in Zig
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >JSX in Zig</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/"
+      >Posts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-03-how-renderer-works/"
+      >Building UIs in Zig: Part 3 - How the Renderer Works</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Building UIs in Zig: Part 3 - How the Renderer Works
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time><span class="px-2 text-primary-500">&middot;</span><span>527 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Author
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#the-node-tree">The Node Tree</a></li>
+    <li><a href="#step-1-parse-tailwind-classes-comptime">Step 1: Parse Tailwind Classes (Comptime)</a></li>
+    <li><a href="#step-2-layout-calculation">Step 2: Layout Calculation</a></li>
+    <li><a href="#step-3-drawing">Step 3: Drawing</a></li>
+    <li><a href="#the-render-loop">The Render Loop</a></li>
+    <li><a href="#flex-layout">Flex Layout</a></li>
+    <li><a href="#event-handling">Event Handling</a></li>
+    <li><a href="#why-this-architecture">Why This Architecture?</a></li>
+    <li><a href="#whats-next">What&rsquo;s Next</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#the-node-tree">The Node Tree</a></li>
+    <li><a href="#step-1-parse-tailwind-classes-comptime">Step 1: Parse Tailwind Classes (Comptime)</a></li>
+    <li><a href="#step-2-layout-calculation">Step 2: Layout Calculation</a></li>
+    <li><a href="#step-3-drawing">Step 3: Drawing</a></li>
+    <li><a href="#the-render-loop">The Render Loop</a></li>
+    <li><a href="#flex-layout">Flex Layout</a></li>
+    <li><a href="#event-handling">Event Handling</a></li>
+    <li><a href="#why-this-architecture">Why This Architecture?</a></li>
+    <li><a href="#whats-next">What&rsquo;s Next</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+  <details
+    class="mt-2 mb-5 overflow-hidden rounded-lg ms-0 ps-5"
+    >
+    
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-primary-200 text-neutral-800 -ms-5 ps-5 dark:bg-primary-800 dark:text-neutral-100">
+    JSX in Zig -
+    This article is part of a series.
+  </summary>
+  
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
+          Part :
+          Building UIs in Zig: Part 1 - Imperative vs Declarative
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-02-first-counter-app/">
+          Part :
+          Building UIs in Zig: Part 2 - Your First Counter App
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        Part :
+        This Article
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-04-tailwind-parser/">
+          Part :
+          Building UIs in Zig: Part 4 - Comptime Tailwind Parser
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-05-complete-architecture/">
+          Part :
+          Building UIs in Zig: Part 5 - The Complete Architecture
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-06-behind-the-scenes/">
+          Part :
+          Building UIs in Zig: Part 6 - Behind the Scenes
+        </a>
+      </div>
+    
+  
+
+
+  </details>
+
+
+        <div class="article-content max-w-prose mb-20">
+          <p>You&rsquo;ve built a counter app. But how does <code>jsx.col(&quot;gap-4&quot;, &amp;.{...})</code> become pixels? Let&rsquo;s peek behind the curtain.</p>
+
+<h2 class="relative group">The Node Tree
+    <div id="the-node-tree" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-node-tree" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>When you write:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;gap-4 p-6&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">h1</span><span class="p">(</span><span class="s">&#34;Counter&#34;</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;+&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-green-500&#34;</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">})</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>You&rsquo;re creating a <strong>tree of nodes</strong>:</p>
+<pre tabindex="0"><code>col (gap-4, p-6)
+├── text &#34;Counter&#34; (text-3xl, font-bold)
+└── button &#34;+&#34; (bg-green-500)
+</code></pre><p>Each node is a simple struct:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">kind</span><span class="o">:</span><span class="w"> </span><span class="n">Kind</span><span class="p">,</span><span class="w">           </span><span class="c1">// col, row, text, button...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">style</span><span class="o">:</span><span class="w"> </span><span class="n">Style</span><span class="p">,</span><span class="w">         </span><span class="c1">// parsed from Tailwind classes
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">children</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">props</span><span class="o">:</span><span class="w"> </span><span class="n">Props</span><span class="p">,</span><span class="w">         </span><span class="c1">// label, event handlers, etc.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">Step 1: Parse Tailwind Classes (Comptime)
+    <div id="step-1-parse-tailwind-classes-comptime" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-1-parse-tailwind-classes-comptime" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The magic starts at compile time. When you write <code>&quot;gap-4 p-6&quot;</code>, it&rsquo;s parsed into a <code>Style</code> struct:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// This happens at COMPILE TIME
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">tw</span><span class="p">(</span><span class="s">&#34;gap-4 p-6&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Results in:
+</span></span></span><span class="line"><span class="cl"><span class="c1">// Style{ .gap = 16, .p = 24 }
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>No runtime string parsing. Zero cost.</p>
+
+<h2 class="relative group">Step 2: Layout Calculation
+    <div id="step-2-layout-calculation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-2-layout-calculation" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The renderer walks the tree and calculates bounds for each node:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">renderCol</span><span class="p">(</span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="o">:</span><span class="w"> </span><span class="n">Rect</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bounds</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">padding</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">children</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">child_height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">measureHeight</span><span class="p">(</span><span class="n">child</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nf">renderNode</span><span class="p">(</span><span class="n">child</span><span class="p">,</span><span class="w"> </span><span class="n">Rect</span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bounds</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">padding</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bounds</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">padding</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">.</span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">child_height</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">y</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">child_height</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">gap</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Column layout</strong>: Stack children vertically, add gap between them.</p>
+<p><strong>Row layout</strong>: Same idea, but horizontally.</p>
+
+<h2 class="relative group">Step 3: Drawing
+    <div id="step-3-drawing" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-3-drawing" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Once we know where everything goes, drawing is simple:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">renderButton</span><span class="p">(</span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="o">:</span><span class="w"> </span><span class="n">Rect</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Draw background
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">bg</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">color</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nf">drawRect</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span><span class="w"> </span><span class="n">color</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Draw text centered
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">label</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nf">drawTextCentered</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">text_color</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">The Render Loop
+    <div id="the-render-loop" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-render-loop" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Every frame:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">Renderer</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 1. Clear screen
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="nf">clearBackground</span><span class="p">(</span><span class="n">DARK_GRAY</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 2. Walk the tree, calculate layout, draw
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="nf">renderNode</span><span class="p">(</span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">bounds</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 3. Handle any triggered events
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="n">events</span><span class="p">.</span><span class="nf">flush</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">Flex Layout
+    <div id="flex-layout" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#flex-layout" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>For flexible sizing, we use flex values:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="s">&#34;Header&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;&#34;</span><span class="p">),</span><span class="w">           </span><span class="c1">// Fixed height
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">div</span><span class="p">(</span><span class="s">&#34;flex-1&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{...}),</span><span class="w">       </span><span class="c1">// Takes remaining space
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="s">&#34;Footer&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;&#34;</span><span class="p">),</span><span class="w">           </span><span class="c1">// Fixed height
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">})</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The renderer:</p>
+<ol>
+<li>Measures fixed-size children</li>
+<li>Divides remaining space among flex children</li>
+<li>Positions everything</li>
+</ol>
+
+<h2 class="relative group">Event Handling
+    <div id="event-handling" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#event-handling" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>When you click a button:</p>
+<ol>
+<li>Renderer checks mouse position against button bounds</li>
+<li>If hit, queues the event ID</li>
+<li>After rendering, <code>flush()</code> calls the handler</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">renderButton</span><span class="p">(</span><span class="n">ctx</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">RenderCtx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="o">:</span><span class="w"> </span><span class="n">Rect</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Draw button...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Check for click
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">isMouseInRect</span><span class="p">(</span><span class="n">bounds</span><span class="p">)</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="nf">isMousePressed</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">on_press</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">handler_id</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">ctx</span><span class="p">.</span><span class="n">events</span><span class="p">.</span><span class="nf">queue</span><span class="p">(</span><span class="n">handler_id</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">Why This Architecture?
+    <div id="why-this-architecture" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-this-architecture" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<ol>
+<li><strong>Immediate mode</strong>: Rebuild UI every frame. No diffing, no virtual DOM.</li>
+<li><strong>Comptime parsing</strong>: Tailwind classes parsed at compile time. Zero runtime cost.</li>
+<li><strong>Simple tree</strong>: Just structs and slices. No allocations during rendering.</li>
+<li><strong>Decoupled</strong>: View code doesn&rsquo;t know about pixels. Renderer doesn&rsquo;t know about app logic.</li>
+</ol>
+
+<h2 class="relative group">What&rsquo;s Next
+    <div id="whats-next" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#whats-next" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>In Part 4, we&rsquo;ll build the Tailwind parser that makes <code>&quot;gap-4 p-6&quot;</code> work at compile time.</p>
+
+          
+          
+          
+        </div>
+        
+        
+  <details class="mt-2 mb-5 overflow-hidden rounded-lg ms-0 ps-5">
+    
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-primary-200 text-neutral-800 -ms-5 ps-5 dark:bg-primary-800 dark:text-neutral-100">
+    JSX in Zig -
+    This article is part of a series.
+  </summary>
+  
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
+          Part :
+          Building UIs in Zig: Part 1 - Imperative vs Declarative
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-02-first-counter-app/">
+          Part :
+          Building UIs in Zig: Part 2 - Your First Counter App
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        Part :
+        This Article
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-04-tailwind-parser/">
+          Part :
+          Building UIs in Zig: Part 4 - Comptime Tailwind Parser
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-05-complete-architecture/">
+          Part :
+          Building UIs in Zig: Part 5 - The Complete Architecture
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-06-behind-the-scenes/">
+          Part :
+          Building UIs in Zig: Part 6 - Behind the Scenes
+        </a>
+      </div>
+    
+  
+
+
+  </details>
+
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_posts/jsx-zig-03-how-renderer-works.md"
+          data-oid-likes="likes_posts/jsx-zig-03-how-renderer-works.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+            <a
+              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/posts/jsx-zig-04-tailwind-parser/">
+              <span class="leading-6">
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building UIs in Zig: Part 4 - Comptime Tailwind Parser
+              </span>
+            </a>
+            
+              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time>
+              </span>
+            
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+            <a
+              class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/posts/jsx-zig-02-first-counter-app/">
+              <span class="leading-6">
+                Building UIs in Zig: Part 2 - Your First Counter App&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+              </span>
+            </a>
+            
+              <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time>
+              </span>
+            
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Author
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:51816/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>

@@ -1,0 +1,1832 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51816&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Building UIs in Zig: Part 6 - Behind the Scenes &middot; JSX in Zig</title>
+    <meta name="title" content="Building UIs in Zig: Part 6 - Behind the Scenes &middot; JSX in Zig">
+  
+
+  
+  
+  
+    <meta name="keywords" content="zig,ui,advanced,internals,">
+  
+  
+  
+  <link rel="canonical" href="http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/">
+  
+
+  
+  
+    <meta name="author" content="Author">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/">
+  <meta property="og:site_name" content="JSX in Zig">
+  <meta property="og:title" content="Building UIs in Zig: Part 6 - Behind the Scenes">
+  <meta property="og:description" content="You’ve seen the API. Now let’s look at the actual code. This is a sneak peek into how the JSX framework is built.
+The Node Struct # Everything starts with Node. Here’s what it actually looks like:
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 pub const Node = struct { kind: Kind, style: Style = .{}, props: Props = .{}, children: []const Node = &amp;.{}, pub const Kind = enum { // Layout col, row, div, center, stack, scroll, // Content text, icon, spacer, divider, // Interactive button, toggle, input, slider, // Containers card, list, item, modal, }; pub const Props = struct { // Content label: ?[]const u8 = null, value: ?[]const u8 = null, // State active: bool = false, disabled: bool = false, focused: bool = false, // Events (handler indices) on_press: ?usize = null, on_change: ?usize = null, on_focus: ?usize = null, }; }; Four fields. That’s it. The kind tells the renderer what to draw, style controls appearance, props holds content and state, and children is just a slice of more nodes.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-12-08T00:00:00+00:00">
+    <meta property="article:modified_time" content="2024-12-08T00:00:00+00:00">
+    <meta property="article:tag" content="Zig">
+    <meta property="article:tag" content="Ui">
+    <meta property="article:tag" content="Advanced">
+    <meta property="article:tag" content="Internals">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-01-imperative-vs-declarative/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-02-first-counter-app/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-03-how-renderer-works/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-04-tailwind-parser/">
+      <meta property="og:see_also" content="http://localhost:51816/posts/jsx-zig-05-complete-architecture/">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Building UIs in Zig: Part 6 - Behind the Scenes">
+  <meta name="twitter:description" content="You’ve seen the API. Now let’s look at the actual code. This is a sneak peek into how the JSX framework is built.
+The Node Struct # Everything starts with Node. Here’s what it actually looks like:
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 pub const Node = struct { kind: Kind, style: Style = .{}, props: Props = .{}, children: []const Node = &amp;.{}, pub const Kind = enum { // Layout col, row, div, center, stack, scroll, // Content text, icon, spacer, divider, // Interactive button, toggle, input, slider, // Containers card, list, item, modal, }; pub const Props = struct { // Content label: ?[]const u8 = null, value: ?[]const u8 = null, // State active: bool = false, disabled: bool = false, focused: bool = false, // Events (handler indices) on_press: ?usize = null, on_change: ?usize = null, on_focus: ?usize = null, }; }; Four fields. That’s it. The kind tells the renderer what to draw, style controls appearance, props holds content and state, and children is just a slice of more nodes.">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Posts",
+    "name": "Building UIs in Zig: Part 6 - Behind the Scenes",
+    "headline": "Building UIs in Zig: Part 6 - Behind the Scenes",
+    
+    "abstract": "\u003cp\u003eYou\u0026rsquo;ve seen the API. Now let\u0026rsquo;s look at the actual code. This is a sneak peek into how the JSX framework is built.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe Node Struct\n    \u003cdiv id=\u0022the-node-struct\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-node-struct\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eEverything starts with \u003ccode\u003eNode\u003c\/code\u003e. Here\u0026rsquo;s what it actually looks like:\u003c\/p\u003e\n\u003cdiv class=\u0022highlight\u0022\u003e\u003cdiv class=\u0022chroma\u0022\u003e\n\u003ctable class=\u0022lntable\u0022\u003e\u003ctr\u003e\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode\u003e\u003cspan class=\u0022lnt\u0022\u003e 1\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 2\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 3\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 4\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 5\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 6\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 7\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 8\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e 9\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e10\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e11\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e12\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e13\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e14\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e15\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e16\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e17\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e18\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e19\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e20\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e21\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e22\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e23\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e24\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e25\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e26\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e27\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e28\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e29\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e30\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e31\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e32\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e33\n\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\n\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode class=\u0022language-zig\u0022 data-lang=\u0022zig\u0022\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022kr\u0022\u003epub\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eNode\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022k\u0022\u003estruct\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ekind\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eKind\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003estyle\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eStyle\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{},\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eprops\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eProps\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{},\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003echildren\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e[]\u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eNode\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026amp;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{},\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003epub\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eKind\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022k\u0022\u003eenum\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022c1\u0022\u003e\/\/ Layout\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022c1\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ecol\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003erow\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ediv\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ecenter\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003estack\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003escroll\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022c1\u0022\u003e\/\/ Content\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022c1\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003etext\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eicon\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003espacer\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003edivider\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022c1\u0022\u003e\/\/ Interactive\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022c1\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ebutton\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003etoggle\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003einput\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eslider\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022c1\u0022\u003e\/\/ Containers\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022c1\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ecard\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003elist\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eitem\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003emodal\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e};\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003epub\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eProps\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022k\u0022\u003estruct\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022c1\u0022\u003e\/\/ Content\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022c1\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003elabel\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e?\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e[]\u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003eu8\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003enull\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003evalue\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e?\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e[]\u003c\/span\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003eu8\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003enull\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022c1\u0022\u003e\/\/ State\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022c1\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eactive\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003ebool\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003efalse\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003edisabled\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003ebool\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003efalse\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003efocused\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003ebool\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003efalse\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022c1\u0022\u003e\/\/ Events (handler indices)\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022c1\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eon_press\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e?\u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003eusize\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003enull\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eon_change\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e?\u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003eusize\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003enull\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eon_focus\u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e:\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e?\u003c\/span\u003e\u003cspan class=\u0022kt\u0022\u003eusize\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022kc\u0022\u003enull\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e};\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e};\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\u003c\/tr\u003e\u003c\/table\u003e\n\u003c\/div\u003e\n\u003c\/div\u003e\u003cp\u003eFour fields. That\u0026rsquo;s it. The \u003ccode\u003ekind\u003c\/code\u003e tells the renderer what to draw, \u003ccode\u003estyle\u003c\/code\u003e controls appearance, \u003ccode\u003eprops\u003c\/code\u003e holds content and state, and \u003ccode\u003echildren\u003c\/code\u003e is just a slice of more nodes.\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/",
+    "author" : {
+      "@type": "Person",
+      "name": "Author"
+    },
+    "copyrightYear": "2024",
+    "dateCreated": "2024-12-08T00:00:00\u002b00:00",
+    "datePublished": "2024-12-08T00:00:00\u002b00:00",
+    
+    "dateModified": "2024-12-08T00:00:00\u002b00:00",
+    
+    "keywords": ["zig","ui","advanced","internals"],
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "1731"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          JSX in Zig
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >JSX in Zig</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/"
+      >Posts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-06-behind-the-scenes/"
+      >Building UIs in Zig: Part 6 - Behind the Scenes</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Building UIs in Zig: Part 6 - Behind the Scenes
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time><span class="px-2 text-primary-500">&middot;</span><span>1731 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">9 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Author
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#the-node-struct">The Node Struct</a></li>
+    <li><a href="#the-builder-functions">The Builder Functions</a></li>
+    <li><a href="#method-chaining">Method Chaining</a></li>
+    <li><a href="#the-style-struct">The Style Struct</a></li>
+    <li><a href="#the-renderer">The Renderer</a></li>
+    <li><a href="#column-layout">Column Layout</a></li>
+    <li><a href="#flex-calculation">Flex Calculation</a></li>
+    <li><a href="#widget-rendering">Widget Rendering</a></li>
+    <li><a href="#measuring">Measuring</a></li>
+    <li><a href="#event-dispatch">Event Dispatch</a></li>
+    <li><a href="#the-full-picture">The Full Picture</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#the-node-struct">The Node Struct</a></li>
+    <li><a href="#the-builder-functions">The Builder Functions</a></li>
+    <li><a href="#method-chaining">Method Chaining</a></li>
+    <li><a href="#the-style-struct">The Style Struct</a></li>
+    <li><a href="#the-renderer">The Renderer</a></li>
+    <li><a href="#column-layout">Column Layout</a></li>
+    <li><a href="#flex-calculation">Flex Calculation</a></li>
+    <li><a href="#widget-rendering">Widget Rendering</a></li>
+    <li><a href="#measuring">Measuring</a></li>
+    <li><a href="#event-dispatch">Event Dispatch</a></li>
+    <li><a href="#the-full-picture">The Full Picture</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+  <details
+    class="mt-2 mb-5 overflow-hidden rounded-lg ms-0 ps-5"
+    >
+    
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-primary-200 text-neutral-800 -ms-5 ps-5 dark:bg-primary-800 dark:text-neutral-100">
+    JSX in Zig -
+    This article is part of a series.
+  </summary>
+  
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
+          Part :
+          Building UIs in Zig: Part 1 - Imperative vs Declarative
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-02-first-counter-app/">
+          Part :
+          Building UIs in Zig: Part 2 - Your First Counter App
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-03-how-renderer-works/">
+          Part :
+          Building UIs in Zig: Part 3 - How the Renderer Works
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-04-tailwind-parser/">
+          Part :
+          Building UIs in Zig: Part 4 - Comptime Tailwind Parser
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-05-complete-architecture/">
+          Part :
+          Building UIs in Zig: Part 5 - The Complete Architecture
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        Part :
+        This Article
+      </div>
+    
+  
+
+
+  </details>
+
+
+        <div class="article-content max-w-prose mb-20">
+          <p>You&rsquo;ve seen the API. Now let&rsquo;s look at the actual code. This is a sneak peek into how the JSX framework is built.</p>
+
+<h2 class="relative group">The Node Struct
+    <div id="the-node-struct" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-node-struct" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Everything starts with <code>Node</code>. Here&rsquo;s what it actually looks like:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">kind</span><span class="o">:</span><span class="w"> </span><span class="n">Kind</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">style</span><span class="o">:</span><span class="w"> </span><span class="n">Style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.{},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">props</span><span class="o">:</span><span class="w"> </span><span class="n">Props</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.{},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">children</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Layout
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="n">row</span><span class="p">,</span><span class="w"> </span><span class="n">div</span><span class="p">,</span><span class="w"> </span><span class="n">center</span><span class="p">,</span><span class="w"> </span><span class="n">stack</span><span class="p">,</span><span class="w"> </span><span class="n">scroll</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Content
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">text</span><span class="p">,</span><span class="w"> </span><span class="n">icon</span><span class="p">,</span><span class="w"> </span><span class="n">spacer</span><span class="p">,</span><span class="w"> </span><span class="n">divider</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Interactive
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">button</span><span class="p">,</span><span class="w"> </span><span class="n">toggle</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">slider</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Containers
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">card</span><span class="p">,</span><span class="w"> </span><span class="n">list</span><span class="p">,</span><span class="w"> </span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="n">modal</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Props</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Content
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">label</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">value</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// State
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">active</span><span class="o">:</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">disabled</span><span class="o">:</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">focused</span><span class="o">:</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Events (handler indices)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">on_press</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">usize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">on_change</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">usize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">on_focus</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">usize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Four fields. That&rsquo;s it. The <code>kind</code> tells the renderer what to draw, <code>style</code> controls appearance, <code>props</code> holds content and state, and <code>children</code> is just a slice of more nodes.</p>
+
+<h2 class="relative group">The Builder Functions
+    <div id="the-builder-functions" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-builder-functions" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>When you write <code>jsx.col(&quot;gap-4 p-6&quot;, &amp;.{...})</code>, here&rsquo;s what happens:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">col</span><span class="p">(</span><span class="kr">comptime</span><span class="w"> </span><span class="n">classes</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">children</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="p">)</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">col</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kr">comptime</span><span class="w"> </span><span class="n">blk</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="kr">var</span><span class="w"> </span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">tw</span><span class="p">(</span><span class="n">classes</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">style</span><span class="p">.</span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">flex</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">style</span><span class="p">.</span><span class="n">flex_dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">col</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">break</span><span class="w"> </span><span class="o">:</span><span class="n">blk</span><span class="w"> </span><span class="n">style</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">children</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">children</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The <code>comptime blk:</code> block parses Tailwind classes at compile time and sets up flex direction. The result is a <code>Node</code> struct with everything baked in.</p>
+<p>Text and buttons work similarly:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">text</span><span class="p">(</span><span class="n">label</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="kr">comptime</span><span class="w"> </span><span class="n">classes</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">text</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kr">comptime</span><span class="w"> </span><span class="nf">tw</span><span class="p">(</span><span class="n">classes</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">props</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.{</span><span class="w"> </span><span class="p">.</span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">button</span><span class="p">(</span><span class="n">label</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="kr">comptime</span><span class="w"> </span><span class="n">classes</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">button</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kr">comptime</span><span class="w"> </span><span class="nf">tw</span><span class="p">(</span><span class="n">classes</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">props</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.{</span><span class="w"> </span><span class="p">.</span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">Method Chaining
+    <div id="method-chaining" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#method-chaining" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>How does <code>.onPress(E.increment)</code> work? Each modifier returns a new Node:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">onPress</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">handler</span><span class="o">:</span><span class="w"> </span><span class="n">anytype</span><span class="p">)</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">n</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">on_press</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">toHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">fg</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">color</span><span class="o">:</span><span class="w"> </span><span class="n">Color</span><span class="p">)</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">n</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">fg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">color</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">active</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="o">:</span><span class="w"> </span><span class="kt">bool</span><span class="p">)</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">n</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">active</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The <code>toHandler</code> function converts enums to <code>usize</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">toHandler</span><span class="p">(</span><span class="n">handler</span><span class="o">:</span><span class="w"> </span><span class="n">anytype</span><span class="p">)</span><span class="w"> </span><span class="kt">usize</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@TypeOf</span><span class="p">(</span><span class="n">handler</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">T</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">handler</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">@typeInfo</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">.</span><span class="err">@</span><span class="s">&#34;enum&#34;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">@intFromEnum</span><span class="p">(</span><span class="n">handler</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nb">@compileError</span><span class="p">(</span><span class="s">&#34;Handler must be usize or enum&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>So <code>jsx.button(&quot;+&quot;, &quot;&quot;).onPress(E.increment)</code> creates a Node, then returns a modified copy with <code>on_press</code> set.</p>
+
+<h2 class="relative group">The Style Struct
+    <div id="the-style-struct" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-style-struct" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The <code>Style</code> struct holds all visual properties:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Layout
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">display</span><span class="o">:</span><span class="w"> </span><span class="n">Display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">block</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">flex_dir</span><span class="o">:</span><span class="w"> </span><span class="n">FlexDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">row</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">flex</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">gap</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">items</span><span class="o">:</span><span class="w"> </span><span class="n">Align</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">start</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">justify</span><span class="o">:</span><span class="w"> </span><span class="n">Justify</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">start</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Spacing (pixels)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">p</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">       </span><span class="c1">// padding all
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">px</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">  </span><span class="c1">// padding x
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">  </span><span class="c1">// padding y
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">m</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">       </span><span class="c1">// margin all
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">mt</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">  </span><span class="c1">// margin top
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="c1">// ... etc
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Colors
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">bg</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="n">Color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">fg</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="n">Color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Borders
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">rounded</span><span class="o">:</span><span class="w"> </span><span class="n">Rounded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">none</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">border_width</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Why <code>?i32</code> for directional spacing? So we can tell &ldquo;not set&rdquo; from &ldquo;explicitly zero&rdquo;. The getters cascade:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">getMarginTop</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">Style</span><span class="p">)</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">mt</span><span class="w"> </span><span class="k">orelse</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">my</span><span class="w"> </span><span class="k">orelse</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">m</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>mt-4</code> overrides <code>my-2</code> which overrides <code>m-1</code>.</p>
+
+<h2 class="relative group">The Renderer
+    <div id="the-renderer" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-renderer" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Here&rsquo;s the actual render loop:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">Renderer</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="n">events</span><span class="p">.</span><span class="nf">beginFrame</span><span class="p">(</span><span class="n">rl</span><span class="p">.</span><span class="nf">getFrameTime</span><span class="p">());</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">rl</span><span class="p">.</span><span class="nf">clearBackground</span><span class="p">(</span><span class="n">DEFAULT_BG</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="nf">renderNode</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">bounds</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">renderNode</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">Renderer</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">RenderCtx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="o">:</span><span class="w"> </span><span class="n">Rect</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">kind</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">col</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="nf">renderCol</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">row</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="nf">renderRow</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">text</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">widgets</span><span class="p">.</span><span class="nf">renderText</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">button</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">widgets</span><span class="p">.</span><span class="nf">renderButton</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">toggle</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">widgets</span><span class="p">.</span><span class="nf">renderToggle</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// ... etc
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>A switch on <code>node.kind</code> dispatches to the right renderer. Layout nodes recurse into children, leaf nodes just draw.</p>
+
+<h2 class="relative group">Column Layout
+    <div id="column-layout" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#column-layout" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Here&rsquo;s how <code>renderColChildren</code> actually works:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">renderColChildren</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">Renderer</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">RenderCtx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">content</span><span class="o">:</span><span class="w"> </span><span class="n">Rect</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">gap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">gap</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">children</span><span class="p">.</span><span class="n">len</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Calculate how much space flex children get
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">calc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="n">FlexLayout</span><span class="p">.</span><span class="nf">calcSizes</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">node</span><span class="p">.</span><span class="n">children</span><span class="p">,</span><span class="w"> </span><span class="n">content</span><span class="p">.</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">gap</span><span class="p">,</span><span class="w"> </span><span class="n">widgets</span><span class="p">.</span><span class="n">measureH</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">content</span><span class="p">.</span><span class="n">y</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">children</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">mt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">child</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getMarginTop</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">ml</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">child</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getMarginLeft</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">child</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getMarginRight</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Position with margins
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="kr">var</span><span class="w"> </span><span class="n">child_x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">content</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">ml</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">var</span><span class="w"> </span><span class="n">child_w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">content</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ml</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mr</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Handle mx-auto centering
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">child</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">hasAutoMarginX</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="kr">const</span><span class="w"> </span><span class="n">actual_w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">widgets</span><span class="p">.</span><span class="nf">measureBaseW</span><span class="p">(</span><span class="n">child</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">child_x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">content</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">@divFloor</span><span class="p">(</span><span class="n">content</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">actual_w</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">child_w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">actual_w</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Height: flex children expand, others use natural size
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">child_h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">child</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">flex</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nb">@max</span><span class="p">(</span><span class="nf">getChildSize</span><span class="p">(</span><span class="n">child</span><span class="p">,</span><span class="w"> </span><span class="n">calc</span><span class="p">.</span><span class="n">flex_unit</span><span class="p">),</span><span class="w"> </span><span class="n">widgets</span><span class="p">.</span><span class="nf">measureBaseH</span><span class="p">(</span><span class="n">child</span><span class="p">))</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">else</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">widgets</span><span class="p">.</span><span class="nf">measureBaseH</span><span class="p">(</span><span class="n">child</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Render at position with top margin applied
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">self</span><span class="p">.</span><span class="nf">renderNode</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">child</span><span class="p">,</span><span class="w"> </span><span class="n">Rect</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">child_x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">mt</span><span class="p">,</span><span class="w"> </span><span class="n">child_w</span><span class="p">,</span><span class="w"> </span><span class="n">child_h</span><span class="p">));</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Advance by total height including margins
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">y</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">widgets</span><span class="p">.</span><span class="nf">measureH</span><span class="p">(</span><span class="n">child</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">y</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">gap</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The key insight: <code>measureBaseH</code> returns content height, <code>measureH</code> returns content + margins. We render at <code>y + mt</code> (applying top margin), then advance by the full measured height.</p>
+
+<h2 class="relative group">Flex Calculation
+    <div id="flex-calculation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#flex-calculation" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>How does <code>flex-1</code> work? The <code>calcSizes</code> function figures out how much space each flex child gets:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">calcSizes</span><span class="p">(</span><span class="n">children</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">available</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">gap</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">measureFn</span><span class="o">:</span><span class="w"> </span><span class="k">fn</span><span class="p">(</span><span class="n">Node</span><span class="p">)</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="n">FlexCalc</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">fixed_total</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">flex_total</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">children</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">child</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">flex</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">flex_total</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">child</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">flex</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">fixed_total</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nf">measureFn</span><span class="p">(</span><span class="n">child</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Space after fixed children and gaps
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">gaps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@intCast</span><span class="p">(</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">children</span><span class="p">.</span><span class="n">len</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">gap</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">remaining</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">available</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">fixed_total</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">gaps</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Each flex unit gets this many pixels
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">flex_unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">flex_total</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nb">@divFloor</span><span class="p">(</span><span class="n">remaining</span><span class="p">,</span><span class="w"> </span><span class="n">flex_total</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">else</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">.{</span><span class="w"> </span><span class="p">.</span><span class="n">flex_unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">flex_unit</span><span class="w"> </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>If you have three children: fixed (50px), <code>flex-1</code>, <code>flex-2</code>, and 300px available with 10px gaps:</p>
+<ol>
+<li>Fixed space: 50px</li>
+<li>Gaps: 20px (2 gaps)</li>
+<li>Remaining: 230px</li>
+<li>Total flex: 3</li>
+<li>Per unit: 76px</li>
+<li>First flex child: 76px, second: 152px</li>
+</ol>
+
+<h2 class="relative group">Widget Rendering
+    <div id="widget-rendering" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#widget-rendering" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Here&rsquo;s how a button actually gets drawn:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">renderButton</span><span class="p">(</span><span class="n">ctx</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">RenderCtx</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w"> </span><span class="n">bounds</span><span class="o">:</span><span class="w"> </span><span class="n">Rect</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">hover</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">isHovered</span><span class="p">(</span><span class="n">bounds</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">press</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hover</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">rl</span><span class="p">.</span><span class="nf">isMouseButtonDown</span><span class="p">(.</span><span class="n">left</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Background color based on state
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">disabled</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">DEFAULT_BG_SECONDARY</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">press</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">DEFAULT_BG_ACTIVE</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hover</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">DEFAULT_BG_HOVER</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">else</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nf">resolveColor</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">bg</span><span class="p">)</span><span class="w"> </span><span class="k">orelse</span><span class="w"> </span><span class="n">DEFAULT_BG_SECONDARY</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Draw rounded rectangle
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">radius</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getBorderRadius</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">roundness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">radius</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">@as</span><span class="p">(</span><span class="kt">f32</span><span class="p">,</span><span class="w"> </span><span class="nb">@floatFromInt</span><span class="p">(</span><span class="n">bounds</span><span class="p">.</span><span class="n">h</span><span class="p">));</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">rl</span><span class="p">.</span><span class="nf">drawRectangleRounded</span><span class="p">(</span><span class="n">bounds</span><span class="p">.</span><span class="nf">toRaylib</span><span class="p">(),</span><span class="w"> </span><span class="n">roundness</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">bg</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Draw label centered
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">label</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">label</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">slice</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctx</span><span class="p">.</span><span class="nf">toZ</span><span class="p">(</span><span class="n">label</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">font_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getFontSize</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">text_w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rl</span><span class="p">.</span><span class="nf">measureText</span><span class="p">(</span><span class="n">slice</span><span class="p">,</span><span class="w"> </span><span class="n">font_size</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">tx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bounds</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">@divFloor</span><span class="p">(</span><span class="n">bounds</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">text_w</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">ty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bounds</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">@divFloor</span><span class="p">(</span><span class="n">bounds</span><span class="p">.</span><span class="n">h</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">font_size</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">rl</span><span class="p">.</span><span class="nf">drawText</span><span class="p">(</span><span class="n">slice</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">ty</span><span class="p">,</span><span class="w"> </span><span class="n">font_size</span><span class="p">,</span><span class="w"> </span><span class="n">DEFAULT_TEXT</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Handle click - queue the event
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">node</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">disabled</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">hover</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">rl</span><span class="p">.</span><span class="nf">isMouseButtonPressed</span><span class="p">(.</span><span class="n">left</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">props</span><span class="p">.</span><span class="n">on_press</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">idx</span><span class="o">|</span><span class="w"> </span><span class="n">ctx</span><span class="p">.</span><span class="n">events</span><span class="p">.</span><span class="nf">queue</span><span class="p">(</span><span class="n">idx</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>State flows from props (disabled, active), visual feedback comes from hover/press detection, and clicks queue events for later dispatch.</p>
+
+<h2 class="relative group">Measuring
+    <div id="measuring" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#measuring" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>How do we know a button is 36px tall? The <code>measureBaseH</code> function:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">measureBaseH</span><span class="p">(</span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Node</span><span class="p">)</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">h</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">h</span><span class="o">|</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">h</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">h</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">kind</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">card</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">modal</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="c1">// Vertical stack: sum of children
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">            </span><span class="kr">var</span><span class="w"> </span><span class="n">total</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">children</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span><span class="w"> </span><span class="n">total</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nf">measureH</span><span class="p">(</span><span class="n">child</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="kr">const</span><span class="w"> </span><span class="n">gaps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">children</span><span class="p">.</span><span class="n">len</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">gap</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="kr">const</span><span class="w"> </span><span class="n">pad</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getPadTop</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getPadBottom</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">total</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">gaps</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pad</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">row</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">div</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">center</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="c1">// Horizontal: max of children
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">            </span><span class="kr">var</span><span class="w"> </span><span class="n">max_h</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">children</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="kr">const</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">measureH</span><span class="p">(</span><span class="n">child</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">h</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">max_h</span><span class="p">)</span><span class="w"> </span><span class="n">max_h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">max_h</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getPadTop</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getPadBottom</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">text</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="n">text_size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">.</span><span class="n">xs</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">sm</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">18</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">base</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">lg</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">26</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">.</span><span class="n">xl</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">x2l</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">x3l</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">48</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">x4l</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">56</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">button</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">toggle</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">input</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">36</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getPadTop</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">node</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">getPadBottom</span><span class="p">(),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">divider</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">spacer</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Containers recurse, widgets return constants, text sizes are predefined. Simple.</p>
+
+<h2 class="relative group">Event Dispatch
+    <div id="event-dispatch" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#event-dispatch" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>After rendering, <code>flush()</code> calls the queued handlers:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">flush</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">EventManager</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">..</span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">i</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">queue</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">idx</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">handlers</span><span class="p">.</span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">self</span><span class="p">.</span><span class="n">handlers</span><span class="p">[</span><span class="n">idx</span><span class="p">]();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Events are just indices into a handler array. No closures, no allocations.</p>
+
+<h2 class="relative group">The Full Picture
+    <div id="the-full-picture" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-full-picture" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>When you write:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">view</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;gap-4 p-6&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="s">&#34;Hello&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-2xl&#34;</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;+&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-green-500&#34;</span><span class="p">).</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">increment</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">renderer</span><span class="p">.</span><span class="nf">render</span><span class="p">(</span><span class="n">view</span><span class="p">);</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li><code>jsx.col</code> creates a Node with parsed style and children slice</li>
+<li><code>jsx.text</code> and <code>jsx.button</code> create child Nodes</li>
+<li><code>.onPress()</code> sets <code>props.on_press</code> to the enum value</li>
+<li><code>render()</code> walks the tree, calculates layout, draws each node</li>
+<li>Button detects click, queues handler index</li>
+<li><code>flush()</code> calls <code>handlers[@intFromEnum(E.increment)]</code></li>
+</ol>
+<p>No heap allocation. No virtual DOM. No diffing. Just struct construction and a tree walk.</p>
+<hr>
+<p><em>The beauty is in the simplicity. Each piece does one thing well.</em></p>
+
+          
+          
+          
+        </div>
+        
+        
+  <details class="mt-2 mb-5 overflow-hidden rounded-lg ms-0 ps-5">
+    
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-primary-200 text-neutral-800 -ms-5 ps-5 dark:bg-primary-800 dark:text-neutral-100">
+    JSX in Zig -
+    This article is part of a series.
+  </summary>
+  
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
+          Part :
+          Building UIs in Zig: Part 1 - Imperative vs Declarative
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-02-first-counter-app/">
+          Part :
+          Building UIs in Zig: Part 2 - Your First Counter App
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-03-how-renderer-works/">
+          Part :
+          Building UIs in Zig: Part 3 - How the Renderer Works
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-04-tailwind-parser/">
+          Part :
+          Building UIs in Zig: Part 4 - Comptime Tailwind Parser
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        <a href="/posts/jsx-zig-05-complete-architecture/">
+          Part :
+          Building UIs in Zig: Part 5 - The Complete Architecture
+        </a>
+      </div>
+    
+  
+    
+      <div
+        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+        Part :
+        This Article
+      </div>
+    
+  
+
+
+  </details>
+
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_posts/jsx-zig-06-behind-the-scenes.md"
+          data-oid-likes="likes_posts/jsx-zig-06-behind-the-scenes.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+            <a
+              class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/posts/jsx-zig-05-complete-architecture/">
+              <span class="leading-6">
+                Building UIs in Zig: Part 5 - The Complete Architecture&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+              </span>
+            </a>
+            
+              <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time>
+              </span>
+            
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Author
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:51816/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>
