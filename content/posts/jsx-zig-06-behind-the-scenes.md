@@ -48,7 +48,25 @@ pub const Node = struct {
 };
 ```
 
-Four fields. That's it. The `kind` tells the renderer what to draw, `style` controls appearance, `props` holds content and state, and `children` is just a slice of more nodes.
+Four fields. That's it:
+
+```
+┌─────────────────────────────────────┐
+│              Node                   │
+├─────────────────────────────────────┤
+│  kind: .col, .row, .button, ...    │
+│  style: { gap, padding, bg, ... }  │
+│  props: { label, on_press, ... }   │
+│  children: []const Node ──────────────┐
+└─────────────────────────────────────┘ │
+         ┌──────────────────────────────┘
+         ▼
+    ┌─────────┬─────────┬─────────┐
+    │  Node   │  Node   │  Node   │
+    └─────────┴─────────┴─────────┘
+```
+
+The `kind` tells the renderer what to draw, `style` controls appearance, `props` holds content and state, and `children` is just a slice of more nodes.
 
 ## The Builder Functions
 
@@ -126,7 +144,21 @@ fn toHandler(handler: anytype) usize {
 }
 ```
 
-So `jsx.button("+", "").onPress(E.increment)` creates a Node, then returns a modified copy with `on_press` set.
+So `jsx.button("+", "").onPress(E.increment)` creates a Node, then returns a modified copy with `on_press` set:
+
+```
+jsx.button("+", "bg-green-500")     .onPress(E.increment)
+         │                                  │
+         ▼                                  ▼
+┌─────────────────────┐           ┌─────────────────────┐
+│ kind: .button       │           │ kind: .button       │
+│ style: { bg: ... }  │    ──▶    │ style: { bg: ... }  │
+│ props: {            │  copy &   │ props: {            │
+│   label: "+"        │  modify   │   label: "+"        │
+│   on_press: null    │           │   on_press: 0  ◀────── E.increment
+│ }                   │           │ }                   │
+└─────────────────────┘           └─────────────────────┘
+```
 
 ## The Style Struct
 
@@ -193,7 +225,32 @@ fn renderNode(self: *Renderer, ctx: *RenderCtx, node: Node, bounds: Rect) void {
 }
 ```
 
-A switch on `node.kind` dispatches to the right renderer. Layout nodes recurse into children, leaf nodes just draw.
+A switch on `node.kind` dispatches to the right renderer:
+
+```
+                    renderNode(node, bounds)
+                            │
+                            ▼
+               ┌────────────────────────┐
+               │   switch (node.kind)   │
+               └────────────────────────┘
+                            │
+        ┌───────────┬───────┴───────┬───────────┐
+        ▼           ▼               ▼           ▼
+     .col        .row           .button      .text
+        │           │               │           │
+        ▼           ▼               ▼           ▼
+  renderCol    renderRow      renderButton  renderText
+        │           │               │           │
+        ▼           ▼               │           │
+   [recurse     [recurse           │           │
+    children]    children]          ▼           ▼
+                              [draw rect]  [draw text]
+                              [draw label]
+                              [check click]
+```
+
+Layout nodes recurse into children, leaf nodes just draw.
 
 ## Column Layout
 
@@ -245,6 +302,33 @@ fn renderColChildren(self: *Renderer, ctx: *RenderCtx, node: Node, content: Rect
 
 The key insight: `measureBaseH` returns content height, `measureH` returns content + margins. We render at `y + mt` (applying top margin), then advance by the full measured height.
 
+```
+Container bounds (content area after padding)
+┌──────────────────────────────────────┐
+│                                      │
+│  y ─▶ ┌─ mt (margin-top) ──────────┐ │
+│       │                            │ │
+│       │  ┌──────────────────────┐  │ │  measureH(child1)
+│       │  │      Child 1         │  │ │  = mt + baseH + mb
+│       │  │      (baseH)         │  │ │
+│       │  └──────────────────────┘  │ │
+│       │                            │ │
+│       └─ mb (margin-bottom) ───────┘ │
+│                                      │
+│       ◀── gap ──▶                    │
+│                                      │
+│  y ─▶ ┌─ mt ───────────────────────┐ │
+│       │  ┌──────────────────────┐  │ │
+│       │  │      Child 2         │  │ │
+│       │  └──────────────────────┘  │ │
+│       └─ mb ───────────────────────┘ │
+│                                      │
+└──────────────────────────────────────┘
+
+Position: y + mt  (render inside the margin)
+Advance:  y += measureH(child) + gap
+```
+
 ## Flex Calculation
 
 How does `flex-1` work? The `calcSizes` function figures out how much space each flex child gets:
@@ -278,12 +362,27 @@ fn calcSizes(children: []const Node, available: i32, gap: i32, measureFn: fn(Nod
 
 If you have three children: fixed (50px), `flex-1`, `flex-2`, and 300px available with 10px gaps:
 
-1. Fixed space: 50px
-2. Gaps: 20px (2 gaps)
-3. Remaining: 230px
-4. Total flex: 3
-5. Per unit: 76px
-6. First flex child: 76px, second: 152px
+```
+Available: 300px
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+
+Step 1: Subtract fixed + gaps
+┌────────┐     ┌─────────────────────────────────────────┐
+│ Fixed  │ gap │           Remaining: 230px              │
+│  50px  │10px │                                         │
+└────────┘     └─────────────────────────────────────────┘
+
+Step 2: Divide remaining by total flex (1+2=3)
+         flex_unit = 230 / 3 = 76px
+
+Step 3: Assign to flex children
+┌────────┐     ┌──────────────┐     ┌────────────────────────────┐
+│ Fixed  │ gap │   flex-1     │ gap │         flex-2             │
+│  50px  │10px │  1×76=76px   │10px │       2×76=152px           │
+└────────┘     └──────────────┘     └────────────────────────────┘
+```
 
 ## Widget Rendering
 
@@ -386,6 +485,33 @@ pub fn flush(self: *EventManager) void {
 
 Events are just indices into a handler array. No closures, no allocations.
 
+```
+Button clicked with on_press = 2
+           │
+           ▼
+    events.queue(2)
+           │
+           ▼
+┌─────────────────────────┐
+│    Event Queue          │
+│  ┌───┬───┬───┬───┐     │
+│  │ 2 │   │   │   │     │
+│  └───┴───┴───┴───┘     │
+│    count = 1            │
+└─────────────────────────┘
+           │
+           ▼ flush()
+┌─────────────────────────┐
+│    Handlers Array       │
+│  ┌───────────────────┐  │
+│  │ 0: onIncrement    │  │
+│  │ 1: onDecrement    │  │
+│  │ 2: onReset  ◀──────────── call handlers[2]()
+│  │ 3: ...            │  │
+│  └───────────────────┘  │
+└─────────────────────────┘
+```
+
 ## The Full Picture
 
 When you write:
@@ -406,6 +532,33 @@ renderer.render(view);
 6. `flush()` calls `handlers[@intFromEnum(E.increment)]`
 
 No heap allocation. No virtual DOM. No diffing. Just struct construction and a tree walk.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRAME LIFECYCLE                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   1. BUILD                    2. RENDER                         │
+│   ┌─────────────┐            ┌─────────────┐                   │
+│   │ jsx.col()   │            │ renderNode  │                   │
+│   │ jsx.text()  │  ────▶     │     │       │                   │
+│   │ jsx.button()│   Node     │     ▼       │                   │
+│   └─────────────┘   Tree     │  [layout]   │                   │
+│                              │  [draw]     │                   │
+│                              │  [hit test] │                   │
+│                              └─────────────┘                   │
+│                                     │                          │
+│                                     ▼                          │
+│   4. UPDATE                  3. DISPATCH                        │
+│   ┌─────────────┐            ┌─────────────┐                   │
+│   │ handler()   │  ◀────     │  flush()    │                   │
+│   │ state.x += 1│  calls     │  queue[i]   │                   │
+│   └─────────────┘            └─────────────┘                   │
+│         │                                                       │
+│         └──────────────▶ NEXT FRAME ──────────────────────────▶│
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 

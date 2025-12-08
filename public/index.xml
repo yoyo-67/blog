@@ -336,7 +336,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;Four fields. That&amp;rsquo;s it. The &lt;code&gt;kind&lt;/code&gt; tells the renderer what to draw, &lt;code&gt;style&lt;/code&gt; controls appearance, &lt;code&gt;props&lt;/code&gt; holds content and state, and &lt;code&gt;children&lt;/code&gt; is just a slice of more nodes.&lt;/p&gt;</description>
+&lt;/div&gt;&lt;p&gt;Four fields. That&amp;rsquo;s it:&lt;/p&gt;</description>
       
     </item>
     
