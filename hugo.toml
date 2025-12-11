@@ -1,6 +1,6 @@
-baseURL = 'https://example.org/'
+baseURL = '/'
 languageCode = 'en-us'
-title = 'JSX in Zig'
+title = "Yohai's Blog"
 theme = 'blowfish'
 
 [params]
@@ -11,9 +11,8 @@ theme = 'blowfish'
   enableCodeCopy = true
 
   [params.homepage]
-    layout = "profile"
-    showRecent = true
-    recentLimit = 15
+    layout = "custom"
+    showRecent = false
 
   [params.article]
     showDate = true
@@ -24,8 +23,8 @@ theme = 'blowfish'
     showBreadcrumbs = true
 
   [params.author]
-    name = "Author"
-    headline = "Building declarative UI in Zig"
+    name = "Yohai"
+    headline = "Exploring systems programming, UI frameworks, and everything in between"
 
 [markup]
   [markup.highlight]

@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Series on JSX in Zig</title>
-    <link>http://localhost:1313/series/</link>
-    <description>Recent content in Series on JSX in Zig</description>
+    <title>Series on Yohai&#39;s Blog</title>
+    <link>//localhost:1313/series/</link>
+    <description>Recent content in Series on Yohai&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <copyright>© 2025 Author</copyright>
-    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/series/index.xml" rel="self" type="application/rss+xml" />
+    <copyright>© 2025 Yohai</copyright>
+    <lastBuildDate>Thu, 11 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="//localhost:1313/series/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
-      <title>JSX in Zig</title>
-      <link>http://localhost:1313/series/jsx-in-zig/</link>
-      <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
+      <title>Building Declarative UI in Zig</title>
+      <link>//localhost:1313/series/building-declarative-ui-in-zig/</link>
+      <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/series/jsx-in-zig/</guid>
+      <guid>//localhost:1313/series/building-declarative-ui-in-zig/</guid>
       <description></description>
       
     </item>

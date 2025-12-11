@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 8 - The Complete Architecture"
+title = "Building Declarative UI in Zig: Part 8 - The Complete Architecture"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial", "architecture"]
 +++
 
@@ -203,4 +203,8 @@ The beauty is in the simplicity. Each piece does one thing well, and together th
 
 ---
 
-*This concludes the "Building UIs in Zig" series. Happy building!*
+*This concludes the "Building Declarative UI in Zig" series. Happy building!*
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

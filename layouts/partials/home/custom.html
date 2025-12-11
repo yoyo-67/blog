@@ -1,0 +1,46 @@
+<div class="flex flex-col gap-12">
+  <!-- Author Section -->
+  <div class="text-center">
+    <h1 class="text-4xl font-bold">{{ .Site.Params.author.name }}</h1>
+    <p class="text-xl text-neutral-500 dark:text-neutral-400 mt-2">{{ .Site.Params.author.headline }}</p>
+  </div>
+
+  <!-- Series Section -->
+  <section>
+    <h2 class="text-2xl font-bold mb-6">Series</h2>
+    <div class="grid gap-4">
+      {{ range $name, $taxonomy := .Site.Taxonomies.series }}
+        {{ $posts := $taxonomy.Pages.ByDate }}
+        {{ if gt (len $posts) 0 }}
+          {{ $firstPost := index $posts 0 }}
+          <a href="{{ $firstPost.Permalink }}" class="block p-6 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+            <h3 class="text-xl font-semibold">{{ index $firstPost.Params.series 0 }}</h3>
+            <p class="text-neutral-500 dark:text-neutral-400 mt-1">{{ len $posts }} parts</p>
+          </a>
+        {{ end }}
+      {{ else }}
+        <p class="text-neutral-500">No series yet.</p>
+      {{ end }}
+    </div>
+  </section>
+
+  <!-- Standalone Posts Section -->
+  <section>
+    <h2 class="text-2xl font-bold mb-6">Standalone Posts</h2>
+    <div class="grid gap-4">
+      {{ $hasPosts := false }}
+      {{ range where .Site.RegularPages "Section" "posts" }}
+        {{ if not (.Params.series) }}
+          {{ $hasPosts = true }}
+          <a href="{{ .Permalink }}" class="block p-6 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+            <h3 class="text-xl font-semibold">{{ .Title }}</h3>
+            <p class="text-neutral-500 dark:text-neutral-400 mt-1">{{ .Date.Format "January 2, 2006" }}</p>
+          </a>
+        {{ end }}
+      {{ end }}
+      {{ if not $hasPosts }}
+        <p class="text-neutral-500">No standalone posts yet.</p>
+      {{ end }}
+    </div>
+  </section>
+</div>

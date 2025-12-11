@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 7 - Your First Counter App"
+title = "Building Declarative UI in Zig: Part 7 - Your First Counter App"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial"]
 +++
 
@@ -267,3 +267,7 @@ The UI stays in sync because we rebuild it every frame from current state.
 ## What's Next
 
 In Part 8, we'll zoom out and look at the complete architecture - how all the pieces fit together, the module structure, and the key design decisions.
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 2 - Building Nodes"
+title = "Building Declarative UI in Zig: Part 2 - Building Nodes"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial"]
 +++
 
@@ -210,3 +210,7 @@ The code reads like a description of the UI.
 ## What's Next
 
 We glossed over how `tw("gap-4 p-6")` actually works. In Part 3, we'll build the comptime Tailwind parser that turns class strings into Style structs - all at compile time.
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Introduction on JSX in Zig</title>
-    <link>http://localhost:1313/tags/introduction/</link>
-    <description>Recent content in Introduction on JSX in Zig</description>
+    <title>Introduction on Yohai&#39;s Blog</title>
+    <link>//localhost:1313/tags/introduction/</link>
+    <description>Recent content in Introduction on Yohai&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <copyright>© 2025 Author</copyright>
-    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/introduction/index.xml" rel="self" type="application/rss+xml" />
+    <copyright>© 2025 Yohai</copyright>
+    <lastBuildDate>Thu, 11 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="//localhost:1313/tags/introduction/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
-      <title>Building UIs in Zig: Part 0 - What We&#39;re Building</title>
-      <link>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</link>
-      <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
+      <title>Building Declarative UI in Zig: Part 0 - What We&#39;re Building</title>
+      <link>//localhost:1313/posts/jsx-zig-00-what-we-are-building/</link>
+      <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</guid>
+      <guid>//localhost:1313/posts/jsx-zig-00-what-we-are-building/</guid>
       <description>&lt;p&gt;Welcome to the &amp;ldquo;Building UIs in Zig&amp;rdquo; series. We&amp;rsquo;re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The End Result

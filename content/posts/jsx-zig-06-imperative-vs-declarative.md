@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 6 - Imperative vs Declarative"
+title = "Building Declarative UI in Zig: Part 6 - Imperative vs Declarative"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial"]
 +++
 
@@ -154,3 +154,7 @@ But for most UI work, the benefits far outweigh the costs. Especially as UIs gro
 ## What's Next
 
 Time to put it all together. In Part 7, we'll build a complete counter app from scratch, step by step, using everything we've learned.
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

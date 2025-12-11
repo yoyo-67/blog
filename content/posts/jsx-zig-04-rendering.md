@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 4 - Rendering: From Tree to Pixels"
+title = "Building Declarative UI in Zig: Part 4 - Rendering: From Tree to Pixels"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial"]
 +++
 
@@ -298,3 +298,7 @@ renderer.render(view);
 ## What's Next
 
 We saw that buttons "queue" events. But how does that work? In Part 5, we'll build the event system that connects UI interactions to your code.
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

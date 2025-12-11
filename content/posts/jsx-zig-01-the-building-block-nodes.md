@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 1 - The Building Block: Nodes"
+title = "Building Declarative UI in Zig: Part 1 - The Building Block: Nodes"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial"]
 +++
 
@@ -168,3 +168,7 @@ This is the foundation everything else builds on.
 ## What's Next
 
 Writing `Node{ .kind = .button, .props = .{ .label = "+" } }` is verbose. In Part 2, we'll create builder functions like `jsx.button("+", "bg-green-500")` that make node creation elegant.
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

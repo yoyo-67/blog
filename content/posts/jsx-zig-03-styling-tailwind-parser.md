@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser"
+title = "Building Declarative UI in Zig: Part 3 - Styling: The Comptime Tailwind Parser"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial", "comptime"]
 +++
 
@@ -268,3 +268,7 @@ fn parseInt(str: []const u8) i32 {
 ## What's Next
 
 We have nodes, builders, and styles. But how does a tree of nodes become pixels on screen? In Part 4, we'll build the renderer that walks the tree, calculates layout, and draws.
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

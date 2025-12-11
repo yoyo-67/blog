@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 0 - What We're Building"
+title = "Building Declarative UI in Zig: Part 0 - What We're Building"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial", "introduction"]
 +++
 
@@ -63,14 +63,10 @@ We'll build this framework step by step, from the ground up:
 - Curiosity about UI frameworks
 - That's it!
 
-## The Code
-
-The full source code is available at [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui).
-
 ## Let's Go
 
 Ready? In Part 1, we'll start with the fundamental building block: the Node.
 
 ---
 
-*Written by Yohai*
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*

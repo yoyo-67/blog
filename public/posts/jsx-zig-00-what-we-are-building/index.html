@@ -15,8 +15,8 @@
 
   
   
-    <title>Building UIs in Zig: Part 0 - What We&#39;re Building &middot; JSX in Zig</title>
-    <meta name="title" content="Building UIs in Zig: Part 0 - What We&#39;re Building &middot; JSX in Zig">
+    <title>Building Declarative UI in Zig: Part 0 - What We&#39;re Building &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Building Declarative UI in Zig: Part 0 - What We&#39;re Building &middot; Yohai&#39;s Blog">
   
 
   
@@ -26,19 +26,19 @@
   
   
   
-  <link rel="canonical" href="http://localhost:1313/posts/jsx-zig-00-what-we-are-building/">
+  <link rel="canonical" href="//localhost:1313/posts/jsx-zig-00-what-we-are-building/">
   
 
   
   
-    <meta name="author" content="Author">
+    <meta name="author" content="Yohai">
   
   
 
   
-  <meta property="og:url" content="http://localhost:1313/posts/jsx-zig-00-what-we-are-building/">
-  <meta property="og:site_name" content="JSX in Zig">
-  <meta property="og:title" content="Building UIs in Zig: Part 0 - What We&#39;re Building">
+  <meta property="og:url" content="//localhost:1313/posts/jsx-zig-00-what-we-are-building/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Building Declarative UI in Zig: Part 0 - What We&#39;re Building">
   <meta property="og:description" content="Welcome to the “Building UIs in Zig” series. We’re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.
 The End Result # By the end of this series, you’ll have a framework that lets you write UI like this:
 1 2 3 4 5 6 7 8 9 const view = jsx.col(&#34;gap-4 p-6 bg-slate-900&#34;, &amp;.{ jsx.h1(&#34;Counter&#34;), jsx.text(count_str, &#34;text-4xl font-bold&#34;) .fg(if (count &gt;= 0) .green400 else .red400), jsx.row(&#34;gap-4&#34;, &amp;.{ jsx.button(&#34;-&#34;, &#34;bg-red-500 rounded&#34;).onPress(E.decrement), jsx.button(&#34;&#43;&#34;, &#34;bg-green-500 rounded&#34;).onPress(E.increment), }), }); And it becomes this:">
@@ -51,16 +51,16 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     <meta property="article:tag" content="Ui">
     <meta property="article:tag" content="Tutorial">
     <meta property="article:tag" content="Introduction">
-      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-01-the-building-block-nodes/">
-      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-02-building-nodes/">
-      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/">
-      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-04-rendering/">
-      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-05-events/">
-      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/">
+      <meta property="og:see_also" content="//localhost:1313/posts/jsx-zig-01-the-building-block-nodes/">
+      <meta property="og:see_also" content="//localhost:1313/posts/jsx-zig-02-building-nodes/">
+      <meta property="og:see_also" content="//localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/">
+      <meta property="og:see_also" content="//localhost:1313/posts/jsx-zig-04-rendering/">
+      <meta property="og:see_also" content="//localhost:1313/posts/jsx-zig-05-events/">
+      <meta property="og:see_also" content="//localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/">
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Building UIs in Zig: Part 0 - What We&#39;re Building">
+  <meta name="twitter:title" content="Building Declarative UI in Zig: Part 0 - What We&#39;re Building">
   <meta name="twitter:description" content="Welcome to the “Building UIs in Zig” series. We’re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.
 The End Result # By the end of this series, you’ll have a framework that lets you write UI like this:
 1 2 3 4 5 6 7 8 9 const view = jsx.col(&#34;gap-4 p-6 bg-slate-900&#34;, &amp;.{ jsx.h1(&#34;Counter&#34;), jsx.text(count_str, &#34;text-4xl font-bold&#34;) .fg(if (count &gt;= 0) .green400 else .red400), jsx.row(&#34;gap-4&#34;, &amp;.{ jsx.button(&#34;-&#34;, &#34;bg-red-500 rounded&#34;).onPress(E.decrement), jsx.button(&#34;&#43;&#34;, &#34;bg-green-500 rounded&#34;).onPress(E.increment), }), }); And it becomes this:">
@@ -212,15 +212,15 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     "@context": "https://schema.org",
     "@type": "Article",
     "articleSection": "Posts",
-    "name": "Building UIs in Zig: Part 0 - What We\u0027re Building",
-    "headline": "Building UIs in Zig: Part 0 - What We\u0027re Building",
+    "name": "Building Declarative UI in Zig: Part 0 - What We\u0027re Building",
+    "headline": "Building Declarative UI in Zig: Part 0 - What We\u0027re Building",
     
     "abstract": "\u003cp\u003eWelcome to the \u0026ldquo;Building UIs in Zig\u0026rdquo; series. We\u0026rsquo;re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe End Result\n    \u003cdiv id=\u0022the-end-result\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-end-result\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eBy the end of this series, you\u0026rsquo;ll have a framework that lets you write UI like this:\u003c\/p\u003e\n\u003cdiv class=\u0022highlight\u0022\u003e\u003cdiv class=\u0022chroma\u0022\u003e\n\u003ctable class=\u0022lntable\u0022\u003e\u003ctr\u003e\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode\u003e\u003cspan class=\u0022lnt\u0022\u003e1\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e2\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e3\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e4\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e5\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e6\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e7\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e8\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e9\n\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\n\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode class=\u0022language-zig\u0022 data-lang=\u0022zig\u0022\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eview\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ecol\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;gap-4 p-6 bg-slate-900\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026amp;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003eh1\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;Counter\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003etext\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ecount_str\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;text-4xl font-bold\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e)\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003efg\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022k\u0022\u003eif\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ecount\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026gt;=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022mi\u0022\u003e0\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e)\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003egreen400\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022k\u0022\u003eelse\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ered400\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003erow\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;gap-4\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026amp;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ebutton\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;-\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;bg-red-500 rounded\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e).\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003eonPress\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eE\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003edecrement\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ebutton\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;\u002b\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;bg-green-500 rounded\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e).\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003eonPress\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eE\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eincrement\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e}),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e});\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\u003c\/tr\u003e\u003c\/table\u003e\n\u003c\/div\u003e\n\u003c\/div\u003e\u003cp\u003eAnd it becomes this:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/posts/jsx-zig-00-what-we-are-building/",
+    "url" : "//localhost:1313/posts/jsx-zig-00-what-we-are-building/",
     "author" : {
       "@type": "Person",
-      "name": "Author"
+      "name": "Yohai"
     },
     "copyrightYear": "2025",
     "dateCreated": "2025-12-11T00:00:00\u002b00:00",
@@ -231,7 +231,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     "keywords": ["zig","ui","tutorial","introduction"],
     
     "mainEntityOfPage": "true",
-    "wordCount": "290"
+    "wordCount": "283"
   }]
   </script>
 
@@ -306,7 +306,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     <nav class="flex space-x-3">
       
         <a href="/" class="text-base font-medium">
-          JSX in Zig
+          Yohai&rsquo;s Blog
         </a>
       
     </nav>
@@ -522,7 +522,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
   
   <li class="hidden">
     <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
-      >JSX in Zig</a
+      >Yohai&#39;s Blog</a
     ><span class="px-1 text-primary-500">/</span>
   </li>
 
@@ -536,7 +536,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
   
   <li class="hidden">
     <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-00-what-we-are-building/"
-      >Building UIs in Zig: Part 0 - What We&#39;re Building</a
+      >Building Declarative UI in Zig: Part 0 - What We&#39;re Building</a
     ><span class="px-1 text-primary-500">/</span>
   </li>
 
@@ -545,7 +545,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 
       
       <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
-        Building UIs in Zig: Part 0 - What We're Building
+        Building Declarative UI in Zig: Part 0 - What We're Building
       </h1>
       <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
         
@@ -597,7 +597,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>290 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">2 mins</span>
+      <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>283 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">2 mins</span>
     
 
     
@@ -637,7 +637,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         Author
       </div>
       <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
-        Author
+        Yohai
       </div>
     
     
@@ -682,7 +682,6 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     <li><a href="#the-end-result">The End Result</a></li>
     <li><a href="#the-series">The Series</a></li>
     <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#the-code">The Code</a></li>
     <li><a href="#lets-go">Let&rsquo;s Go</a></li>
   </ul>
 </nav>
@@ -700,7 +699,6 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     <li><a href="#the-end-result">The End Result</a></li>
     <li><a href="#the-series">The Series</a></li>
     <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#the-code">The Code</a></li>
     <li><a href="#lets-go">Let&rsquo;s Go</a></li>
   </ul>
 </nav>
@@ -723,7 +721,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     
   <summary
     class="py-1 text-lg font-semibold cursor-pointer bg-primary-200 text-neutral-800 -ms-5 ps-5 dark:bg-primary-800 dark:text-neutral-100">
-    JSX in Zig -
+    Building Declarative UI in Zig -
     This article is part of a series.
   </summary>
   
@@ -741,7 +739,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-01-the-building-block-nodes/">
           Part :
-          Building UIs in Zig: Part 1 - The Building Block: Nodes
+          Building Declarative UI in Zig: Part 1 - The Building Block: Nodes
         </a>
       </div>
     
@@ -751,7 +749,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-02-building-nodes/">
           Part :
-          Building UIs in Zig: Part 2 - Building Nodes
+          Building Declarative UI in Zig: Part 2 - Building Nodes
         </a>
       </div>
     
@@ -761,7 +759,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-03-styling-tailwind-parser/">
           Part :
-          Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser
+          Building Declarative UI in Zig: Part 3 - Styling: The Comptime Tailwind Parser
         </a>
       </div>
     
@@ -771,7 +769,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-04-rendering/">
           Part :
-          Building UIs in Zig: Part 4 - Rendering: From Tree to Pixels
+          Building Declarative UI in Zig: Part 4 - Rendering: From Tree to Pixels
         </a>
       </div>
     
@@ -781,7 +779,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-05-events/">
           Part :
-          Building UIs in Zig: Part 5 - Events: Connecting UI to Actions
+          Building Declarative UI in Zig: Part 5 - Events: Connecting UI to Actions
         </a>
       </div>
     
@@ -791,7 +789,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-06-imperative-vs-declarative/">
           Part :
-          Building UIs in Zig: Part 6 - Imperative vs Declarative
+          Building Declarative UI in Zig: Part 6 - Imperative vs Declarative
         </a>
       </div>
     
@@ -801,7 +799,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-07-first-counter-app/">
           Part :
-          Building UIs in Zig: Part 7 - Your First Counter App
+          Building Declarative UI in Zig: Part 7 - Your First Counter App
         </a>
       </div>
     
@@ -811,7 +809,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-08-complete-architecture/">
           Part :
-          Building UIs in Zig: Part 8 - The Complete Architecture
+          Building Declarative UI in Zig: Part 8 - The Complete Architecture
         </a>
       </div>
     
@@ -909,20 +907,6 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 <li>That&rsquo;s it!</li>
 </ul>
 
-<h2 class="relative group">The Code
-    <div id="the-code" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-code" aria-label="Anchor">#</a>
-    </span>
-    
-</h2>
-<p>The full source code is available at <a
-  href="https://github.com/yoyo-67/zig-ui"
-    target="_blank"
-  >github.com/yoyo-67/zig-ui</a>.</p>
-
 <h2 class="relative group">Let&rsquo;s Go
     <div id="lets-go" class="anchor"></div>
     
@@ -934,7 +918,10 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 </h2>
 <p>Ready? In Part 1, we&rsquo;ll start with the fundamental building block: the Node.</p>
 <hr>
-<p><em>Written by Yohai</em></p>
+<p><em>Written by Yohai | Source code: <a
+  href="https://github.com/yoyo-67/zig-ui"
+    target="_blank"
+  >github.com/yoyo-67/zig-ui</a></em></p>
 
           
           
@@ -946,7 +933,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     
   <summary
     class="py-1 text-lg font-semibold cursor-pointer bg-primary-200 text-neutral-800 -ms-5 ps-5 dark:bg-primary-800 dark:text-neutral-100">
-    JSX in Zig -
+    Building Declarative UI in Zig -
     This article is part of a series.
   </summary>
   
@@ -964,7 +951,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-01-the-building-block-nodes/">
           Part :
-          Building UIs in Zig: Part 1 - The Building Block: Nodes
+          Building Declarative UI in Zig: Part 1 - The Building Block: Nodes
         </a>
       </div>
     
@@ -974,7 +961,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-02-building-nodes/">
           Part :
-          Building UIs in Zig: Part 2 - Building Nodes
+          Building Declarative UI in Zig: Part 2 - Building Nodes
         </a>
       </div>
     
@@ -984,7 +971,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-03-styling-tailwind-parser/">
           Part :
-          Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser
+          Building Declarative UI in Zig: Part 3 - Styling: The Comptime Tailwind Parser
         </a>
       </div>
     
@@ -994,7 +981,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-04-rendering/">
           Part :
-          Building UIs in Zig: Part 4 - Rendering: From Tree to Pixels
+          Building Declarative UI in Zig: Part 4 - Rendering: From Tree to Pixels
         </a>
       </div>
     
@@ -1004,7 +991,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-05-events/">
           Part :
-          Building UIs in Zig: Part 5 - Events: Connecting UI to Actions
+          Building Declarative UI in Zig: Part 5 - Events: Connecting UI to Actions
         </a>
       </div>
     
@@ -1014,7 +1001,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-06-imperative-vs-declarative/">
           Part :
-          Building UIs in Zig: Part 6 - Imperative vs Declarative
+          Building Declarative UI in Zig: Part 6 - Imperative vs Declarative
         </a>
       </div>
     
@@ -1024,7 +1011,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-07-first-counter-app/">
           Part :
-          Building UIs in Zig: Part 7 - Your First Counter App
+          Building Declarative UI in Zig: Part 7 - Your First Counter App
         </a>
       </div>
     
@@ -1034,7 +1021,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
         <a href="/posts/jsx-zig-08-complete-architecture/">
           Part :
-          Building UIs in Zig: Part 8 - The Complete Architecture
+          Building Declarative UI in Zig: Part 8 - The Complete Architecture
         </a>
       </div>
     
@@ -1084,7 +1071,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
               class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
               href="/posts/jsx-zig-01-the-building-block-nodes/">
               <span class="leading-6">
-                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building UIs in Zig: Part 1 - The Building Block: Nodes
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building Declarative UI in Zig: Part 1 - The Building Block: Nodes
               </span>
             </a>
             
@@ -1139,7 +1126,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
       <p class="text-sm text-neutral-500 dark:text-neutral-400">
           &copy;
           2025
-          Author
+          Yohai
       </p>
     
 
@@ -1175,7 +1162,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 <div
   id="search-wrapper"
   class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
-  data-url="http://localhost:1313/">
+  data-url="//localhost:1313/">
   <div
     id="search-modal"
     class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">

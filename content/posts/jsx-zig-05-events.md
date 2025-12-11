@@ -1,8 +1,8 @@
 +++
-title = "Building UIs in Zig: Part 5 - Events: Connecting UI to Actions"
+title = "Building Declarative UI in Zig: Part 5 - Events: Connecting UI to Actions"
 date = 2025-12-11
 draft = false
-series = ["JSX in Zig"]
+series = ["Building Declarative UI in Zig"]
 tags = ["zig", "ui", "tutorial"]
 +++
 
@@ -241,3 +241,7 @@ Now you understand the building blocks:
 - Events (index dispatch)
 
 In Part 6, we'll step back and see WHY this declarative approach is better than the alternative.
+
+---
+
+*Written by Yohai | Source code: [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui)*
