@@ -1,4 +1,4 @@
-baseURL = '/'
+baseURL = 'https://blog-production-6bc9.up.railway.app/'
 languageCode = 'en-us'
 title = "Yohai's Blog"
 theme = 'blowfish'

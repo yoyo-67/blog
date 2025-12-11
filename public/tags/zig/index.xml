@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Zig on Yohai&#39;s Blog</title>
-    <link>//localhost:1313/tags/zig/</link>
+    <link>http://localhost:1313/tags/zig/</link>
     <description>Recent content in Zig on Yohai&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© 2025 Yohai</copyright>
-    <lastBuildDate>Thu, 11 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="//localhost:1313/tags/zig/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 11 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/zig/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Building Declarative UI in Zig: Part 0 - What We&#39;re Building</title>
-      <link>//localhost:1313/posts/jsx-zig-00-what-we-are-building/</link>
+      <link>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-00-what-we-are-building/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</guid>
       <description>&lt;p&gt;Welcome to the &amp;ldquo;Building UIs in Zig&amp;rdquo; series. We&amp;rsquo;re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The End Result
@@ -57,10 +57,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 1 - The Building Block: Nodes</title>
-      <link>//localhost:1313/posts/jsx-zig-01-the-building-block-nodes/</link>
+      <link>http://localhost:1313/posts/jsx-zig-01-the-building-block-nodes/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-01-the-building-block-nodes/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-01-the-building-block-nodes/</guid>
       <description>&lt;p&gt;Every UI framework needs a way to represent UI elements. In our framework, everything is built from one fundamental type: the &lt;strong&gt;Node&lt;/strong&gt;.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;UI as Data
@@ -95,10 +95,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 2 - Building Nodes</title>
-      <link>//localhost:1313/posts/jsx-zig-02-building-nodes/</link>
+      <link>http://localhost:1313/posts/jsx-zig-02-building-nodes/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-02-building-nodes/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-02-building-nodes/</guid>
       <description>&lt;p&gt;Writing &lt;code&gt;Node{ .kind = .button, .props = .{ .label = &amp;quot;+&amp;quot; } }&lt;/code&gt; every time is verbose. Let&amp;rsquo;s create builder functions that make node construction elegant.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Goal
@@ -139,10 +139,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 3 - Styling: The Comptime Tailwind Parser</title>
-      <link>//localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/</link>
+      <link>http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/</guid>
       <description>&lt;p&gt;The magic of &lt;code&gt;jsx.col(&amp;quot;gap-4 p-6 bg-slate-800&amp;quot;, &amp;amp;.{...})&lt;/code&gt; is that those strings are parsed at &lt;strong&gt;compile time&lt;/strong&gt;. No runtime cost. Let&amp;rsquo;s build it.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Goal
@@ -198,10 +198,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 4 - Rendering: From Tree to Pixels</title>
-      <link>//localhost:1313/posts/jsx-zig-04-rendering/</link>
+      <link>http://localhost:1313/posts/jsx-zig-04-rendering/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-04-rendering/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-04-rendering/</guid>
       <description>&lt;p&gt;We have nodes, builders, and styles. Now let&amp;rsquo;s turn that tree of data into actual pixels on screen.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Render Loop
@@ -256,10 +256,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 5 - Events: Connecting UI to Actions</title>
-      <link>//localhost:1313/posts/jsx-zig-05-events/</link>
+      <link>http://localhost:1313/posts/jsx-zig-05-events/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-05-events/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-05-events/</guid>
       <description>&lt;p&gt;Buttons need to do something when clicked. But how? Most frameworks use closures or callbacks. We use something simpler: &lt;strong&gt;indices into an array&lt;/strong&gt;.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Problem with Closures
@@ -294,10 +294,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 6 - Imperative vs Declarative</title>
-      <link>//localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/</link>
+      <link>http://localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/</guid>
       <description>&lt;p&gt;Now that you understand how the framework works - nodes, builders, styles, rendering, events - let&amp;rsquo;s step back and see WHY this approach is valuable.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Imperative Approach
@@ -362,10 +362,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 7 - Your First Counter App</title>
-      <link>//localhost:1313/posts/jsx-zig-07-first-counter-app/</link>
+      <link>http://localhost:1313/posts/jsx-zig-07-first-counter-app/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-07-first-counter-app/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-07-first-counter-app/</guid>
       <description>&lt;p&gt;Let&amp;rsquo;s put everything together and build a complete counter app. By the end, you&amp;rsquo;ll have a working UI with buttons, state, and event handling.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Goal
@@ -401,10 +401,10 @@
     
     <item>
       <title>Building Declarative UI in Zig: Part 8 - The Complete Architecture</title>
-      <link>//localhost:1313/posts/jsx-zig-08-complete-architecture/</link>
+      <link>http://localhost:1313/posts/jsx-zig-08-complete-architecture/</link>
       <pubDate>Thu, 11 Dec 2025 00:00:00 +0000</pubDate>
       
-      <guid>//localhost:1313/posts/jsx-zig-08-complete-architecture/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-08-complete-architecture/</guid>
       <description>&lt;p&gt;Let&amp;rsquo;s zoom out and see how all the pieces fit together into a complete UI framework.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Big Picture

@@ -3,47 +3,47 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-00-what-we-are-building/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-01-the-building-block-nodes/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-01-the-building-block-nodes/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-02-building-nodes/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-02-building-nodes/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-04-rendering/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-04-rendering/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-05-events/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-05-events/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-07-first-counter-app/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-07-first-counter-app/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/jsx-zig-08-complete-architecture/</loc>
+    <loc>http://localhost:1313/posts/jsx-zig-08-complete-architecture/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/posts/</loc>
+    <loc>http://localhost:1313/posts/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>//localhost:1313/</loc>
+    <loc>http://localhost:1313/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
 </urlset>
