@@ -63,6 +63,14 @@ We'll build this framework step by step, from the ground up:
 - Curiosity about UI frameworks
 - That's it!
 
+## The Code
+
+The full source code is available at [github.com/yoyo-67/zig-ui](https://github.com/yoyo-67/zig-ui).
+
 ## Let's Go
 
 Ready? In Part 1, we'll start with the fundamental building block: the Node.
+
+---
+
+*Written by Yohai*
