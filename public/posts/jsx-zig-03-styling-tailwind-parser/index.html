@@ -15,8 +15,8 @@
 
   
   
-    <title>Building UIs in Zig: Part 4 - Comptime Tailwind Parser &middot; JSX in Zig</title>
-    <meta name="title" content="Building UIs in Zig: Part 4 - Comptime Tailwind Parser &middot; JSX in Zig">
+    <title>Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser &middot; JSX in Zig</title>
+    <meta name="title" content="Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser &middot; JSX in Zig">
   
 
   
@@ -26,7 +26,7 @@
   
   
   
-  <link rel="canonical" href="http://localhost:1313/posts/jsx-zig-04-tailwind-parser/">
+  <link rel="canonical" href="http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/">
   
 
   
@@ -36,9 +36,9 @@
   
 
   
-  <meta property="og:url" content="http://localhost:1313/posts/jsx-zig-04-tailwind-parser/">
+  <meta property="og:url" content="http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/">
   <meta property="og:site_name" content="JSX in Zig">
-  <meta property="og:title" content="Building UIs in Zig: Part 4 - Comptime Tailwind Parser">
+  <meta property="og:title" content="Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser">
   <meta property="og:description" content="The magic of jsx.col(&#34;gap-4 p-6 bg-slate-800&#34;, &amp;.{...}) is that those strings are parsed at compile time. No runtime cost. Let’s build it.
 The Goal # Turn this:
 1 const style = tw(&#34;gap-4 p-6 bg-slate-800 rounded-lg&#34;); Into this (at compile time):
@@ -46,8 +46,8 @@ The Goal # Turn this:
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
-    <meta property="article:published_time" content="2024-12-08T00:00:00+00:00">
-    <meta property="article:modified_time" content="2024-12-08T00:00:00+00:00">
+    <meta property="article:published_time" content="2025-12-11T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-11T00:00:00+00:00">
     <meta property="article:tag" content="Zig">
     <meta property="article:tag" content="Ui">
     <meta property="article:tag" content="Tutorial">
@@ -55,14 +55,13 @@ The Goal # Turn this:
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-00-what-we-are-building/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-01-the-building-block-nodes/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-02-building-nodes/">
-      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-04-rendering/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-05-events/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-06-imperative-vs-declarative/">
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Building UIs in Zig: Part 4 - Comptime Tailwind Parser">
+  <meta name="twitter:title" content="Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser">
   <meta name="twitter:description" content="The magic of jsx.col(&#34;gap-4 p-6 bg-slate-800&#34;, &amp;.{...}) is that those strings are parsed at compile time. No runtime cost. Let’s build it.
 The Goal # Turn this:
 1 const style = tw(&#34;gap-4 p-6 bg-slate-800 rounded-lg&#34;); Into this (at compile time):
@@ -215,26 +214,26 @@ The Goal # Turn this:
     "@context": "https://schema.org",
     "@type": "Article",
     "articleSection": "Posts",
-    "name": "Building UIs in Zig: Part 4 - Comptime Tailwind Parser",
-    "headline": "Building UIs in Zig: Part 4 - Comptime Tailwind Parser",
+    "name": "Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser",
+    "headline": "Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser",
     
     "abstract": "\u003cp\u003eThe magic of \u003ccode\u003ejsx.col(\u0026quot;gap-4 p-6 bg-slate-800\u0026quot;, \u0026amp;.{...})\u003c\/code\u003e is that those strings are parsed at \u003cstrong\u003ecompile time\u003c\/strong\u003e. No runtime cost. Let\u0026rsquo;s build it.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe Goal\n    \u003cdiv id=\u0022the-goal\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-goal\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eTurn this:\u003c\/p\u003e\n\u003cdiv class=\u0022highlight\u0022\u003e\u003cdiv class=\u0022chroma\u0022\u003e\n\u003ctable class=\u0022lntable\u0022\u003e\u003ctr\u003e\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode\u003e\u003cspan class=\u0022lnt\u0022\u003e1\n\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\n\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode class=\u0022language-zig\u0022 data-lang=\u0022zig\u0022\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003estyle\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003etw\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;gap-4 p-6 bg-slate-800 rounded-lg\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e);\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\u003c\/tr\u003e\u003c\/table\u003e\n\u003c\/div\u003e\n\u003c\/div\u003e\u003cp\u003eInto this (at compile time):\u003c\/p\u003e\n\u003cdiv class=\u0022highlight\u0022\u003e\u003cdiv class=\u0022chroma\u0022\u003e\n\u003ctable class=\u0022lntable\u0022\u003e\u003ctr\u003e\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode\u003e\u003cspan class=\u0022lnt\u0022\u003e1\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e2\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e3\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e4\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e5\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e6\n\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\n\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode class=\u0022language-zig\u0022 data-lang=\u0022zig\u0022\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022n\u0022\u003eStyle\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003egap\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022mi\u0022\u003e16\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ep\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022mi\u0022\u003e24\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ebg\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eColor\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eslate800\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003erounded\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003elg\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e}\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\u003c\/tr\u003e\u003c\/table\u003e\n\u003c\/div\u003e\n\u003c\/div\u003e\n\u003ch2 class=\u0022relative group\u0022\u003eThe Style Struct\n    \u003cdiv id=\u0022the-style-struct\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-style-struct\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eFirst, define what styles we support:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/posts/jsx-zig-04-tailwind-parser/",
+    "url" : "http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/",
     "author" : {
       "@type": "Person",
       "name": "Author"
     },
-    "copyrightYear": "2024",
-    "dateCreated": "2024-12-08T00:00:00\u002b00:00",
-    "datePublished": "2024-12-08T00:00:00\u002b00:00",
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-11T00:00:00\u002b00:00",
+    "datePublished": "2025-12-11T00:00:00\u002b00:00",
     
-    "dateModified": "2024-12-08T00:00:00\u002b00:00",
+    "dateModified": "2025-12-11T00:00:00\u002b00:00",
     
     "keywords": ["zig","ui","tutorial","comptime"],
     
     "mainEntityOfPage": "true",
-    "wordCount": "647"
+    "wordCount": "897"
   }]
   </script>
 
@@ -538,8 +537,8 @@ The Goal # Turn this:
 
   
   <li class="hidden">
-    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-04-tailwind-parser/"
-      >Building UIs in Zig: Part 4 - Comptime Tailwind Parser</a
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-03-styling-tailwind-parser/"
+      >Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser</a
     ><span class="px-1 text-primary-500">/</span>
   </li>
 
@@ -548,7 +547,7 @@ The Goal # Turn this:
 
       
       <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
-        Building UIs in Zig: Part 4 - Comptime Tailwind Parser
+        Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser
       </h1>
       <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
         
@@ -600,7 +599,7 @@ The Goal # Turn this:
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time><span class="px-2 text-primary-500">&middot;</span><span>647 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
+      <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>897 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">5 mins</span>
     
 
     
@@ -690,7 +689,9 @@ The Goal # Turn this:
     <li><a href="#color-parsing">Color Parsing</a></li>
     <li><a href="#why-comptime">Why Comptime?</a></li>
     <li><a href="#compile-time-error-messages">Compile-Time Error Messages</a></li>
+    <li><a href="#text-sizes">Text Sizes</a></li>
     <li><a href="#adding-new-classes">Adding New Classes</a></li>
+    <li><a href="#helper-functions">Helper Functions</a></li>
     <li><a href="#whats-next">What&rsquo;s Next</a></li>
   </ul>
 </nav>
@@ -713,7 +714,9 @@ The Goal # Turn this:
     <li><a href="#color-parsing">Color Parsing</a></li>
     <li><a href="#why-comptime">Why Comptime?</a></li>
     <li><a href="#compile-time-error-messages">Compile-Time Error Messages</a></li>
+    <li><a href="#text-sizes">Text Sizes</a></li>
     <li><a href="#adding-new-classes">Adding New Classes</a></li>
+    <li><a href="#helper-functions">Helper Functions</a></li>
     <li><a href="#whats-next">What&rsquo;s Next</a></li>
   </ul>
 </nav>
@@ -774,10 +777,8 @@ The Goal # Turn this:
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-03-styling-tailwind-parser/">
-          Part :
-          Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser
-        </a>
+        Part :
+        This Article
       </div>
     
   
@@ -827,64 +828,6 @@ The Goal # Turn this:
         <a href="/posts/jsx-zig-08-complete-architecture/">
           Part :
           Building UIs in Zig: Part 8 - The Complete Architecture
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
-          Part :
-          Building UIs in Zig: Part 1 - Imperative vs Declarative
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-02-first-counter-app/">
-          Part :
-          Building UIs in Zig: Part 2 - Your First Counter App
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-03-how-renderer-works/">
-          Part :
-          Building UIs in Zig: Part 3 - How the Renderer Works
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        Part :
-        This Article
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-05-complete-architecture/">
-          Part :
-          Building UIs in Zig: Part 5 - The Complete Architecture
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-06-behind-the-scenes/">
-          Part :
-          Building UIs in Zig: Part 6 - Behind the Scenes
         </a>
       </div>
     
@@ -973,8 +916,8 @@ The Goal # Turn this:
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Spacing
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">gap</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">p</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">      </span><span class="c1">// padding (all sides)
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">px</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">     </span><span class="c1">// padding horizontal
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">     </span><span class="c1">// padding vertical
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">px</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="c1">// padding horizontal
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="o">?</span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="c1">// padding vertical
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Flex
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">flex</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
@@ -991,7 +934,21 @@ The Goal # Turn this:
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
+</div><p>Why <code>?i32</code> for directional spacing? So we can tell &ldquo;not set&rdquo; from &ldquo;explicitly zero&rdquo;. The getters cascade:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">getPadLeft</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="n">Style</span><span class="p">)</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">px</span><span class="w"> </span><span class="k">orelse</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">p</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
 </div>
+</div><p><code>px-4</code> overrides <code>p-2</code>.</p>
+
 <h2 class="relative group">The Parser
     <div id="the-parser" class="anchor"></div>
     
@@ -1083,6 +1040,14 @@ The Goal # Turn this:
 </span><span class="lnt">36
 </span><span class="lnt">37
 </span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">parseClass</span><span class="p">(</span><span class="n">style</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">Style</span><span class="p">,</span><span class="w"> </span><span class="n">class</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -1095,6 +1060,14 @@ The Goal # Turn this:
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Padding: p-1, px-2, py-4, etc.
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">startsWith</span><span class="p">(</span><span class="n">class</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;p-&#34;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">style</span><span class="p">.</span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">parseSpacing</span><span class="p">(</span><span class="n">class</span><span class="p">[</span><span class="mi">2</span><span class="p">..]);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">startsWith</span><span class="p">(</span><span class="n">class</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;px-&#34;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">style</span><span class="p">.</span><span class="n">px</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">parseSpacing</span><span class="p">(</span><span class="n">class</span><span class="p">[</span><span class="mi">3</span><span class="p">..]);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">startsWith</span><span class="p">(</span><span class="n">class</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;py-&#34;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">style</span><span class="p">.</span><span class="n">py</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">parseSpacing</span><span class="p">(</span><span class="n">class</span><span class="p">[</span><span class="mi">3</span><span class="p">..]);</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
@@ -1164,7 +1137,8 @@ The Goal # Turn this:
 </span></span></span><span class="line"><span class="cl"><span class="c1">// p-6    -&gt; 24px
 </span></span></span></code></pre></td></tr></table>
 </div>
-</div>
+</div><p>This matches Tailwind CSS&rsquo;s 4px base unit.</p>
+
 <h2 class="relative group">Color Parsing
     <div id="color-parsing" class="anchor"></div>
     
@@ -1177,20 +1151,26 @@ The Goal # Turn this:
 <p>Colors follow <code>{color}-{shade}</code> pattern:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">parseColor</span><span class="p">(</span><span class="n">value</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="n">Color</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;red-500&#34;</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Color</span><span class="p">.</span><span class="n">red500</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;red-400&#34;</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Color</span><span class="p">.</span><span class="n">red400</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;green-500&#34;</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Color</span><span class="p">.</span><span class="n">green500</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;green-400&#34;</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Color</span><span class="p">.</span><span class="n">green400</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;slate-800&#34;</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Color</span><span class="p">.</span><span class="n">slate800</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;slate-900&#34;</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Color</span><span class="p">.</span><span class="n">slate900</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// ... more colors
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nb">@compileError</span><span class="p">(</span><span class="s">&#34;Unknown color: &#34;</span><span class="w"> </span><span class="o">++</span><span class="w"> </span><span class="n">value</span><span class="p">);</span><span class="w">
@@ -1225,11 +1205,11 @@ The Goal # Turn this:
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>Benefits:</p>
-<ul>
-<li><strong>Zero runtime cost</strong> - no string parsing when your app runs</li>
-<li><strong>Compile-time errors</strong> - typo in class name? Won&rsquo;t compile</li>
-<li><strong>Type safety</strong> - invalid values caught early</li>
-</ul>
+<ol>
+<li><strong>Zero runtime cost</strong> - No string parsing when your app runs</li>
+<li><strong>Compile-time errors</strong> - Typo in class name? Won&rsquo;t compile</li>
+<li><strong>Type safety</strong> - Invalid values caught early</li>
+</ol>
 
 <h2 class="relative group">Compile-Time Error Messages
     <div id="compile-time-error-messages" class="anchor"></div>
@@ -1253,6 +1233,55 @@ The Goal # Turn this:
 <pre tabindex="0"><code>error: Unknown Tailwind class: gaap-4
 </code></pre><p>At compile time. Not a runtime crash.</p>
 
+<h2 class="relative group">Text Sizes
+    <div id="text-sizes" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#text-sizes" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Text classes use a scale too:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">class</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-sm&#34;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">style</span><span class="p">.</span><span class="n">text_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">sm</span><span class="p">;</span><span class="w">  </span><span class="c1">// 14px
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">class</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-base&#34;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">style</span><span class="p">.</span><span class="n">text_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">base</span><span class="p">;</span><span class="w">  </span><span class="c1">// 16px
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">class</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-xl&#34;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">style</span><span class="p">.</span><span class="n">text_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">xl</span><span class="p">;</span><span class="w">  </span><span class="c1">// 20px
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">eql</span><span class="p">(</span><span class="n">class</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-4xl&#34;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">style</span><span class="p">.</span><span class="n">text_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">x4l</span><span class="p">;</span><span class="w">  </span><span class="c1">// 36px
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
 <h2 class="relative group">Adding New Classes
     <div id="adding-new-classes" class="anchor"></div>
     
@@ -1279,6 +1308,54 @@ The Goal # Turn this:
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
+</div><p>The pattern is simple:</p>
+<ol>
+<li>Check prefix</li>
+<li>Parse value</li>
+<li>Set style field</li>
+<li>Return</li>
+</ol>
+
+<h2 class="relative group">Helper Functions
+    <div id="helper-functions" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#helper-functions" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The parser uses a few helpers:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">startsWith</span><span class="p">(</span><span class="n">str</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">prefix</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">str</span><span class="p">.</span><span class="n">len</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">prefix</span><span class="p">.</span><span class="n">len</span><span class="w"> </span><span class="k">and</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">           </span><span class="n">std</span><span class="p">.</span><span class="n">mem</span><span class="p">.</span><span class="nf">eql</span><span class="p">(</span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">[</span><span class="mi">0</span><span class="p">..</span><span class="n">prefix</span><span class="p">.</span><span class="n">len</span><span class="p">],</span><span class="w"> </span><span class="n">prefix</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">eql</span><span class="p">(</span><span class="n">a</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">mem</span><span class="p">.</span><span class="nf">eql</span><span class="p">(</span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">parseInt</span><span class="p">(</span><span class="n">str</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">fmt</span><span class="p">.</span><span class="nf">parseInt</span><span class="p">(</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
 </div>
 <h2 class="relative group">What&rsquo;s Next
     <div id="whats-next" class="anchor"></div>
@@ -1289,7 +1366,7 @@ The Goal # Turn this:
     </span>
     
 </h2>
-<p>In Part 5, we&rsquo;ll put it all together and look at the complete architecture.</p>
+<p>We have nodes, builders, and styles. But how does a tree of nodes become pixels on screen? In Part 4, we&rsquo;ll build the renderer that walks the tree, calculates layout, and draws.</p>
 
           
           
@@ -1339,10 +1416,8 @@ The Goal # Turn this:
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-03-styling-tailwind-parser/">
-          Part :
-          Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser
-        </a>
+        Part :
+        This Article
       </div>
     
   
@@ -1396,64 +1471,6 @@ The Goal # Turn this:
       </div>
     
   
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
-          Part :
-          Building UIs in Zig: Part 1 - Imperative vs Declarative
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-02-first-counter-app/">
-          Part :
-          Building UIs in Zig: Part 2 - Your First Counter App
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-03-how-renderer-works/">
-          Part :
-          Building UIs in Zig: Part 3 - How the Renderer Works
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        Part :
-        This Article
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-05-complete-architecture/">
-          Part :
-          Building UIs in Zig: Part 5 - The Complete Architecture
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-06-behind-the-scenes/">
-          Part :
-          Building UIs in Zig: Part 6 - Behind the Scenes
-        </a>
-      </div>
-    
-  
 
 
   </details>
@@ -1478,8 +1495,8 @@ The Goal # Turn this:
           type="text/javascript"
           src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
           integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
-          data-oid="views_posts/jsx-zig-04-tailwind-parser.md"
-          data-oid-likes="likes_posts/jsx-zig-04-tailwind-parser.md"></script>
+          data-oid="views_posts/jsx-zig-03-styling-tailwind-parser.md"
+          data-oid-likes="likes_posts/jsx-zig-03-styling-tailwind-parser.md"></script>
       
     </section>
 
@@ -1497,14 +1514,14 @@ The Goal # Turn this:
           
             <a
               class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
-              href="/posts/jsx-zig-05-complete-architecture/">
+              href="/posts/jsx-zig-04-rendering/">
               <span class="leading-6">
-                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building UIs in Zig: Part 5 - The Complete Architecture
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building UIs in Zig: Part 4 - Rendering: From Tree to Pixels
               </span>
             </a>
             
               <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time>
+                <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time>
               </span>
             
           
@@ -1513,14 +1530,14 @@ The Goal # Turn this:
           
             <a
               class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
-              href="/posts/jsx-zig-03-how-renderer-works/">
+              href="/posts/jsx-zig-02-building-nodes/">
               <span class="leading-6">
-                Building UIs in Zig: Part 3 - How the Renderer Works&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+                Building UIs in Zig: Part 2 - Building Nodes&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
               </span>
             </a>
             
               <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time>
+                <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time>
               </span>
             
           

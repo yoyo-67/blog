@@ -15,18 +15,18 @@
 
   
   
-    <title>Building UIs in Zig: Part 5 - The Complete Architecture &middot; JSX in Zig</title>
-    <meta name="title" content="Building UIs in Zig: Part 5 - The Complete Architecture &middot; JSX in Zig">
+    <title>Building UIs in Zig: Part 7 - Your First Counter App &middot; JSX in Zig</title>
+    <meta name="title" content="Building UIs in Zig: Part 7 - Your First Counter App &middot; JSX in Zig">
   
 
   
   
   
-    <meta name="keywords" content="zig,ui,tutorial,architecture,">
+    <meta name="keywords" content="zig,ui,tutorial,">
   
   
   
-  <link rel="canonical" href="http://localhost:1313/posts/jsx-zig-05-complete-architecture/">
+  <link rel="canonical" href="http://localhost:1313/posts/jsx-zig-07-first-counter-app/">
   
 
   
@@ -36,20 +36,20 @@
   
 
   
-  <meta property="og:url" content="http://localhost:1313/posts/jsx-zig-05-complete-architecture/">
+  <meta property="og:url" content="http://localhost:1313/posts/jsx-zig-07-first-counter-app/">
   <meta property="og:site_name" content="JSX in Zig">
-  <meta property="og:title" content="Building UIs in Zig: Part 5 - The Complete Architecture">
-  <meta property="og:description" content="We’ve covered the pieces. Now let’s see how they fit together into a complete UI framework.
-The Big Picture # ┌─────────────────────────────────────────────────┐ │ Your App │ │ State: { count: 5, step: .one } │ │ │ │ │ ▼ │ │ View: jsx.col(&#34;gap-4&#34;, &amp;.{ ... }) │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ JSX Framework │ │ ┌──────────┐ ┌──────────┐ ┌──────────┐ │ │ │ Builder │ │ Renderer │ │ Events │ │ │ │ col,row │ │ Layout&#43; │ │ Handler │ │ │ │ text,btn │ │ Draw │ │ Dispatch │ │ │ └──────────┘ └──────────┘ └──────────┘ │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ Raylib │ │ drawRect, drawText, getMousePos │ └─────────────────────────────────────────────────┘ Data Flow # Every frame:">
+  <meta property="og:title" content="Building UIs in Zig: Part 7 - Your First Counter App">
+  <meta property="og:description" content="Let’s put everything together and build a complete counter app. By the end, you’ll have a working UI with buttons, state, and event handling.
+The Goal # A counter with:
+A title The current count (green when positive, red when negative) Plus and minus buttons A step size selector (1, 5, or 10) A reset button Step 1: Define State # Every app needs state. Ours tracks a count and step size:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
-    <meta property="article:published_time" content="2024-12-08T00:00:00+00:00">
-    <meta property="article:modified_time" content="2024-12-08T00:00:00+00:00">
+    <meta property="article:published_time" content="2025-12-11T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-11T00:00:00+00:00">
     <meta property="article:tag" content="Zig">
     <meta property="article:tag" content="Ui">
     <meta property="article:tag" content="Tutorial">
-    <meta property="article:tag" content="Architecture">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-00-what-we-are-building/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-01-the-building-block-nodes/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-02-building-nodes/">
@@ -60,9 +60,10 @@ The Big Picture # ┌───────────────────�
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Building UIs in Zig: Part 5 - The Complete Architecture">
-  <meta name="twitter:description" content="We’ve covered the pieces. Now let’s see how they fit together into a complete UI framework.
-The Big Picture # ┌─────────────────────────────────────────────────┐ │ Your App │ │ State: { count: 5, step: .one } │ │ │ │ │ ▼ │ │ View: jsx.col(&#34;gap-4&#34;, &amp;.{ ... }) │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ JSX Framework │ │ ┌──────────┐ ┌──────────┐ ┌──────────┐ │ │ │ Builder │ │ Renderer │ │ Events │ │ │ │ col,row │ │ Layout&#43; │ │ Handler │ │ │ │ text,btn │ │ Draw │ │ Dispatch │ │ │ └──────────┘ └──────────┘ └──────────┘ │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ Raylib │ │ drawRect, drawText, getMousePos │ └─────────────────────────────────────────────────┘ Data Flow # Every frame:">
+  <meta name="twitter:title" content="Building UIs in Zig: Part 7 - Your First Counter App">
+  <meta name="twitter:description" content="Let’s put everything together and build a complete counter app. By the end, you’ll have a working UI with buttons, state, and event handling.
+The Goal # A counter with:
+A title The current count (green when positive, red when negative) Plus and minus buttons A step size selector (1, 5, or 10) A reset button Step 1: Define State # Every app needs state. Ours tracks a count and step size:">
 
   
   
@@ -211,26 +212,26 @@ The Big Picture # ┌───────────────────�
     "@context": "https://schema.org",
     "@type": "Article",
     "articleSection": "Posts",
-    "name": "Building UIs in Zig: Part 5 - The Complete Architecture",
-    "headline": "Building UIs in Zig: Part 5 - The Complete Architecture",
+    "name": "Building UIs in Zig: Part 7 - Your First Counter App",
+    "headline": "Building UIs in Zig: Part 7 - Your First Counter App",
     
-    "abstract": "\u003cp\u003eWe\u0026rsquo;ve covered the pieces. Now let\u0026rsquo;s see how they fit together into a complete UI framework.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe Big Picture\n    \u003cdiv id=\u0022the-big-picture\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-big-picture\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌─────────────────────────────────────────────────┐\n│                   Your App                       │\n│  State: { count: 5, step: .one }                │\n│                    │                             │\n│                    ▼                             │\n│  View: jsx.col(\u0026#34;gap-4\u0026#34;, \u0026amp;.{ ... })              │\n└─────────────────────────────────────────────────┘\n                     │\n                     ▼\n┌─────────────────────────────────────────────────┐\n│               JSX Framework                      │\n│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │\n│  │ Builder  │  │ Renderer │  │  Events  │      │\n│  │ col,row  │  │ Layout\u002b  │  │ Handler  │      │\n│  │ text,btn │  │  Draw    │  │ Dispatch │      │\n│  └──────────┘  └──────────┘  └──────────┘      │\n└─────────────────────────────────────────────────┘\n                     │\n                     ▼\n┌─────────────────────────────────────────────────┐\n│                  Raylib                          │\n│        drawRect, drawText, getMousePos          │\n└─────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\n\u003ch2 class=\u0022relative group\u0022\u003eData Flow\n    \u003cdiv id=\u0022data-flow\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#data-flow\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eEvery frame:\u003c\/p\u003e",
+    "abstract": "\u003cp\u003eLet\u0026rsquo;s put everything together and build a complete counter app. By the end, you\u0026rsquo;ll have a working UI with buttons, state, and event handling.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe Goal\n    \u003cdiv id=\u0022the-goal\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-goal\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eA counter with:\u003c\/p\u003e\n\u003cul\u003e\n\u003cli\u003eA title\u003c\/li\u003e\n\u003cli\u003eThe current count (green when positive, red when negative)\u003c\/li\u003e\n\u003cli\u003ePlus and minus buttons\u003c\/li\u003e\n\u003cli\u003eA step size selector (1, 5, or 10)\u003c\/li\u003e\n\u003cli\u003eA reset button\u003c\/li\u003e\n\u003c\/ul\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eStep 1: Define State\n    \u003cdiv id=\u0022step-1-define-state\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#step-1-define-state\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eEvery app needs state. Ours tracks a count and step size:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/posts/jsx-zig-05-complete-architecture/",
+    "url" : "http://localhost:1313/posts/jsx-zig-07-first-counter-app/",
     "author" : {
       "@type": "Person",
       "name": "Author"
     },
-    "copyrightYear": "2024",
-    "dateCreated": "2024-12-08T00:00:00\u002b00:00",
-    "datePublished": "2024-12-08T00:00:00\u002b00:00",
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-11T00:00:00\u002b00:00",
+    "datePublished": "2025-12-11T00:00:00\u002b00:00",
     
-    "dateModified": "2024-12-08T00:00:00\u002b00:00",
+    "dateModified": "2025-12-11T00:00:00\u002b00:00",
     
-    "keywords": ["zig","ui","tutorial","architecture"],
+    "keywords": ["zig","ui","tutorial"],
     
     "mainEntityOfPage": "true",
-    "wordCount": "823"
+    "wordCount": "972"
   }]
   </script>
 
@@ -534,8 +535,8 @@ The Big Picture # ┌───────────────────�
 
   
   <li class="hidden">
-    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-05-complete-architecture/"
-      >Building UIs in Zig: Part 5 - The Complete Architecture</a
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-07-first-counter-app/"
+      >Building UIs in Zig: Part 7 - Your First Counter App</a
     ><span class="px-1 text-primary-500">/</span>
   </li>
 
@@ -544,7 +545,7 @@ The Big Picture # ┌───────────────────�
 
       
       <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
-        Building UIs in Zig: Part 5 - The Complete Architecture
+        Building UIs in Zig: Part 7 - Your First Counter App
       </h1>
       <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
         
@@ -596,7 +597,7 @@ The Big Picture # ┌───────────────────�
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time><span class="px-2 text-primary-500">&middot;</span><span>823 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
+      <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>972 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">5 mins</span>
     
 
     
@@ -678,21 +679,17 @@ The Big Picture # ┌───────────────────�
     class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
     <nav id="TableOfContents">
   <ul>
-    <li><a href="#the-big-picture">The Big Picture</a></li>
-    <li><a href="#data-flow">Data Flow</a></li>
-    <li><a href="#the-module-structure">The Module Structure</a></li>
-    <li><a href="#key-design-decisions">Key Design Decisions</a>
-      <ul>
-        <li><a href="#1-immediate-mode">1. Immediate Mode</a></li>
-        <li><a href="#2-comptime-everything">2. Comptime Everything</a></li>
-        <li><a href="#3-value-types">3. Value Types</a></li>
-        <li><a href="#4-explicit-event-binding">4. Explicit Event Binding</a></li>
-      </ul>
-    </li>
-    <li><a href="#building-components">Building Components</a></li>
-    <li><a href="#the-complete-counter-app">The Complete Counter App</a></li>
-    <li><a href="#what-youve-learned">What You&rsquo;ve Learned</a></li>
-    <li><a href="#next-steps">Next Steps</a></li>
+    <li><a href="#the-goal">The Goal</a></li>
+    <li><a href="#step-1-define-state">Step 1: Define State</a></li>
+    <li><a href="#step-2-define-events">Step 2: Define Events</a></li>
+    <li><a href="#step-3-write-handlers">Step 3: Write Handlers</a></li>
+    <li><a href="#step-4-create-the-handler-array">Step 4: Create the Handler Array</a></li>
+    <li><a href="#step-5-build-the-view">Step 5: Build the View</a></li>
+    <li><a href="#step-6-the-draw-function">Step 6: The Draw Function</a></li>
+    <li><a href="#the-complete-app">The Complete App</a></li>
+    <li><a href="#what-just-happened">What Just Happened?</a></li>
+    <li><a href="#try-it-yourself">Try It Yourself</a></li>
+    <li><a href="#whats-next">What&rsquo;s Next</a></li>
   </ul>
 </nav>
   </div>
@@ -706,21 +703,17 @@ The Big Picture # ┌───────────────────�
     class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
     <nav id="TableOfContents">
   <ul>
-    <li><a href="#the-big-picture">The Big Picture</a></li>
-    <li><a href="#data-flow">Data Flow</a></li>
-    <li><a href="#the-module-structure">The Module Structure</a></li>
-    <li><a href="#key-design-decisions">Key Design Decisions</a>
-      <ul>
-        <li><a href="#1-immediate-mode">1. Immediate Mode</a></li>
-        <li><a href="#2-comptime-everything">2. Comptime Everything</a></li>
-        <li><a href="#3-value-types">3. Value Types</a></li>
-        <li><a href="#4-explicit-event-binding">4. Explicit Event Binding</a></li>
-      </ul>
-    </li>
-    <li><a href="#building-components">Building Components</a></li>
-    <li><a href="#the-complete-counter-app">The Complete Counter App</a></li>
-    <li><a href="#what-youve-learned">What You&rsquo;ve Learned</a></li>
-    <li><a href="#next-steps">Next Steps</a></li>
+    <li><a href="#the-goal">The Goal</a></li>
+    <li><a href="#step-1-define-state">Step 1: Define State</a></li>
+    <li><a href="#step-2-define-events">Step 2: Define Events</a></li>
+    <li><a href="#step-3-write-handlers">Step 3: Write Handlers</a></li>
+    <li><a href="#step-4-create-the-handler-array">Step 4: Create the Handler Array</a></li>
+    <li><a href="#step-5-build-the-view">Step 5: Build the View</a></li>
+    <li><a href="#step-6-the-draw-function">Step 6: The Draw Function</a></li>
+    <li><a href="#the-complete-app">The Complete App</a></li>
+    <li><a href="#what-just-happened">What Just Happened?</a></li>
+    <li><a href="#try-it-yourself">Try It Yourself</a></li>
+    <li><a href="#whats-next">What&rsquo;s Next</a></li>
   </ul>
 </nav>
   </div>
@@ -820,10 +813,8 @@ The Big Picture # ┌───────────────────�
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-07-first-counter-app/">
-          Part :
-          Building UIs in Zig: Part 7 - Your First Counter App
-        </a>
+        Part :
+        This Article
       </div>
     
   
@@ -837,187 +828,42 @@ The Big Picture # ┌───────────────────�
       </div>
     
   
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
-          Part :
-          Building UIs in Zig: Part 1 - Imperative vs Declarative
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-02-first-counter-app/">
-          Part :
-          Building UIs in Zig: Part 2 - Your First Counter App
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-03-how-renderer-works/">
-          Part :
-          Building UIs in Zig: Part 3 - How the Renderer Works
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-04-tailwind-parser/">
-          Part :
-          Building UIs in Zig: Part 4 - Comptime Tailwind Parser
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        Part :
-        This Article
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-06-behind-the-scenes/">
-          Part :
-          Building UIs in Zig: Part 6 - Behind the Scenes
-        </a>
-      </div>
-    
-  
 
 
   </details>
 
 
         <div class="article-content max-w-prose mb-20">
-          <p>We&rsquo;ve covered the pieces. Now let&rsquo;s see how they fit together into a complete UI framework.</p>
+          <p>Let&rsquo;s put everything together and build a complete counter app. By the end, you&rsquo;ll have a working UI with buttons, state, and event handling.</p>
 
-<h2 class="relative group">The Big Picture
-    <div id="the-big-picture" class="anchor"></div>
+<h2 class="relative group">The Goal
+    <div id="the-goal" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-big-picture" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-goal" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<pre tabindex="0"><code>┌─────────────────────────────────────────────────┐
-│                   Your App                       │
-│  State: { count: 5, step: .one }                │
-│                    │                             │
-│                    ▼                             │
-│  View: jsx.col(&#34;gap-4&#34;, &amp;.{ ... })              │
-└─────────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────┐
-│               JSX Framework                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │ Builder  │  │ Renderer │  │  Events  │      │
-│  │ col,row  │  │ Layout+  │  │ Handler  │      │
-│  │ text,btn │  │  Draw    │  │ Dispatch │      │
-│  └──────────┘  └──────────┘  └──────────┘      │
-└─────────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────┐
-│                  Raylib                          │
-│        drawRect, drawText, getMousePos          │
-└─────────────────────────────────────────────────┘
-</code></pre>
-<h2 class="relative group">Data Flow
-    <div id="data-flow" class="anchor"></div>
+<p>A counter with:</p>
+<ul>
+<li>A title</li>
+<li>The current count (green when positive, red when negative)</li>
+<li>Plus and minus buttons</li>
+<li>A step size selector (1, 5, or 10)</li>
+<li>A reset button</li>
+</ul>
+
+<h2 class="relative group">Step 1: Define State
+    <div id="step-1-define-state" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#data-flow" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-1-define-state" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>Every frame:</p>
-<ol>
-<li><strong>State</strong> - Your app&rsquo;s current data</li>
-<li><strong>View</strong> - Function that builds Node tree from state</li>
-<li><strong>Render</strong> - Framework calculates layout and draws</li>
-<li><strong>Events</strong> - User clicks trigger handlers</li>
-<li><strong>Update</strong> - Handlers modify state</li>
-<li><strong>Repeat</strong> - Next frame rebuilds view from new state</li>
-</ol>
-
-<h2 class="relative group">The Module Structure
-    <div id="the-module-structure" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-module-structure" aria-label="Anchor">#</a>
-    </span>
-    
-</h2>
-<pre tabindex="0"><code>jsx/
-├── root.zig       # Public API
-├── node.zig       # Node struct, modifiers
-├── builder.zig    # Element constructors
-├── tw.zig         # Comptime Tailwind parser
-├── renderer.zig   # Layout and tree walking
-├── widgets.zig    # Draw individual nodes
-├── layout.zig     # Rect, flex calculations
-└── events.zig     # Event queue and dispatch
-</code></pre>
-<h2 class="relative group">Key Design Decisions
-    <div id="key-design-decisions" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#key-design-decisions" aria-label="Anchor">#</a>
-    </span>
-    
-</h2>
-
-<h3 class="relative group">1. Immediate Mode
-    <div id="1-immediate-mode" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#1-immediate-mode" aria-label="Anchor">#</a>
-    </span>
-    
-</h3>
-<p>We rebuild the entire UI every frame. No diffing.</p>
-<p><strong>Why?</strong> Simplicity. No virtual DOM. No reconciliation.</p>
-
-<h3 class="relative group">2. Comptime Everything
-    <div id="2-comptime-everything" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#2-comptime-everything" aria-label="Anchor">#</a>
-    </span>
-    
-</h3>
-<p>Tailwind classes parsed at compile time. Event enums defined at compile time.</p>
-<p><strong>Why?</strong> Zero runtime cost. Errors caught early.</p>
-
-<h3 class="relative group">3. Value Types
-    <div id="3-value-types" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#3-value-types" aria-label="Anchor">#</a>
-    </span>
-    
-</h3>
-<p>Nodes are values, not heap allocations:</p>
+<p>Every app needs state. Ours tracks a count and step size:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -1026,28 +872,29 @@ The Big Picture # ┌───────────────────�
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">kind</span><span class="o">:</span><span class="w"> </span><span class="n">Kind</span><span class="p">,</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">style</span><span class="o">:</span><span class="w"> </span><span class="n">Style</span><span class="p">,</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">children</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">props</span><span class="o">:</span><span class="w"> </span><span class="n">Props</span><span class="p">,</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">CounterApp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">count</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">step</span><span class="o">:</span><span class="w"> </span><span class="n">Step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">one</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">count_buf</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mi">32</span><span class="p">]</span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="p">(</span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">five</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">ten</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="p">};</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
-</div><p><strong>Why?</strong> No allocator needed. Nodes live on stack or in static memory.</p>
-
-<h3 class="relative group">4. Explicit Event Binding
-    <div id="4-explicit-event-binding" class="anchor"></div>
+</div>
+<h2 class="relative group">Step 2: Define Events
+    <div id="step-2-define-events" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#4-explicit-event-binding" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-2-define-events" aria-label="Anchor">#</a>
     </span>
     
-</h3>
-<p>Events are indices into a handler array:</p>
+</h2>
+<p>What can the user do? Define an enum:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -1060,28 +907,27 @@ The Big Picture # ┌───────────────────�
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">E</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="p">(</span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">increment</span><span class="p">,</span><span class="w"> </span><span class="n">decrement</span><span class="w"> </span><span class="p">};</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">const</span><span class="w"> </span><span class="n">handlers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">handlers</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">increment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onIncrement</span><span class="p">,</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">decrement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onDecrement</span><span class="p">,</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">});</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;+&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;&#34;</span><span class="p">).</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">increment</span><span class="p">)</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">E</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="p">(</span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">increment</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">decrement</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">reset</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">step_one</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">step_five</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">step_ten</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
-</div><p><strong>Why?</strong> No closures. No heap. Comptime verified.</p>
-
-<h2 class="relative group">Building Components
-    <div id="building-components" class="anchor"></div>
+</div>
+<h2 class="relative group">Step 3: Write Handlers
+    <div id="step-3-write-handlers" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#building-components" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-3-write-handlers" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>Create reusable components as functions:</p>
+<p>Each event needs a handler function:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -1096,33 +942,218 @@ The Big Picture # ┌───────────────────�
 </span><span class="lnt">10
 </span><span class="lnt">11
 </span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">StatBox</span><span class="p">(</span><span class="n">label</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">color</span><span class="o">:</span><span class="w"> </span><span class="n">Color</span><span class="p">)</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">div</span><span class="p">(</span><span class="s">&#34;p-4 bg-slate-700 rounded&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-sm text-slate-400&#34;</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-2xl font-bold&#34;</span><span class="p">).</span><span class="nf">fg</span><span class="p">(</span><span class="n">color</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">});</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">var</span><span class="w"> </span><span class="n">instance</span><span class="o">:</span><span class="w"> </span><span class="o">?*</span><span class="n">CounterApp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">onIncrement</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nb">@intFromEnum</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="p">);</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Usage:
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;gap-4&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nf">StatBox</span><span class="p">(</span><span class="s">&#34;Users&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;1,234&#34;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">green400</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nf">StatBox</span><span class="p">(</span><span class="s">&#34;Revenue&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;$5,678&#34;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">blue400</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">onDecrement</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="nb">@intFromEnum</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">onReset</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">onStepOne</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">one</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">onStepFive</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">five</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">onStepTen</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">ten</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">Step 4: Create the Handler Array
+    <div id="step-4-create-the-handler-array" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-4-create-the-handler-array" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Connect events to handlers:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">handlers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">handlers</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">increment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onIncrement</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">decrement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onDecrement</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onReset</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">step_one</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onStepOne</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">step_five</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onStepFive</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">step_ten</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onStepTen</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">});</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div>
-<h2 class="relative group">The Complete Counter App
-    <div id="the-complete-counter-app" class="anchor"></div>
+<h2 class="relative group">Step 5: Build the View
+    <div id="step-5-build-the-view" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-complete-counter-app" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-5-build-the-view" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>Here&rsquo;s everything we&rsquo;ve learned in one app:</p>
+<p>Now the fun part - describe the UI:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">view</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">CounterApp</span><span class="p">)</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Format count as string
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">count_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">fmt</span><span class="p">.</span><span class="nf">bufPrint</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="o">&amp;</span><span class="n">self</span><span class="p">.</span><span class="n">count_buf</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;{d}&#34;</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="s">&#34;?&#34;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;gap-4 p-6 bg-slate-900&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Title
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">h1</span><span class="p">(</span><span class="s">&#34;Counter&#34;</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Count display
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">center</span><span class="p">(</span><span class="s">&#34;flex-1&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="n">count_str</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-4xl font-bold&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">fg</span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="n">green400</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">.</span><span class="n">red400</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Step size selector
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">row</span><span class="p">(</span><span class="s">&#34;gap-2&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">toggle</span><span class="p">(</span><span class="s">&#34;1&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;p-2 rounded&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">active</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">.</span><span class="n">one</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">onChange</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">step_one</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">toggle</span><span class="p">(</span><span class="s">&#34;5&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;p-2 rounded&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">active</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">.</span><span class="n">five</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">onChange</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">step_five</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">toggle</span><span class="p">(</span><span class="s">&#34;10&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;p-2 rounded&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">active</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">.</span><span class="n">ten</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">onChange</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">step_ten</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Action buttons
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">row</span><span class="p">(</span><span class="s">&#34;gap-4 justify-center&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;-&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-red-500 px-6 py-2 rounded-lg&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">decrement</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;Reset&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-slate-600 px-4 py-2 rounded&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">reset</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;+&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-green-500 px-6 py-2 rounded-lg&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">.</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">increment</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">Step 6: The Draw Function
+    <div id="step-6-the-draw-function" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-6-the-draw-function" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Tie it all together:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">CounterApp</span><span class="p">,</span><span class="w"> </span><span class="n">renderer</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">jsx</span><span class="p">.</span><span class="n">Renderer</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">;</span><span class="w">  </span><span class="c1">// Set for handlers
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">ui</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="nf">view</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">renderer</span><span class="p">.</span><span class="nf">render</span><span class="p">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handlers</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">The Complete App
+    <div id="the-complete-app" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-complete-app" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Here&rsquo;s everything in one place:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
@@ -1208,8 +1239,6 @@ The Big Picture # ┌───────────────────�
 </span><span class="lnt">81
 </span><span class="lnt">82
 </span><span class="lnt">83
-</span><span class="lnt">84
-</span><span class="lnt">85
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">std</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@import</span><span class="p">(</span><span class="s">&#34;std&#34;</span><span class="p">);</span><span class="w">
@@ -1218,19 +1247,16 @@ The Big Picture # ┌───────────────────�
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">CounterApp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">count</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">step</span><span class="o">:</span><span class="w"> </span><span class="n">Step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">one</span><span class="p">,</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">renderer</span><span class="o">:</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="n">Renderer</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">count_buf</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mi">32</span><span class="p">]</span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="p">(</span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">five</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">ten</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="p">};</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Events - IDE autocomplete works
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">E</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="p">(</span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">E</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="p">(</span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">increment</span><span class="p">,</span><span class="w"> </span><span class="n">decrement</span><span class="p">,</span><span class="w"> </span><span class="n">reset</span><span class="p">,</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">step_one</span><span class="p">,</span><span class="w"> </span><span class="n">step_five</span><span class="p">,</span><span class="w"> </span><span class="n">step_ten</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">step_one</span><span class="p">,</span><span class="w"> </span><span class="n">step_five</span><span class="p">,</span><span class="w"> </span><span class="n">step_ten</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">};</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Handlers - named, order-independent, comptime verified
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">handlers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">handlers</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">handlers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">handlers</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">increment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onIncrement</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">decrement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onDecrement</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">onReset</span><span class="p">,</span><span class="w">
@@ -1242,31 +1268,30 @@ The Big Picture # ┌───────────────────�
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">instance</span><span class="o">:</span><span class="w"> </span><span class="o">?*</span><span class="n">CounterApp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">onIncrement</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nb">@intFromEnum</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">step</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nb">@intFromEnum</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="p">);</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">onDecrement</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="nb">@intFromEnum</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">step</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="nb">@intFromEnum</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="p">);</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">onReset</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">onStepOne</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">one</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">one</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">onStepFive</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">five</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">five</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">onStepTen</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">ten</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">self</span><span class="o">|</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">ten</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">CounterApp</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">view</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">CounterApp</span><span class="p">)</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="n">Node</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">count_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">fmt</span><span class="p">.</span><span class="nf">bufPrint</span><span class="p">(</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="o">&amp;</span><span class="n">self</span><span class="p">.</span><span class="n">count_buf</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;{d}&#34;</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="n">self</span><span class="p">.</span><span class="n">count</span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">)</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="s">&#34;?&#34;</span><span class="p">;</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">view</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;gap-4 p-6&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;gap-4 p-6 bg-slate-900&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">h1</span><span class="p">(</span><span class="s">&#34;Counter&#34;</span><span class="p">),</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">center</span><span class="p">(</span><span class="s">&#34;flex-1&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
@@ -1284,57 +1309,71 @@ The Big Picture # ┌───────────────────�
 </span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">}),</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">jsx</span><span class="p">.</span><span class="nf">row</span><span class="p">(</span><span class="s">&#34;gap-4 justify-center&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;-&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-red-500 rounded-lg&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;-&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-red-500 px-6 py-2 rounded-lg&#34;</span><span class="p">)</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="p">.</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">decrement</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;Reset&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-slate-600 rounded&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;Reset&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-slate-600 px-4 py-2 rounded&#34;</span><span class="p">)</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="p">.</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">reset</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;+&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-green-500 rounded-lg&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;+&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-green-500 px-6 py-2 rounded-lg&#34;</span><span class="p">)</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="p">.</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">increment</span><span class="p">),</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">}),</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">self</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="nf">render</span><span class="p">(</span><span class="n">view</span><span class="p">);</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">self</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="nf">flush</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">CounterApp</span><span class="p">,</span><span class="w"> </span><span class="n">renderer</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">jsx</span><span class="p">.</span><span class="n">Renderer</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">self</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">renderer</span><span class="p">.</span><span class="nf">render</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">view</span><span class="p">(),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handlers</span><span class="p">);</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div>
-<h2 class="relative group">What You&rsquo;ve Learned
-    <div id="what-youve-learned" class="anchor"></div>
+<h2 class="relative group">What Just Happened?
+    <div id="what-just-happened" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-youve-learned" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-just-happened" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Let&rsquo;s trace a click on &ldquo;+&rdquo;:</p>
+<ol>
+<li><strong>User clicks</strong> on the &ldquo;+&rdquo; button</li>
+<li><strong>Renderer</strong> checks mouse position, finds it&rsquo;s over the button</li>
+<li><strong>Button</strong> has <code>.onPress(E.increment)</code> → queues index 0</li>
+<li><strong>After rendering</strong>, <code>flush()</code> calls <code>handlers[0]</code> → <code>onIncrement()</code></li>
+<li><strong>Handler</strong> accesses <code>instance</code>, increments <code>count</code></li>
+<li><strong>Next frame</strong>, <code>view()</code> is called with new count</li>
+<li><strong>Text shows</strong> updated value</li>
+</ol>
+<p>The UI stays in sync because we rebuild it every frame from current state.</p>
+
+<h2 class="relative group">Try It Yourself
+    <div id="try-it-yourself" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#try-it-yourself" aria-label="Anchor">#</a>
     </span>
     
 </h2>
 <ol>
-<li><strong>Declarative &gt; Imperative</strong> - Describe what, not how</li>
-<li><strong>Node trees</strong> - UI as data structures</li>
-<li><strong>Comptime parsing</strong> - Zero-cost abstractions</li>
-<li><strong>Immediate mode</strong> - Rebuild every frame</li>
-<li><strong>Event binding</strong> - Type-safe handler dispatch</li>
+<li><strong>Add a &ldquo;Double&rdquo; button</strong> that multiplies count by 2</li>
+<li><strong>Add a max/min</strong> - don&rsquo;t let count go above 100 or below -100</li>
+<li><strong>Add color for the step buttons</strong> - green when active</li>
+<li><strong>Add a &ldquo;Random&rdquo; button</strong> that sets count to a random number</li>
 </ol>
 
-<h2 class="relative group">Next Steps
-    <div id="next-steps" class="anchor"></div>
+<h2 class="relative group">What&rsquo;s Next
+    <div id="whats-next" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#next-steps" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#whats-next" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<ul>
-<li>Add more widgets (slider, checkbox, dropdown)</li>
-<li>Add animations (lerp values over time)</li>
-<li>Add keyboard navigation</li>
-<li>Build a real app!</li>
-</ul>
-<p>The foundation is solid. Build on it.</p>
-<hr>
-<p><em>This concludes the &ldquo;Building UIs in Zig&rdquo; series. Happy building!</em></p>
+<p>In Part 8, we&rsquo;ll zoom out and look at the complete architecture - how all the pieces fit together, the module structure, and the key design decisions.</p>
 
           
           
@@ -1424,10 +1463,8 @@ The Big Picture # ┌───────────────────�
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-07-first-counter-app/">
-          Part :
-          Building UIs in Zig: Part 7 - Your First Counter App
-        </a>
+        Part :
+        This Article
       </div>
     
   
@@ -1437,64 +1474,6 @@ The Big Picture # ┌───────────────────�
         <a href="/posts/jsx-zig-08-complete-architecture/">
           Part :
           Building UIs in Zig: Part 8 - The Complete Architecture
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-01-imperative-vs-declarative/">
-          Part :
-          Building UIs in Zig: Part 1 - Imperative vs Declarative
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-02-first-counter-app/">
-          Part :
-          Building UIs in Zig: Part 2 - Your First Counter App
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-03-how-renderer-works/">
-          Part :
-          Building UIs in Zig: Part 3 - How the Renderer Works
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-04-tailwind-parser/">
-          Part :
-          Building UIs in Zig: Part 4 - Comptime Tailwind Parser
-        </a>
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        Part :
-        This Article
-      </div>
-    
-  
-    
-      <div
-        class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-06-behind-the-scenes/">
-          Part :
-          Building UIs in Zig: Part 6 - Behind the Scenes
         </a>
       </div>
     
@@ -1523,8 +1502,8 @@ The Big Picture # ┌───────────────────�
           type="text/javascript"
           src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
           integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
-          data-oid="views_posts/jsx-zig-05-complete-architecture.md"
-          data-oid-likes="likes_posts/jsx-zig-05-complete-architecture.md"></script>
+          data-oid="views_posts/jsx-zig-07-first-counter-app.md"
+          data-oid-likes="likes_posts/jsx-zig-07-first-counter-app.md"></script>
       
     </section>
 
@@ -1542,14 +1521,14 @@ The Big Picture # ┌───────────────────�
           
             <a
               class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
-              href="/posts/jsx-zig-06-behind-the-scenes/">
+              href="/posts/jsx-zig-08-complete-architecture/">
               <span class="leading-6">
-                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building UIs in Zig: Part 6 - Behind the Scenes
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building UIs in Zig: Part 8 - The Complete Architecture
               </span>
             </a>
             
               <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time>
+                <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time>
               </span>
             
           
@@ -1558,14 +1537,14 @@ The Big Picture # ┌───────────────────�
           
             <a
               class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
-              href="/posts/jsx-zig-04-tailwind-parser/">
+              href="/posts/jsx-zig-06-imperative-vs-declarative/">
               <span class="leading-6">
-                Building UIs in Zig: Part 4 - Comptime Tailwind Parser&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+                Building UIs in Zig: Part 6 - Imperative vs Declarative&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
               </span>
             </a>
             
               <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                <time datetime="2024-12-08T00:00:00&#43;00:00">December 8, 2024</time>
+                <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time>
               </span>
             
           

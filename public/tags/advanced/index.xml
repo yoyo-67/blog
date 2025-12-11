@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Advanced on JSX in Zig</title>
-    <link>http://localhost:51816/tags/advanced/</link>
+    <link>http://localhost:1313/tags/advanced/</link>
     <description>Recent content in Advanced on JSX in Zig</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© 2025 Author</copyright>
-    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:51816/tags/advanced/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/advanced/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Building UIs in Zig: Part 6 - Behind the Scenes</title>
-      <link>http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/</link>
+      <link>http://localhost:1313/posts/jsx-zig-06-behind-the-scenes/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:51816/posts/jsx-zig-06-behind-the-scenes/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-06-behind-the-scenes/</guid>
       <description>&lt;p&gt;You&amp;rsquo;ve seen the API. Now let&amp;rsquo;s look at the actual code. This is a sneak peek into how the JSX framework is built.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Node Struct

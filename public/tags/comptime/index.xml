@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Comptime on JSX in Zig</title>
-    <link>http://localhost:51816/tags/comptime/</link>
+    <link>http://localhost:1313/tags/comptime/</link>
     <description>Recent content in Comptime on JSX in Zig</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© 2025 Author</copyright>
-    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:51816/tags/comptime/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/comptime/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Building UIs in Zig: Part 4 - Comptime Tailwind Parser</title>
-      <link>http://localhost:51816/posts/jsx-zig-04-tailwind-parser/</link>
+      <link>http://localhost:1313/posts/jsx-zig-04-tailwind-parser/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:51816/posts/jsx-zig-04-tailwind-parser/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-04-tailwind-parser/</guid>
       <description>&lt;p&gt;The magic of &lt;code&gt;jsx.col(&amp;quot;gap-4 p-6 bg-slate-800&amp;quot;, &amp;amp;.{...})&lt;/code&gt; is that those strings are parsed at &lt;strong&gt;compile time&lt;/strong&gt;. No runtime cost. Let&amp;rsquo;s build it.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Goal

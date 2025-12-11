@@ -15,18 +15,18 @@
 
   
   
-    <title>Building UIs in Zig: Part 0 - What We&#39;re Building &middot; JSX in Zig</title>
-    <meta name="title" content="Building UIs in Zig: Part 0 - What We&#39;re Building &middot; JSX in Zig">
+    <title>Building UIs in Zig: Part 8 - The Complete Architecture &middot; JSX in Zig</title>
+    <meta name="title" content="Building UIs in Zig: Part 8 - The Complete Architecture &middot; JSX in Zig">
   
 
   
   
   
-    <meta name="keywords" content="zig,ui,tutorial,introduction,">
+    <meta name="keywords" content="zig,ui,tutorial,architecture,">
   
   
   
-  <link rel="canonical" href="http://localhost:1313/posts/jsx-zig-00-what-we-are-building/">
+  <link rel="canonical" href="http://localhost:1313/posts/jsx-zig-08-complete-architecture/">
   
 
   
@@ -36,12 +36,11 @@
   
 
   
-  <meta property="og:url" content="http://localhost:1313/posts/jsx-zig-00-what-we-are-building/">
+  <meta property="og:url" content="http://localhost:1313/posts/jsx-zig-08-complete-architecture/">
   <meta property="og:site_name" content="JSX in Zig">
-  <meta property="og:title" content="Building UIs in Zig: Part 0 - What We&#39;re Building">
-  <meta property="og:description" content="Welcome to the “Building UIs in Zig” series. We’re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.
-The End Result # By the end of this series, you’ll have a framework that lets you write UI like this:
-1 2 3 4 5 6 7 8 9 const view = jsx.col(&#34;gap-4 p-6 bg-slate-900&#34;, &amp;.{ jsx.h1(&#34;Counter&#34;), jsx.text(count_str, &#34;text-4xl font-bold&#34;) .fg(if (count &gt;= 0) .green400 else .red400), jsx.row(&#34;gap-4&#34;, &amp;.{ jsx.button(&#34;-&#34;, &#34;bg-red-500 rounded&#34;).onPress(E.decrement), jsx.button(&#34;&#43;&#34;, &#34;bg-green-500 rounded&#34;).onPress(E.increment), }), }); And it becomes this:">
+  <meta property="og:title" content="Building UIs in Zig: Part 8 - The Complete Architecture">
+  <meta property="og:description" content="Let’s zoom out and see how all the pieces fit together into a complete UI framework.
+The Big Picture # ┌─────────────────────────────────────────────────┐ │ Your App │ │ State: { count: 5, step: .one } │ │ │ │ │ ▼ │ │ View: jsx.col(&#34;gap-4&#34;, &amp;.{ ... }) │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ JSX Framework │ │ ┌──────────┐ ┌──────────┐ ┌──────────┐ │ │ │ Builder │ │ Renderer │ │ Events │ │ │ │ col,row │ │ Layout&#43; │ │ Handler │ │ │ │ text,btn │ │ Draw │ │ Dispatch │ │ │ └──────────┘ └──────────┘ └──────────┘ │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ Raylib │ │ drawRect, drawText, getMousePos │ └─────────────────────────────────────────────────┘ Three layers:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
@@ -50,7 +49,8 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     <meta property="article:tag" content="Zig">
     <meta property="article:tag" content="Ui">
     <meta property="article:tag" content="Tutorial">
-    <meta property="article:tag" content="Introduction">
+    <meta property="article:tag" content="Architecture">
+      <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-00-what-we-are-building/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-01-the-building-block-nodes/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-02-building-nodes/">
       <meta property="og:see_also" content="http://localhost:1313/posts/jsx-zig-03-styling-tailwind-parser/">
@@ -60,10 +60,9 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Building UIs in Zig: Part 0 - What We&#39;re Building">
-  <meta name="twitter:description" content="Welcome to the “Building UIs in Zig” series. We’re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.
-The End Result # By the end of this series, you’ll have a framework that lets you write UI like this:
-1 2 3 4 5 6 7 8 9 const view = jsx.col(&#34;gap-4 p-6 bg-slate-900&#34;, &amp;.{ jsx.h1(&#34;Counter&#34;), jsx.text(count_str, &#34;text-4xl font-bold&#34;) .fg(if (count &gt;= 0) .green400 else .red400), jsx.row(&#34;gap-4&#34;, &amp;.{ jsx.button(&#34;-&#34;, &#34;bg-red-500 rounded&#34;).onPress(E.decrement), jsx.button(&#34;&#43;&#34;, &#34;bg-green-500 rounded&#34;).onPress(E.increment), }), }); And it becomes this:">
+  <meta name="twitter:title" content="Building UIs in Zig: Part 8 - The Complete Architecture">
+  <meta name="twitter:description" content="Let’s zoom out and see how all the pieces fit together into a complete UI framework.
+The Big Picture # ┌─────────────────────────────────────────────────┐ │ Your App │ │ State: { count: 5, step: .one } │ │ │ │ │ ▼ │ │ View: jsx.col(&#34;gap-4&#34;, &amp;.{ ... }) │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ JSX Framework │ │ ┌──────────┐ ┌──────────┐ ┌──────────┐ │ │ │ Builder │ │ Renderer │ │ Events │ │ │ │ col,row │ │ Layout&#43; │ │ Handler │ │ │ │ text,btn │ │ Draw │ │ Dispatch │ │ │ └──────────┘ └──────────┘ └──────────┘ │ └─────────────────────────────────────────────────┘ │ ▼ ┌─────────────────────────────────────────────────┐ │ Raylib │ │ drawRect, drawText, getMousePos │ └─────────────────────────────────────────────────┘ Three layers:">
 
   
   
@@ -212,12 +211,12 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     "@context": "https://schema.org",
     "@type": "Article",
     "articleSection": "Posts",
-    "name": "Building UIs in Zig: Part 0 - What We\u0027re Building",
-    "headline": "Building UIs in Zig: Part 0 - What We\u0027re Building",
+    "name": "Building UIs in Zig: Part 8 - The Complete Architecture",
+    "headline": "Building UIs in Zig: Part 8 - The Complete Architecture",
     
-    "abstract": "\u003cp\u003eWelcome to the \u0026ldquo;Building UIs in Zig\u0026rdquo; series. We\u0026rsquo;re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe End Result\n    \u003cdiv id=\u0022the-end-result\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-end-result\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eBy the end of this series, you\u0026rsquo;ll have a framework that lets you write UI like this:\u003c\/p\u003e\n\u003cdiv class=\u0022highlight\u0022\u003e\u003cdiv class=\u0022chroma\u0022\u003e\n\u003ctable class=\u0022lntable\u0022\u003e\u003ctr\u003e\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode\u003e\u003cspan class=\u0022lnt\u0022\u003e1\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e2\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e3\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e4\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e5\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e6\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e7\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e8\n\u003c\/span\u003e\u003cspan class=\u0022lnt\u0022\u003e9\n\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\n\u003ctd class=\u0022lntd\u0022\u003e\n\u003cpre tabindex=\u00220\u0022 class=\u0022chroma\u0022\u003e\u003ccode class=\u0022language-zig\u0022 data-lang=\u0022zig\u0022\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022kr\u0022\u003econst\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eview\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ecol\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;gap-4 p-6 bg-slate-900\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026amp;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003eh1\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;Counter\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003etext\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ecount_str\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;text-4xl font-bold\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e)\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003efg\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022k\u0022\u003eif\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ecount\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026gt;=\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022mi\u0022\u003e0\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e)\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003egreen400\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022k\u0022\u003eelse\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ered400\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003erow\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;gap-4\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022o\u0022\u003e\u0026amp;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.{\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ebutton\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;-\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;bg-red-500 rounded\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e).\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003eonPress\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eE\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003edecrement\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e        \u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003ejsx\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003ebutton\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;\u002b\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e,\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e \u003c\/span\u003e\u003cspan class=\u0022s\u0022\u003e\u0026#34;bg-green-500 rounded\u0026#34;\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e).\u003c\/span\u003e\u003cspan class=\u0022nf\u0022\u003eonPress\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e(\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eE\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e.\u003c\/span\u003e\u003cspan class=\u0022n\u0022\u003eincrement\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e    \u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e}),\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003cspan class=\u0022line\u0022\u003e\u003cspan class=\u0022cl\u0022\u003e\u003cspan class=\u0022w\u0022\u003e\u003c\/span\u003e\u003cspan class=\u0022p\u0022\u003e});\u003c\/span\u003e\u003cspan class=\u0022w\u0022\u003e\n\u003c\/span\u003e\u003c\/span\u003e\u003c\/span\u003e\u003c\/code\u003e\u003c\/pre\u003e\u003c\/td\u003e\u003c\/tr\u003e\u003c\/table\u003e\n\u003c\/div\u003e\n\u003c\/div\u003e\u003cp\u003eAnd it becomes this:\u003c\/p\u003e",
+    "abstract": "\u003cp\u003eLet\u0026rsquo;s zoom out and see how all the pieces fit together into a complete UI framework.\u003c\/p\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe Big Picture\n    \u003cdiv id=\u0022the-big-picture\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-big-picture\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌─────────────────────────────────────────────────┐\n│                   Your App                       │\n│  State: { count: 5, step: .one }                │\n│                    │                             │\n│                    ▼                             │\n│  View: jsx.col(\u0026#34;gap-4\u0026#34;, \u0026amp;.{ ... })              │\n└─────────────────────────────────────────────────┘\n                     │\n                     ▼\n┌─────────────────────────────────────────────────┐\n│               JSX Framework                      │\n│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │\n│  │ Builder  │  │ Renderer │  │  Events  │      │\n│  │ col,row  │  │ Layout\u002b  │  │ Handler  │      │\n│  │ text,btn │  │  Draw    │  │ Dispatch │      │\n│  └──────────┘  └──────────┘  └──────────┘      │\n└─────────────────────────────────────────────────┘\n                     │\n                     ▼\n┌─────────────────────────────────────────────────┐\n│                  Raylib                          │\n│        drawRect, drawText, getMousePos          │\n└─────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003cp\u003eThree layers:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/posts/jsx-zig-00-what-we-are-building/",
+    "url" : "http://localhost:1313/posts/jsx-zig-08-complete-architecture/",
     "author" : {
       "@type": "Person",
       "name": "Author"
@@ -228,10 +227,10 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     
     "dateModified": "2025-12-11T00:00:00\u002b00:00",
     
-    "keywords": ["zig","ui","tutorial","introduction"],
+    "keywords": ["zig","ui","tutorial","architecture"],
     
     "mainEntityOfPage": "true",
-    "wordCount": "276"
+    "wordCount": "768"
   }]
   </script>
 
@@ -535,8 +534,8 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 
   
   <li class="hidden">
-    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-00-what-we-are-building/"
-      >Building UIs in Zig: Part 0 - What We&#39;re Building</a
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/posts/jsx-zig-08-complete-architecture/"
+      >Building UIs in Zig: Part 8 - The Complete Architecture</a
     ><span class="px-1 text-primary-500">/</span>
   </li>
 
@@ -545,7 +544,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 
       
       <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
-        Building UIs in Zig: Part 0 - What We're Building
+        Building UIs in Zig: Part 8 - The Complete Architecture
       </h1>
       <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
         
@@ -597,7 +596,7 @@ The End Result # By the end of this series, you’ll have a framework that lets 
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>276 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">2 mins</span>
+      <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>768 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -679,10 +678,21 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
     <nav id="TableOfContents">
   <ul>
-    <li><a href="#the-end-result">The End Result</a></li>
-    <li><a href="#the-series">The Series</a></li>
-    <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#lets-go">Let&rsquo;s Go</a></li>
+    <li><a href="#the-big-picture">The Big Picture</a></li>
+    <li><a href="#data-flow">Data Flow</a></li>
+    <li><a href="#the-module-structure">The Module Structure</a></li>
+    <li><a href="#key-design-decisions">Key Design Decisions</a>
+      <ul>
+        <li><a href="#1-immediate-mode">1. Immediate Mode</a></li>
+        <li><a href="#2-comptime-everything">2. Comptime Everything</a></li>
+        <li><a href="#3-value-types">3. Value Types</a></li>
+        <li><a href="#4-index-based-events">4. Index-Based Events</a></li>
+      </ul>
+    </li>
+    <li><a href="#frame-lifecycle">Frame Lifecycle</a></li>
+    <li><a href="#what-youve-learned">What You&rsquo;ve Learned</a></li>
+    <li><a href="#next-steps">Next Steps</a></li>
+    <li><a href="#final-thoughts">Final Thoughts</a></li>
   </ul>
 </nav>
   </div>
@@ -696,10 +706,21 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
     <nav id="TableOfContents">
   <ul>
-    <li><a href="#the-end-result">The End Result</a></li>
-    <li><a href="#the-series">The Series</a></li>
-    <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#lets-go">Let&rsquo;s Go</a></li>
+    <li><a href="#the-big-picture">The Big Picture</a></li>
+    <li><a href="#data-flow">Data Flow</a></li>
+    <li><a href="#the-module-structure">The Module Structure</a></li>
+    <li><a href="#key-design-decisions">Key Design Decisions</a>
+      <ul>
+        <li><a href="#1-immediate-mode">1. Immediate Mode</a></li>
+        <li><a href="#2-comptime-everything">2. Comptime Everything</a></li>
+        <li><a href="#3-value-types">3. Value Types</a></li>
+        <li><a href="#4-index-based-events">4. Index-Based Events</a></li>
+      </ul>
+    </li>
+    <li><a href="#frame-lifecycle">Frame Lifecycle</a></li>
+    <li><a href="#what-youve-learned">What You&rsquo;ve Learned</a></li>
+    <li><a href="#next-steps">Next Steps</a></li>
+    <li><a href="#final-thoughts">Final Thoughts</a></li>
   </ul>
 </nav>
   </div>
@@ -729,8 +750,10 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        Part :
-        This Article
+        <a href="/posts/jsx-zig-00-what-we-are-building/">
+          Part :
+          Building UIs in Zig: Part 0 - What We&#39;re Building
+        </a>
       </div>
     
   
@@ -807,10 +830,8 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-08-complete-architecture/">
-          Part :
-          Building UIs in Zig: Part 8 - The Complete Architecture
-        </a>
+        Part :
+        This Article
       </div>
     
   
@@ -820,18 +841,167 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 
 
         <div class="article-content max-w-prose mb-20">
-          <p>Welcome to the &ldquo;Building UIs in Zig&rdquo; series. We&rsquo;re going to build a declarative UI framework from scratch - no dependencies except Raylib for rendering.</p>
+          <p>Let&rsquo;s zoom out and see how all the pieces fit together into a complete UI framework.</p>
 
-<h2 class="relative group">The End Result
-    <div id="the-end-result" class="anchor"></div>
+<h2 class="relative group">The Big Picture
+    <div id="the-big-picture" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-end-result" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-big-picture" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>By the end of this series, you&rsquo;ll have a framework that lets you write UI like this:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────┐
+│                   Your App                       │
+│  State: { count: 5, step: .one }                │
+│                    │                             │
+│                    ▼                             │
+│  View: jsx.col(&#34;gap-4&#34;, &amp;.{ ... })              │
+└─────────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────┐
+│               JSX Framework                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │ Builder  │  │ Renderer │  │  Events  │      │
+│  │ col,row  │  │ Layout+  │  │ Handler  │      │
+│  │ text,btn │  │  Draw    │  │ Dispatch │      │
+│  └──────────┘  └──────────┘  └──────────┘      │
+└─────────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────┐
+│                  Raylib                          │
+│        drawRect, drawText, getMousePos          │
+└─────────────────────────────────────────────────┘
+</code></pre><p>Three layers:</p>
+<ol>
+<li><strong>Your App</strong> - State and view function</li>
+<li><strong>JSX Framework</strong> - Nodes, styles, rendering, events</li>
+<li><strong>Raylib</strong> - Actual pixel drawing</li>
+</ol>
+
+<h2 class="relative group">Data Flow
+    <div id="data-flow" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#data-flow" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Every frame follows this cycle:</p>
+<pre tabindex="0"><code>┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐
+│ State  │───▶│ Build  │───▶│ Render │───▶│ Events │──┐
+│count=5 │    │  Tree  │    │ Pixels │    │ Queue  │  │
+└────────┘    └────────┘    └────────┘    └────────┘  │
+     ▲                                                 │
+     └─────────────────────────────────────────────────┘
+                         next frame
+</code></pre><ol>
+<li><strong>State</strong> - Current app data</li>
+<li><strong>Build</strong> - View function creates Node tree</li>
+<li><strong>Render</strong> - Framework draws tree to pixels</li>
+<li><strong>Events</strong> - User clicks queue handler calls</li>
+<li><strong>Update</strong> - Handlers modify state</li>
+<li><strong>Repeat</strong></li>
+</ol>
+
+<h2 class="relative group">The Module Structure
+    <div id="the-module-structure" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-module-structure" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>If you were building this framework, here&rsquo;s how you might organize it:</p>
+<pre tabindex="0"><code>jsx/
+├── root.zig       # Public API (jsx.col, jsx.button, etc.)
+├── node.zig       # Node struct, Kind enum, Props
+├── builder.zig    # Element constructor functions
+├── tw.zig         # Comptime Tailwind parser
+├── style.zig      # Style struct and defaults
+├── renderer.zig   # Layout calculation, tree walking
+├── widgets.zig    # Draw individual node types
+├── layout.zig     # Rect, flex calculations
+└── events.zig     # Event queue and dispatch
+</code></pre>
+<h2 class="relative group">Key Design Decisions
+    <div id="key-design-decisions" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#key-design-decisions" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">1. Immediate Mode
+    <div id="1-immediate-mode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#1-immediate-mode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>We rebuild the entire UI every frame. No diffing.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Every frame:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">view</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">app</span><span class="p">.</span><span class="nf">view</span><span class="p">();</span><span class="w">  </span><span class="c1">// Build fresh tree
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">renderer</span><span class="p">.</span><span class="nf">render</span><span class="p">(</span><span class="n">view</span><span class="p">);</span><span class="w">     </span><span class="c1">// Draw it
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Why?</strong> Simplicity. No virtual DOM, no reconciliation, no stale state bugs.</p>
+<p><strong>Tradeoff</strong>: Can&rsquo;t easily animate between states.</p>
+
+<h3 class="relative group">2. Comptime Everything
+    <div id="2-comptime-everything" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#2-comptime-everything" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Tailwind classes parsed at compile time. Event enums verified at compile time.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// At compile time:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">tw</span><span class="p">(</span><span class="s">&#34;gap-4 p-6&#34;</span><span class="p">);</span><span class="w">  </span><span class="c1">// Parsed to Style struct
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// At compile time:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">handlers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">handlers</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">});</span><span class="w">  </span><span class="c1">// Verified
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Why?</strong> Zero runtime cost. Errors caught early.</p>
+
+<h3 class="relative group">3. Value Types
+    <div id="3-value-types" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#3-value-types" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Nodes are values, not heap allocations:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -840,83 +1010,137 @@ The End Result # By the end of this series, you’ll have a framework that lets 
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
-</span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">view</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jsx</span><span class="p">.</span><span class="nf">col</span><span class="p">(</span><span class="s">&#34;gap-4 p-6 bg-slate-900&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">h1</span><span class="p">(</span><span class="s">&#34;Counter&#34;</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="n">count_str</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;text-4xl font-bold&#34;</span><span class="p">)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="nf">fg</span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="n">green400</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">.</span><span class="n">red400</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">jsx</span><span class="p">.</span><span class="nf">row</span><span class="p">(</span><span class="s">&#34;gap-4&#34;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="p">.{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;-&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-red-500 rounded&#34;</span><span class="p">).</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">decrement</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">jsx</span><span class="p">.</span><span class="nf">button</span><span class="p">(</span><span class="s">&#34;+&#34;</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;bg-green-500 rounded&#34;</span><span class="p">).</span><span class="nf">onPress</span><span class="p">(</span><span class="n">E</span><span class="p">.</span><span class="n">increment</span><span class="p">),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}),</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">});</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">kind</span><span class="o">:</span><span class="w"> </span><span class="n">Kind</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">style</span><span class="o">:</span><span class="w"> </span><span class="n">Style</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">children</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="p">,</span><span class="w">  </span><span class="c1">// Slice, not pointer
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">props</span><span class="o">:</span><span class="w"> </span><span class="n">Props</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
-</div><p>And it becomes this:</p>
-<pre tabindex="0"><code>┌────────────────────────────────────────┐
-│                                        │
-│            Counter                     │
-│                                        │
-│              42                        │
-│                                        │
-│       ┌─────┐        ┌─────┐          │
-│       │  -  │        │  +  │          │
-│       └─────┘        └─────┘          │
-│                                        │
-└────────────────────────────────────────┘
-</code></pre><p>No manual coordinates. No pixel pushing. Just describe the structure.</p>
-<p>By the end of this series, you&rsquo;ll understand every line of that code and how it all works under the hood.</p>
+</div><p><strong>Why?</strong> No allocator needed. Nodes live on stack or in static memory.</p>
 
-<h2 class="relative group">The Series
-    <div id="the-series" class="anchor"></div>
+<h3 class="relative group">4. Index-Based Events
+    <div id="4-index-based-events" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-series" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#4-index-based-events" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Events are indices into a handler array, not closures:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">E</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="p">(</span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">increment</span><span class="p">,</span><span class="w"> </span><span class="n">decrement</span><span class="w"> </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">handlers</span><span class="p">[</span><span class="mi">0</span><span class="p">]()</span><span class="w"> </span><span class="c1">// calls onIncrement
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Why?</strong> No heap. Comptime verified. Simple dispatch.</p>
+
+<h2 class="relative group">Frame Lifecycle
+    <div id="frame-lifecycle" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#frame-lifecycle" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>We&rsquo;ll build this framework step by step, from the ground up:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────┐
+│                        FRAME LIFECYCLE                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   1. BUILD                    2. RENDER                         │
+│   ┌─────────────┐            ┌─────────────┐                   │
+│   │ jsx.col()   │            │ renderNode  │                   │
+│   │ jsx.text()  │  ────▶     │     │       │                   │
+│   │ jsx.button()│   Node     │     ▼       │                   │
+│   └─────────────┘   Tree     │  [layout]   │                   │
+│                              │  [draw]     │                   │
+│                              │  [hit test] │                   │
+│                              └─────────────┘                   │
+│                                     │                          │
+│                                     ▼                          │
+│   4. UPDATE                  3. DISPATCH                        │
+│   ┌─────────────┐            ┌─────────────┐                   │
+│   │ handler()   │  ◀────     │  flush()    │                   │
+│   │ state.x += 1│  calls     │  queue[i]   │                   │
+│   └─────────────┘            └─────────────┘                   │
+│         │                                                       │
+│         └──────────────▶ NEXT FRAME ──────────────────────────▶│
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">What You&rsquo;ve Learned
+    <div id="what-youve-learned" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-youve-learned" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
 <ol>
-<li><strong>Part 1: The Building Block - Nodes</strong> - UI elements as data structures</li>
-<li><strong>Part 2: Building Nodes</strong> - How jsx.col(), jsx.text(), jsx.button() work</li>
-<li><strong>Part 3: Styling</strong> - Comptime Tailwind parser for zero-cost styling</li>
-<li><strong>Part 4: Rendering</strong> - From node tree to pixels on screen</li>
-<li><strong>Part 5: Events</strong> - Connecting buttons to actions</li>
-<li><strong>Part 6: Imperative vs Declarative</strong> - Why this approach wins</li>
-<li><strong>Part 7: Your First Counter App</strong> - Putting it all together</li>
-<li><strong>Part 8: The Complete Architecture</strong> - The big picture</li>
+<li><strong>Nodes</strong> - UI elements as data structures</li>
+<li><strong>Builders</strong> - Convenient node construction</li>
+<li><strong>Styles</strong> - Comptime Tailwind parsing</li>
+<li><strong>Rendering</strong> - Tree walking and layout</li>
+<li><strong>Events</strong> - Index-based handler dispatch</li>
+<li><strong>Declarative</strong> - Describe what, not how</li>
+<li><strong>Architecture</strong> - How it all fits together</li>
 </ol>
 
-<h2 class="relative group">Prerequisites
-    <div id="prerequisites" class="anchor"></div>
+<h2 class="relative group">Next Steps
+    <div id="next-steps" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#prerequisites" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#next-steps" aria-label="Anchor">#</a>
     </span>
     
 </h2>
+<p>The foundation is solid. Here are ideas to extend it:</p>
 <ul>
-<li>Basic Zig knowledge (structs, slices, comptime)</li>
-<li>Curiosity about UI frameworks</li>
-<li>That&rsquo;s it!</li>
+<li><strong>More widgets</strong> - slider, checkbox, dropdown, text input</li>
+<li><strong>Animations</strong> - lerp values over time</li>
+<li><strong>Keyboard navigation</strong> - focus management</li>
+<li><strong>Scrolling</strong> - overflow containers</li>
+<li><strong>Custom rendering</strong> - graphs, charts, canvas</li>
 </ul>
 
-<h2 class="relative group">Let&rsquo;s Go
-    <div id="lets-go" class="anchor"></div>
+<h2 class="relative group">Final Thoughts
+    <div id="final-thoughts" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#lets-go" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#final-thoughts" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>Ready? In Part 1, we&rsquo;ll start with the fundamental building block: the Node.</p>
+<p>We started with a simple idea: UI elements are data. From there:</p>
+<ul>
+<li>Trees of Nodes describe structure</li>
+<li>Comptime parsing eliminates runtime cost</li>
+<li>Rendering walks the tree and draws</li>
+<li>Events connect interaction to state</li>
+</ul>
+<p>The result is a framework where:</p>
+<ul>
+<li>Code reads like UI</li>
+<li>Changes are easy</li>
+<li>Performance is predictable</li>
+<li>Errors are caught early</li>
+</ul>
+<p>The beauty is in the simplicity. Each piece does one thing well, and together they make UI development in Zig practical and enjoyable.</p>
+<hr>
+<p><em>This concludes the &ldquo;Building UIs in Zig&rdquo; series. Happy building!</em></p>
 
           
           
@@ -936,8 +1160,10 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        Part :
-        This Article
+        <a href="/posts/jsx-zig-00-what-we-are-building/">
+          Part :
+          Building UIs in Zig: Part 0 - What We&#39;re Building
+        </a>
       </div>
     
   
@@ -1014,10 +1240,8 @@ The End Result # By the end of this series, you’ll have a framework that lets 
     
       <div
         class="py-1 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
-        <a href="/posts/jsx-zig-08-complete-architecture/">
-          Part :
-          Building UIs in Zig: Part 8 - The Complete Architecture
-        </a>
+        Part :
+        This Article
       </div>
     
   
@@ -1045,8 +1269,8 @@ The End Result # By the end of this series, you’ll have a framework that lets 
           type="text/javascript"
           src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
           integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
-          data-oid="views_posts/jsx-zig-00-what-we-are-building.md"
-          data-oid-likes="likes_posts/jsx-zig-00-what-we-are-building.md"></script>
+          data-oid="views_posts/jsx-zig-08-complete-architecture.md"
+          data-oid-likes="likes_posts/jsx-zig-08-complete-architecture.md"></script>
       
     </section>
 
@@ -1062,21 +1286,21 @@ The End Result # By the end of this series, you’ll have a framework that lets 
       <div class="flex justify-between pt-3">
         <span class="flex flex-col">
           
+        </span>
+        <span class="flex flex-col items-end">
+          
             <a
-              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
-              href="/posts/jsx-zig-01-the-building-block-nodes/">
+              class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/posts/jsx-zig-07-first-counter-app/">
               <span class="leading-6">
-                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building UIs in Zig: Part 1 - The Building Block: Nodes
+                Building UIs in Zig: Part 7 - Your First Counter App&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
               </span>
             </a>
             
-              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 <time datetime="2025-12-11T00:00:00&#43;00:00">December 11, 2025</time>
               </span>
             
-          
-        </span>
-        <span class="flex flex-col items-end">
           
         </span>
       </div>

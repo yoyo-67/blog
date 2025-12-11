@@ -1,6 +1,6 @@
 +++
-title = "Building UIs in Zig: Part 4 - Comptime Tailwind Parser"
-date = 2024-12-08
+title = "Building UIs in Zig: Part 3 - Styling: The Comptime Tailwind Parser"
+date = 2025-12-11
 draft = false
 series = ["JSX in Zig"]
 tags = ["zig", "ui", "tutorial", "comptime"]
@@ -34,8 +34,8 @@ pub const Style = struct {
     // Spacing
     gap: i32 = 0,
     p: i32 = 0,      // padding (all sides)
-    px: i32 = 0,     // padding horizontal
-    py: i32 = 0,     // padding vertical
+    px: ?i32 = null, // padding horizontal
+    py: ?i32 = null, // padding vertical
 
     // Flex
     flex: i32 = 0,
@@ -51,6 +51,16 @@ pub const Style = struct {
     font_weight: FontWeight = .normal,
 };
 ```
+
+Why `?i32` for directional spacing? So we can tell "not set" from "explicitly zero". The getters cascade:
+
+```zig
+pub fn getPadLeft(self: Style) i32 {
+    return self.px orelse self.p;
+}
+```
+
+`px-4` overrides `p-2`.
 
 ## The Parser
 
@@ -86,6 +96,14 @@ fn parseClass(style: *Style, class: []const u8) void {
     // Padding: p-1, px-2, py-4, etc.
     if (startsWith(class, "p-")) {
         style.p = parseSpacing(class[2..]);
+        return;
+    }
+    if (startsWith(class, "px-")) {
+        style.px = parseSpacing(class[3..]);
+        return;
+    }
+    if (startsWith(class, "py-")) {
+        style.py = parseSpacing(class[3..]);
         return;
     }
 
@@ -134,6 +152,8 @@ fn parseSpacing(value: []const u8) i32 {
 // p-6    -> 24px
 ```
 
+This matches Tailwind CSS's 4px base unit.
+
 ## Color Parsing
 
 Colors follow `{color}-{shade}` pattern:
@@ -141,8 +161,11 @@ Colors follow `{color}-{shade}` pattern:
 ```zig
 fn parseColor(value: []const u8) ?Color {
     if (eql(value, "red-500")) return Color.red500;
+    if (eql(value, "red-400")) return Color.red400;
     if (eql(value, "green-500")) return Color.green500;
+    if (eql(value, "green-400")) return Color.green400;
     if (eql(value, "slate-800")) return Color.slate800;
+    if (eql(value, "slate-900")) return Color.slate900;
     // ... more colors
 
     @compileError("Unknown color: " ++ value);
@@ -162,9 +185,10 @@ const style = Style{ .gap = 16, .p = 24, .bg = Color.slate800 };
 ```
 
 Benefits:
-- **Zero runtime cost** - no string parsing when your app runs
-- **Compile-time errors** - typo in class name? Won't compile
-- **Type safety** - invalid values caught early
+
+1. **Zero runtime cost** - No string parsing when your app runs
+2. **Compile-time errors** - Typo in class name? Won't compile
+3. **Type safety** - Invalid values caught early
 
 ## Compile-Time Error Messages
 
@@ -181,6 +205,29 @@ error: Unknown Tailwind class: gaap-4
 
 At compile time. Not a runtime crash.
 
+## Text Sizes
+
+Text classes use a scale too:
+
+```zig
+if (eql(class, "text-sm")) {
+    style.text_size = .sm;  // 14px
+    return;
+}
+if (eql(class, "text-base")) {
+    style.text_size = .base;  // 16px
+    return;
+}
+if (eql(class, "text-xl")) {
+    style.text_size = .xl;  // 20px
+    return;
+}
+if (eql(class, "text-4xl")) {
+    style.text_size = .x4l;  // 36px
+    return;
+}
+```
+
 ## Adding New Classes
 
 To add a new class, just add a pattern:
@@ -193,6 +240,31 @@ if (startsWith(class, "opacity-")) {
 }
 ```
 
+The pattern is simple:
+1. Check prefix
+2. Parse value
+3. Set style field
+4. Return
+
+## Helper Functions
+
+The parser uses a few helpers:
+
+```zig
+fn startsWith(str: []const u8, prefix: []const u8) bool {
+    return str.len >= prefix.len and
+           std.mem.eql(u8, str[0..prefix.len], prefix);
+}
+
+fn eql(a: []const u8, b: []const u8) bool {
+    return std.mem.eql(u8, a, b);
+}
+
+fn parseInt(str: []const u8) i32 {
+    return std.fmt.parseInt(i32, str, 10) catch 0;
+}
+```
+
 ## What's Next
 
-In Part 5, we'll put it all together and look at the complete architecture.
+We have nodes, builders, and styles. But how does a tree of nodes become pixels on screen? In Part 4, we'll build the renderer that walks the tree, calculates layout, and draws.

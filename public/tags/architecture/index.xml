@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Architecture on JSX in Zig</title>
-    <link>http://localhost:51816/tags/architecture/</link>
+    <link>http://localhost:1313/tags/architecture/</link>
     <description>Recent content in Architecture on JSX in Zig</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© 2025 Author</copyright>
-    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:51816/tags/architecture/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 08 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/architecture/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Building UIs in Zig: Part 5 - The Complete Architecture</title>
-      <link>http://localhost:51816/posts/jsx-zig-05-complete-architecture/</link>
+      <link>http://localhost:1313/posts/jsx-zig-05-complete-architecture/</link>
       <pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:51816/posts/jsx-zig-05-complete-architecture/</guid>
+      <guid>http://localhost:1313/posts/jsx-zig-05-complete-architecture/</guid>
       <description>&lt;p&gt;We&amp;rsquo;ve covered the pieces. Now let&amp;rsquo;s see how they fit together into a complete UI framework.&lt;/p&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;The Big Picture

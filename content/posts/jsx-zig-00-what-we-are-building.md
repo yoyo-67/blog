@@ -1,6 +1,6 @@
 +++
 title = "Building UIs in Zig: Part 0 - What We're Building"
-date = 2024-12-08
+date = 2025-12-11
 draft = false
 series = ["JSX in Zig"]
 tags = ["zig", "ui", "tutorial", "introduction"]
@@ -42,131 +42,20 @@ And it becomes this:
 
 No manual coordinates. No pixel pushing. Just describe the structure.
 
-## What We're Building
-
-A complete UI framework with:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     JSX Framework                            │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐       │
-│  │   Builder   │   │   Tailwind  │   │   Events    │       │
-│  │             │   │   Parser    │   │             │       │
-│  │  jsx.col()  │   │             │   │ E.increment │       │
-│  │  jsx.row()  │   │  "gap-4"    │   │ E.decrement │       │
-│  │  jsx.text() │   │  "p-6"      │   │ handlers[]  │       │
-│  │  jsx.btn()  │   │  "bg-red"   │   │             │       │
-│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘       │
-│         │                 │                 │               │
-│         └────────┬────────┴────────┬────────┘               │
-│                  │                 │                        │
-│                  ▼                 ▼                        │
-│         ┌─────────────┐   ┌─────────────┐                  │
-│         │    Node     │   │   Renderer  │                  │
-│         │    Tree     │──▶│             │                  │
-│         │             │   │  • Layout   │                  │
-│         │ kind: .col  │   │  • Draw     │                  │
-│         │ style: {}   │   │  • Events   │                  │
-│         │ children:[] │   │             │                  │
-│         └─────────────┘   └─────────────┘                  │
-│                                  │                          │
-│                                  ▼                          │
-│                          ┌─────────────┐                   │
-│                          │   Raylib    │                   │
-│                          │  (pixels)   │                   │
-│                          └─────────────┘                   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## The Key Ideas
-
-### 1. Nodes as Data
-
-UI elements are just structs:
-
-```
-┌──────────────────────────┐
-│          Node            │
-├──────────────────────────┤
-│  kind: .col              │
-│  style: { gap: 16 }      │
-│  children: ─────────────────┐
-│  props: { label: null }  │  │
-└──────────────────────────┘  │
-                              ▼
-              ┌───────────────────────────┐
-              │                           │
-        ┌─────┴─────┐            ┌────────┴────────┐
-        │   Node    │            │      Node       │
-        │ kind:.text│            │  kind:.button   │
-        │ "Counter" │            │  label: "+"     │
-        └───────────┘            └─────────────────┘
-```
-
-### 2. Comptime Parsing
-
-Tailwind classes are parsed at compile time:
-
-```
-Compile Time                              Binary
-─────────────                             ──────
-"gap-4 p-6 bg-slate-800"     ──▶     Style {
-                                        .gap = 16,
-                                        .p = 24,
-                                        .bg = slate800
-                                     }
-```
-
-Zero runtime cost. Typos caught at compile time.
-
-### 3. Index-Based Events
-
-No closures. No allocations. Just array indices:
-
-```
-┌─────────────────────────────────────────────┐
-│                                             │
-│  E = enum { increment, decrement, reset }   │
-│              0          1          2        │
-│                                             │
-│  handlers = [ onIncr,  onDecr,   onReset ]  │
-│               [0]       [1]       [2]       │
-│                                             │
-│  button.onPress(E.increment)                │
-│         └─────▶ stores 0                    │
-│                                             │
-│  on click: handlers[0]() ──▶ onIncr()       │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-### 4. Immediate Mode
-
-Every frame:
-
-```
-┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐
-│ State  │───▶│ Build  │───▶│ Render │───▶│ Events │──┐
-│count=5 │    │  Tree  │    │ Pixels │    │ Queue  │  │
-└────────┘    └────────┘    └────────┘    └────────┘  │
-     ▲                                                 │
-     └─────────────────────────────────────────────────┘
-                         next frame
-```
-
-No virtual DOM. No diffing. Just rebuild.
+By the end of this series, you'll understand every line of that code and how it all works under the hood.
 
 ## The Series
 
-1. **Part 1: Imperative vs Declarative** - Why we're doing this
-2. **Part 2: Your First Counter App** - Using the framework
-3. **Part 3: How the Renderer Works** - Tree walking and layout
-4. **Part 4: Comptime Tailwind Parser** - Zero-cost styling
-5. **Part 5: Complete Architecture** - Putting it together
-6. **Part 6: Behind the Scenes** - Deep dive with real code
+We'll build this framework step by step, from the ground up:
+
+1. **Part 1: The Building Block - Nodes** - UI elements as data structures
+2. **Part 2: Building Nodes** - How jsx.col(), jsx.text(), jsx.button() work
+3. **Part 3: Styling** - Comptime Tailwind parser for zero-cost styling
+4. **Part 4: Rendering** - From node tree to pixels on screen
+5. **Part 5: Events** - Connecting buttons to actions
+6. **Part 6: Imperative vs Declarative** - Why this approach wins
+7. **Part 7: Your First Counter App** - Putting it all together
+8. **Part 8: The Complete Architecture** - The big picture
 
 ## Prerequisites
 
@@ -176,4 +65,4 @@ No virtual DOM. No diffing. Just rebuild.
 
 ## Let's Go
 
-Ready? In Part 1, we'll understand why declarative beats imperative.
+Ready? In Part 1, we'll start with the fundamental building block: the Node.
