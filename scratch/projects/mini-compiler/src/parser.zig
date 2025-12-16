@@ -417,152 +417,134 @@ pub const Parser = struct {
         });
     }
 
-    // ==================== Expressions ====================
+    // ==================== Expressions (Precedence Climbing) ====================
+    //
+    // Precedence climbing algorithm:
+    //   1. Parse the first operand (atom)
+    //   2. While the next operator has precedence >= min_prec:
+    //      - Take the operator
+    //      - Recurse with min_prec = op_prec + 1 (for left-associativity)
+    //      - Combine: left OP right
+    //   3. Return the result
+    //
+    // Precedence Table (higher = binds tighter):
+    //   or:          10
+    //   and:         20
+    //   == !=:       30
+    //   < > <= >=:   40
+    //   + -:         60
+    //   * / %:       70
 
+    /// Get the precedence of a binary operator token
+    fn getPrec(token_type: TokenType) i32 {
+        return switch (token_type) {
+            .keyword_or => 10,
+            .keyword_and => 20,
+            .equal_equal, .bang_equal => 30,
+            .less, .less_equal, .greater, .greater_equal => 40,
+            .plus, .minus => 60,
+            .star, .slash, .percent => 70,
+            else => -1, // not an operator
+        };
+    }
+
+    /// Get the binary operator for a token
+    fn getBinaryOp(token_type: TokenType) ?BinaryOp {
+        return switch (token_type) {
+            .keyword_or => .@"or",
+            .keyword_and => .@"and",
+            .equal_equal => .eq,
+            .bang_equal => .neq,
+            .less => .lt,
+            .less_equal => .lte,
+            .greater => .gt,
+            .greater_equal => .gte,
+            .plus => .add,
+            .minus => .sub,
+            .star => .mul,
+            .slash => .div,
+            .percent => .mod,
+            else => null,
+        };
+    }
+
+    /// Parse expression - entry point
     fn parseExpression(self: *Parser) ParseError!*Node {
-        return self.parseOr();
+        return self.parseExprPrecedence(0);
     }
 
-    fn parseOr(self: *Parser) ParseError!*Node {
-        var left = try self.parseAnd();
+    /// Precedence climbing parser
+    ///
+    /// The key insight:
+    ///   - If op_prec >= min_prec: I handle this operator
+    ///   - If op_prec < min_prec: Let my CALLER handle it
+    ///
+    /// Recursing with (op_prec + 1) creates a "precedence barrier"
+    /// that only higher-precedence operators can cross, giving us
+    /// left-associativity for operators at the same level.
+    fn parseExprPrecedence(self: *Parser, min_prec: i32) ParseError!*Node {
+        // Step 1: Parse the left operand (prefix expression or atom)
+        var left = try self.parsePrefixExpr();
 
-        while (self.match(.keyword_or)) {
-            const right = try self.parseAnd();
+        // Step 2: Keep eating operators while they're "strong enough"
+        while (true) {
+            const op_prec = getPrec(self.current().type);
+
+            // Too weak? Let caller handle it
+            if (op_prec < min_prec) break;
+
+            // Get the operator
+            const op = getBinaryOp(self.current().type) orelse break;
+            _ = self.advance();
+
+            // Get right side, but only let STRONGER ops steal it
+            // The +1 is THE KEY to left-associativity!
+            const right = try self.parseExprPrecedence(op_prec + 1);
+
+            // Combine into a single node
             left = try self.createNode(.{
-                .binary = .{ .op = .@"or", .left = left, .right = right },
+                .binary = .{ .op = op, .left = left, .right = right },
             });
         }
 
         return left;
     }
 
-    fn parseAnd(self: *Parser) ParseError!*Node {
-        var left = try self.parseEquality();
-
-        while (self.match(.keyword_and)) {
-            const right = try self.parseEquality();
-            left = try self.createNode(.{
-                .binary = .{ .op = .@"and", .left = left, .right = right },
-            });
-        }
-
-        return left;
-    }
-
-    fn parseEquality(self: *Parser) ParseError!*Node {
-        var left = try self.parseComparison();
-
-        while (true) {
-            const op: ?BinaryOp = switch (self.current().type) {
-                .equal_equal => .eq,
-                .bang_equal => .neq,
-                else => null,
-            };
-
-            if (op) |o| {
-                _ = self.advance();
-                const right = try self.parseComparison();
-                left = try self.createNode(.{
-                    .binary = .{ .op = o, .left = left, .right = right },
-                });
-            } else break;
-        }
-
-        return left;
-    }
-
-    fn parseComparison(self: *Parser) ParseError!*Node {
-        var left = try self.parseAdditive();
-
-        while (true) {
-            const op: ?BinaryOp = switch (self.current().type) {
-                .less => .lt,
-                .less_equal => .lte,
-                .greater => .gt,
-                .greater_equal => .gte,
-                else => null,
-            };
-
-            if (op) |o| {
-                _ = self.advance();
-                const right = try self.parseAdditive();
-                left = try self.createNode(.{
-                    .binary = .{ .op = o, .left = left, .right = right },
-                });
-            } else break;
-        }
-
-        return left;
-    }
-
-    fn parseAdditive(self: *Parser) ParseError!*Node {
-        var left = try self.parseMultiplicative();
-
-        while (true) {
-            const op: ?BinaryOp = switch (self.current().type) {
-                .plus => .add,
-                .minus => .sub,
-                else => null,
-            };
-
-            if (op) |o| {
-                _ = self.advance();
-                const right = try self.parseMultiplicative();
-                left = try self.createNode(.{
-                    .binary = .{ .op = o, .left = left, .right = right },
-                });
-            } else break;
-        }
-
-        return left;
-    }
-
-    fn parseMultiplicative(self: *Parser) ParseError!*Node {
-        var left = try self.parseUnary();
-
-        while (true) {
-            const op: ?BinaryOp = switch (self.current().type) {
-                .star => .mul,
-                .slash => .div,
-                .percent => .mod,
-                else => null,
-            };
-
-            if (op) |o| {
-                _ = self.advance();
-                const right = try self.parseUnary();
-                left = try self.createNode(.{
-                    .binary = .{ .op = o, .left = left, .right = right },
-                });
-            } else break;
-        }
-
-        return left;
-    }
-
-    fn parseUnary(self: *Parser) ParseError!*Node {
+    /// Parse prefix expressions (unary operators) or atoms
+    fn parsePrefixExpr(self: *Parser) ParseError!*Node {
+        // Unary minus: -x
         if (self.match(.minus)) {
-            const operand = try self.parseUnary();
+            const operand = try self.parsePrefixExpr();
             return self.createNode(.{
                 .unary = .{ .op = .neg, .operand = operand },
             });
         }
 
+        // Unary not: !x
         if (self.match(.bang)) {
-            const operand = try self.parseUnary();
+            const operand = try self.parsePrefixExpr();
             return self.createNode(.{
                 .unary = .{ .op = .not, .operand = operand },
             });
         }
 
-        return self.parseCall();
+        // Grouped expression: (x)
+        if (self.match(.lparen)) {
+            const expr = try self.parseExpression();
+            _ = try self.expect(.rparen);
+            return self.createNode(.{ .grouped = .{ .expr = expr } });
+        }
+
+        // Postfix expressions (calls) and atoms
+        return self.parsePostfixExpr();
     }
 
-    fn parseCall(self: *Parser) ParseError!*Node {
+    /// Parse postfix expressions (function calls)
+    fn parsePostfixExpr(self: *Parser) ParseError!*Node {
         var expr = try self.parsePrimary();
 
+        // Handle function calls: foo(x, y)
         while (self.match(.lparen)) {
-            // Parse arguments
             var args: std.ArrayListUnmanaged(*Node) = .empty;
             errdefer args.deinit(self.allocator);
 
@@ -586,6 +568,7 @@ pub const Parser = struct {
         return expr;
     }
 
+    /// Parse primary expressions (atoms: literals, identifiers)
     fn parsePrimary(self: *Parser) ParseError!*Node {
         const tok = self.current();
 

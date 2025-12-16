@@ -81,7 +81,8 @@ pub const CompileResult = union(Backend) {
 
 /// Compile source code to C code (default backend)
 pub fn compile(source: []const u8, allocator: Allocator) !GeneratedCCode {
-    return compileWithBackend(source, allocator, .c).c;
+    const result = try compileWithBackend(source, allocator, .c);
+    return result.c;
 }
 
 /// Compile source code with specified backend
