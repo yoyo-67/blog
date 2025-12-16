@@ -93,22 +93,24 @@ Our compiler supports:
 
 ```
 mini-compiler/
-├── build.zig           # Build configuration
+├── build.zig             # Build configuration
 └── src/
-    ├── main.zig        # Entry point - ties everything together
-    ├── token.zig       # Token type definitions
-    ├── lexer.zig       # Stage 1: Tokenizer
-    ├── ast.zig         # AST node definitions
-    ├── parser.zig      # Stage 2: Parser
-    ├── zir.zig         # Stage 3: ZIR (Zig IR) generation
-    ├── sema.zig        # Stage 4: Semantic Analysis
-    ├── air.zig         # AIR (Analyzed IR) definitions
-    └── codegen.zig     # Stage 5: C Code Generation
+    ├── main.zig          # Entry point - ties everything together
+    ├── token.zig         # Token type definitions
+    ├── lexer.zig         # Stage 1: Tokenizer
+    ├── ast.zig           # AST node definitions
+    ├── parser.zig        # Stage 2: Parser (precedence climbing)
+    ├── zir.zig           # Stage 3: ZIR (Zig IR) generation
+    ├── sema.zig          # Stage 4: Semantic Analysis
+    ├── air.zig           # AIR (Analyzed IR) definitions
+    ├── codegen.zig       # Stage 5: C Code Generation
+    └── llvm_codegen.zig  # Stage 5 (alt): LLVM IR Generation
 ```
 
 Build and run:
 ```bash
-zig build run
+zig build run                # Default: C backend
+zig build run -- --backend=llvm  # LLVM backend
 ```
 
 ---
@@ -122,48 +124,43 @@ The lexer breaks source text into tokens - the smallest meaningful units of Zig 
 ```zig
 pub const TokenType = enum {
     // Keywords
-    kw_fn,
-    kw_pub,
-    kw_const,
-    kw_var,
-    kw_return,
-    kw_if,
-    kw_else,
-    kw_while,
-    kw_true,
-    kw_false,
+    keyword_fn,
+    keyword_pub,
+    keyword_const,
+    keyword_var,
+    keyword_return,
+    keyword_true,
+    keyword_false,
 
-    // Types
-    type_i8, type_i16, type_i32, type_i64,
-    type_u8, type_u16, type_u32, type_u64,
-    type_f32, type_f64,
+    // Types (only 4 primitive types)
+    type_i32,
+    type_i64,
     type_bool,
     type_void,
 
-    // Literals
+    // Literals (integers only)
     int_literal,
-    float_literal,
 
-    // Operators
-    plus,      // +
-    minus,     // -
-    star,      // *
-    slash,     // /
-    eq,        // =
-    eq_eq,     // ==
-    bang_eq,   // !=
-    less,      // <
-    greater,   // >
+    // Identifiers
+    identifier,
+
+    // Operators (arithmetic + assignment)
+    plus,       // +
+    minus,      // -
+    star,       // *
+    slash,      // /
+    equal,      // =
 
     // Delimiters
-    lparen, rparen,     // ( )
-    lbrace, rbrace,     // { }
-    colon,              // :
-    semicolon,          // ;
-    comma,              // ,
+    lparen,     // (
+    rparen,     // )
+    lbrace,     // {
+    rbrace,     // }
+    comma,      // ,
+    colon,      // :
+    semicolon,  // ;
 
-    // Other
-    identifier,
+    // Special
     eof,
     invalid,
 };
@@ -174,26 +171,25 @@ pub const TokenType = enum {
 Zig's `comptime` makes keyword lookup elegant:
 
 ```zig
-pub fn getKeyword(text: []const u8) ?TokenType {
-    const keywords = std.StaticStringMap(TokenType).initComptime(.{
-        .{ "fn", .kw_fn },
-        .{ "pub", .kw_pub },
-        .{ "const", .kw_const },
-        .{ "var", .kw_var },
-        .{ "return", .kw_return },
-        .{ "if", .kw_if },
-        .{ "else", .kw_else },
-        .{ "while", .kw_while },
-        .{ "true", .kw_true },
-        .{ "false", .kw_false },
-        // Type keywords
-        .{ "i32", .type_i32 },
-        .{ "i64", .type_i64 },
-        .{ "bool", .type_bool },
-        .{ "void", .type_void },
-        // ... more types
-    });
-    return keywords.get(text);
+/// Keyword lookup table - built at compile time
+pub const keywords = std.StaticStringMap(TokenType).initComptime(.{
+    .{ "fn", .keyword_fn },
+    .{ "pub", .keyword_pub },
+    .{ "const", .keyword_const },
+    .{ "var", .keyword_var },
+    .{ "return", .keyword_return },
+    .{ "true", .keyword_true },
+    .{ "false", .keyword_false },
+    // Type keywords
+    .{ "i32", .type_i32 },
+    .{ "i64", .type_i64 },
+    .{ "bool", .type_bool },
+    .{ "void", .type_void },
+});
+
+/// Look up keyword or return identifier
+pub fn lookupIdentifier(lexeme: []const u8) TokenType {
+    return keywords.get(lexeme) orelse .identifier;
 }
 ```
 
@@ -205,6 +201,7 @@ pub const Lexer = struct {
     pos: usize,
     line: usize,
     column: usize,
+    start_column: usize,
 
     pub fn init(source: []const u8) Lexer {
         return .{
@@ -212,6 +209,7 @@ pub const Lexer = struct {
             .pos = 0,
             .line = 1,
             .column = 1,
+            .start_column = 1,
         };
     }
 
@@ -233,47 +231,51 @@ pub const Lexer = struct {
         return c;
     }
 
+    fn makeToken(self: *Lexer, token_type: TokenType, len: usize) Token {
+        const start = self.pos;
+        for (0..len) |_| {
+            _ = self.advance();
+        }
+        return .{
+            .type = token_type,
+            .lexeme = self.source[start..self.pos],
+            .line = self.line,
+            .column = self.start_column,
+        };
+    }
+
     pub fn nextToken(self: *Lexer) Token {
         self.skipWhitespaceAndComments();
+        self.start_column = self.column;
 
         if (self.pos >= self.source.len) {
-            return .{ .type = .eof, .lexeme = "", .line = self.line };
+            return .{ .type = .eof, .lexeme = "", .line = self.line, .column = self.column };
         }
 
         const c = self.peek();
 
-        // Identifiers and keywords
-        if (isAlpha(c)) return self.scanIdentifier();
-
         // Numbers
         if (isDigit(c)) return self.scanNumber();
 
-        // Two-character operators: ==, !=, etc.
-        if (c == '=' and self.peekNext() == '=') {
-            _ = self.advance();
-            _ = self.advance();
-            return .{ .type = .eq_eq, .lexeme = "==", .line = self.line };
+        // Identifiers and keywords
+        if (isAlpha(c)) return self.scanIdentifier();
+
+        // Single-character tokens (no multi-char operators in simplified grammar)
+        switch (c) {
+            '+' => return self.makeToken(.plus, 1),
+            '-' => return self.makeToken(.minus, 1),
+            '*' => return self.makeToken(.star, 1),
+            '/' => return self.makeToken(.slash, 1),
+            '=' => return self.makeToken(.equal, 1),
+            '(' => return self.makeToken(.lparen, 1),
+            ')' => return self.makeToken(.rparen, 1),
+            '{' => return self.makeToken(.lbrace, 1),
+            '}' => return self.makeToken(.rbrace, 1),
+            ',' => return self.makeToken(.comma, 1),
+            ':' => return self.makeToken(.colon, 1),
+            ';' => return self.makeToken(.semicolon, 1),
+            else => return self.makeToken(.invalid, 1),
         }
-
-        // Single character tokens
-        _ = self.advance();
-        const token_type: TokenType = switch (c) {
-            '+' => .plus,
-            '-' => .minus,
-            '*' => .star,
-            '/' => .slash,
-            '=' => .eq,
-            '(' => .lparen,
-            ')' => .rparen,
-            '{' => .lbrace,
-            '}' => .rbrace,
-            ':' => .colon,
-            ';' => .semicolon,
-            ',' => .comma,
-            else => .invalid,
-        };
-
-        return .{ .type = token_type, .lexeme = self.source[self.pos-1..self.pos], .line = self.line };
     }
 
     fn scanIdentifier(self: *Lexer) Token {
@@ -281,14 +283,13 @@ pub const Lexer = struct {
         while (isAlphaNumeric(self.peek())) {
             _ = self.advance();
         }
-        const text = self.source[start..self.pos];
-
-        // Check if it's a keyword
-        if (token.getKeyword(text)) |kw| {
-            return .{ .type = kw, .lexeme = text, .line = self.line };
-        }
-
-        return .{ .type = .identifier, .lexeme = text, .line = self.line };
+        const lexeme = self.source[start..self.pos];
+        return .{
+            .type = token.lookupIdentifier(lexeme),
+            .lexeme = lexeme,
+            .line = self.line,
+            .column = self.start_column,
+        };
     }
 };
 ```
@@ -302,8 +303,8 @@ Tokens:
 ┌────────────────┬─────────┬──────┐
 │ Token Type     │ Lexeme  │ Line │
 ├────────────────┼─────────┼──────┤
-│ kw_pub         │ "pub"   │ 1    │
-│ kw_fn          │ "fn"    │ 1    │
+│ keyword_pub    │ "pub"   │ 1    │
+│ keyword_fn     │ "fn"    │ 1    │
 │ identifier     │ "add"   │ 1    │
 │ lparen         │ "("     │ 1    │
 │ identifier     │ "a"     │ 1    │
@@ -337,30 +338,27 @@ pub const Node = union(enum) {
     // Statements
     block: Block,
     return_stmt: ReturnStmt,
-    if_stmt: IfStmt,
-    while_stmt: WhileStmt,
     expr_stmt: ExprStmt,
 
     // Expressions
     int_literal: i64,
-    float_literal: f64,
     bool_literal: bool,
     identifier: []const u8,
     binary: Binary,
     unary: Unary,
     call: Call,
-    grouped: *Node,
+    grouped: Grouped,
 
     // Top-level
     root: Root,
 };
 
 pub const FnDecl = struct {
+    is_pub: bool,
     name: []const u8,
     params: []const Param,
-    return_type: ?TypeExpr,
-    body: ?*Node,
-    is_pub: bool,
+    return_type: TypeExpr,
+    body: *Node,  // block
 };
 
 pub const Binary = struct {
@@ -369,13 +367,158 @@ pub const Binary = struct {
     right: *Node,
 };
 
+/// Binary operators - arithmetic only (no comparisons in simplified grammar)
 pub const BinaryOp = enum {
-    add, sub, mul, div,
-    eq, neq, lt, lte, gt, gte,
+    add,  // +
+    sub,  // -
+    mul,  // *
+    div,  // /
+};
+
+/// Unary operators
+pub const UnaryOp = enum {
+    neg,  // - (unary minus)
 };
 ```
 
-### Recursive Descent Parser
+### Precedence Climbing Parser
+
+The parser uses the **precedence climbing** algorithm - a clean way to handle operator precedence without separate functions for each precedence level.
+
+#### Precedence Table
+
+| Operators | Precedence | Associativity |
+|-----------|------------|---------------|
+| `+` `-`   | 60         | Left          |
+| `*` `/`   | 70         | Left          |
+
+Higher precedence = binds tighter. So `3 + 5 * 2` parses as `3 + (5 * 2)`.
+
+#### The Core Algorithm
+
+```zig
+/// Get precedence of operator (higher = tighter binding)
+fn getPrec(token_type: TokenType) i32 {
+    return switch (token_type) {
+        .plus, .minus => 60,
+        .star, .slash => 70,
+        else => -1,  // not an operator
+    };
+}
+
+/// Convert token to binary operator
+fn getBinaryOp(token_type: TokenType) ?BinaryOp {
+    return switch (token_type) {
+        .plus => .add,
+        .minus => .sub,
+        .star => .mul,
+        .slash => .div,
+        else => null,
+    };
+}
+
+/// Precedence climbing parser - entry point
+fn parseExpression(self: *Parser) !*Node {
+    return self.parseExprPrecedence(0);
+}
+
+/// The heart of precedence climbing
+fn parseExprPrecedence(self: *Parser, min_prec: i32) !*Node {
+    // Step 1: Parse left operand (atom or prefix expression)
+    var left = try self.parsePrefixExpr();
+
+    // Step 2: Keep consuming operators while they're "strong enough"
+    while (true) {
+        const op_prec = getPrec(self.current().type);
+
+        // Operator too weak? Let the caller handle it
+        if (op_prec < min_prec) break;
+
+        const op = getBinaryOp(self.current().type) orelse break;
+        _ = self.advance();
+
+        // Parse right side with higher precedence (for left-associativity)
+        const right = try self.parseExprPrecedence(op_prec + 1);
+
+        // Combine into binary node
+        left = try self.createNode(.{
+            .binary = .{ .op = op, .left = left, .right = right },
+        });
+    }
+
+    return left;
+}
+```
+
+#### Walkthrough: Parsing `3 + 5 * 2`
+
+Let's trace through exactly how the algorithm respects precedence:
+
+```
+parseExprPrecedence(min_prec=0):
+│
+├─ parsePrefixExpr() → Int(3)
+│
+├─ Loop iteration 1:
+│   ├─ current token: +
+│   ├─ getPrec(+) = 60 >= min_prec(0) ✓ continue
+│   ├─ advance past +
+│   ├─ parseExprPrecedence(min_prec=61):  ← RECURSIVE CALL
+│   │   │
+│   │   ├─ parsePrefixExpr() → Int(5)
+│   │   │
+│   │   ├─ Loop iteration 1:
+│   │   │   ├─ current token: *
+│   │   │   ├─ getPrec(*) = 70 >= min_prec(61) ✓ continue
+│   │   │   ├─ advance past *
+│   │   │   ├─ parseExprPrecedence(min_prec=71):
+│   │   │   │   ├─ parsePrefixExpr() → Int(2)
+│   │   │   │   ├─ Loop: current=EOF, prec=-1 < 71 → break
+│   │   │   │   └─ return Int(2)
+│   │   │   └─ left = Binary(*, Int(5), Int(2))
+│   │   │
+│   │   ├─ Loop iteration 2:
+│   │   │   ├─ current token: EOF
+│   │   │   ├─ getPrec(EOF) = -1 < min_prec(61) → break
+│   │   │
+│   │   └─ return Binary(*, Int(5), Int(2))
+│   │
+│   └─ left = Binary(+, Int(3), Binary(*, Int(5), Int(2)))
+│
+├─ Loop iteration 2:
+│   ├─ current token: EOF
+│   ├─ getPrec(EOF) = -1 < min_prec(0) → break
+│
+└─ return Binary(+, Int(3), Binary(*, Int(5), Int(2)))
+
+Result: Add(3, Mul(5, 2)) ✓
+```
+
+The key insight: when we see `+` (precedence 60), we recurse with `min_prec=61`.
+The `*` (precedence 70) is >= 61, so it gets consumed in the recursive call.
+This naturally groups `5 * 2` together before adding to `3`.
+
+#### Why `op_prec + 1`?
+
+The `+ 1` creates **left-associativity**:
+
+```
+Input: 3 - 2 - 1
+
+With op_prec + 1 (left-associative):
+  After seeing first `-`, recurse with min_prec=61
+  Second `-` has prec=60 < 61, so it breaks out
+  Result: (3 - 2) - 1 ✓
+
+With just op_prec (right-associative):
+  After seeing first `-`, recurse with min_prec=60
+  Second `-` has prec=60 >= 60, so it's consumed recursively
+  Result: 3 - (2 - 1) ✗
+```
+
+For right-associative operators (like assignment `=`), you'd use `op_prec` without `+ 1`.
+
+#### Full Parser Structure
 
 ```zig
 pub const Parser = struct {
@@ -384,104 +527,35 @@ pub const Parser = struct {
     allocator: Allocator,
 
     pub fn parse(self: *Parser) !*Node {
-        var items: std.ArrayListUnmanaged(*Node) = .empty;
+        var decls: std.ArrayListUnmanaged(*Node) = .empty;
 
-        while (!self.isAtEnd()) {
-            const item = try self.parseTopLevel();
-            try items.append(self.allocator, item);
+        while (!self.check(.eof)) {
+            const decl = try self.parseDeclaration();
+            decls.append(self.allocator, decl) catch return error.OutOfMemory;
         }
 
-        return self.createNode(.{ .root = .{
-            .items = try items.toOwnedSlice(self.allocator),
-        } });
+        return self.createNode(.{
+            .root = .{ .decls = decls.toOwnedSlice(self.allocator) catch return error.OutOfMemory },
+        });
     }
 
-    fn parseTopLevel(self: *Parser) !*Node {
-        const is_pub = self.match(.kw_pub);
+    fn parseDeclaration(self: *Parser) !*Node {
+        const is_pub = self.match(.keyword_pub);
 
-        if (self.check(.kw_fn)) {
-            return self.parseFnDecl(is_pub);
-        }
-        if (self.check(.kw_const)) {
-            return self.parseConstDecl();
-        }
-        if (self.check(.kw_var)) {
-            return self.parseVarDecl();
-        }
+        if (self.check(.keyword_fn)) return self.parseFnDecl(is_pub);
+        if (self.check(.keyword_const)) return self.parseConstDecl();
+        if (self.check(.keyword_var)) return self.parseVarDecl();
 
-        return ParseError.UnexpectedToken;
+        return error.UnexpectedToken;
     }
 
-    fn parseFnDecl(self: *Parser, is_pub: bool) !*Node {
-        _ = try self.expect(.kw_fn);
-        const name = try self.expect(.identifier);
-        _ = try self.expect(.lparen);
+    // ... parseFnDecl, parseConstDecl, parseVarDecl, parseBlock, etc.
 
-        // Parse parameters
-        var params: std.ArrayListUnmanaged(Param) = .empty;
-        while (!self.check(.rparen)) {
-            const param_name = try self.expect(.identifier);
-            _ = try self.expect(.colon);
-            const param_type = try self.parseType();
-            try params.append(self.allocator, .{
-                .name = param_name.lexeme,
-                .type_expr = param_type,
-            });
-            if (!self.match(.comma)) break;
-        }
-        _ = try self.expect(.rparen);
-
-        // Return type
-        const return_type = try self.parseType();
-
-        // Body
-        const body = try self.parseBlock();
-
-        return self.createNode(.{ .fn_decl = .{
-            .name = name.lexeme,
-            .params = try params.toOwnedSlice(self.allocator),
-            .return_type = return_type,
-            .body = body,
-            .is_pub = is_pub,
-        } });
+    fn parseExpression(self: *Parser) !*Node {
+        return self.parseExprPrecedence(0);
     }
 
-    // Expression parsing with precedence
-    fn parseExpr(self: *Parser) !*Node {
-        return self.parseAdditive();
-    }
-
-    fn parseAdditive(self: *Parser) !*Node {
-        var left = try self.parseMultiplicative();
-
-        while (self.match(.plus) or self.match(.minus)) {
-            const op: BinaryOp = if (self.previous().type == .plus) .add else .sub;
-            const right = try self.parseMultiplicative();
-            left = try self.createNode(.{ .binary = .{
-                .op = op,
-                .left = left,
-                .right = right,
-            } });
-        }
-
-        return left;
-    }
-
-    fn parseMultiplicative(self: *Parser) !*Node {
-        var left = try self.parseUnary();
-
-        while (self.match(.star) or self.match(.slash)) {
-            const op: BinaryOp = if (self.previous().type == .star) .mul else .div;
-            const right = try self.parseUnary();
-            left = try self.createNode(.{ .binary = .{
-                .op = op,
-                .left = left,
-                .right = right,
-            } });
-        }
-
-        return left;
-    }
+    // parseExprPrecedence as shown above
 };
 ```
 
@@ -513,43 +587,34 @@ ZIR (Zig Intermediate Representation) is a flat, linear representation where nam
 pub const Inst = union(enum) {
     // Constants
     int: i64,
-    float: f64,
     bool: bool,
 
-    // Arithmetic
-    add: BinaryOp,
-    sub: BinaryOp,
-    mul: BinaryOp,
-    div: BinaryOp,
+    // Arithmetic (+ - * /)
+    add: BinOp,
+    sub: BinOp,
+    mul: BinOp,
+    div: BinOp,
     neg: Index,
 
-    // Comparisons
-    cmp_eq: BinaryOp,
-    cmp_neq: BinaryOp,
-    cmp_lt: BinaryOp,
-    cmp_gt: BinaryOp,
-
-    // References (unresolved)
+    // References (unresolved - names as strings)
     decl_ref: []const u8,    // Reference by name
     param_ref: u32,          // Reference by parameter index
 
     // Declarations
-    decl_const: DeclConst,
-    decl_var: DeclVar,
+    decl_const: struct { name: []const u8, type_name: ?[]const u8, value: Index },
+    decl_var: struct { name: []const u8, type_name: ?[]const u8, value: ?Index },
     decl_fn: DeclFn,
 
     // Control flow
     block_start: u32,
     block_end: u32,
     ret: ?Index,
-    cond_br: CondBr,
 
-    // Other
-    store: Store,
-    call: Call,
+    // Calls
+    call: struct { callee: []const u8, args: []const Index },
 };
 
-pub const BinaryOp = struct {
+pub const BinOp = struct {
     lhs: Index,
     rhs: Index,
 };
@@ -1067,7 +1132,7 @@ Key differences:
 │     - Position tracking for error messages                                  │
 │                                                                              │
 │  2. PARSER: Tokens → AST                                                    │
-│     - Recursive descent with precedence handling                            │
+│     - Precedence climbing algorithm for expressions                         │
 │     - Zig-style function and declaration syntax                             │
 │                                                                              │
 │  3. ZIR GENERATOR: AST → Flat IR                                            │
