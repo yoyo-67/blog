@@ -1,2 +1,6 @@
 scratch/projects/mini-compiler/.zig-cache
 scratch/projects/mini-compiler/zig-out/bin
+scratch/projects/mini-compiler/output
+scratch/projects/mini-compiler/output.c
+scratch/projects/mini-compiler/output.ll
+scratch/projects/mini-compiler/output_binary
