@@ -1,187 +1,329 @@
-//! Code Generator for the mini math compiler
+//! Code Generator
 //!
-//! Converts IR instructions into bytecode for the virtual machine.
+//! Generates C code from AIR.
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const ir_mod = @import("ir.zig");
+const air_mod = @import("air.zig");
 
-pub const Instruction = ir_mod.Instruction;
-pub const OpCode = ir_mod.OpCode;
+pub const Air = air_mod.Inst;
+pub const AirIndex = air_mod.Index;
+pub const Type = air_mod.Type;
 
-/// Bytecode operation codes (single byte each)
-pub const ByteCode = enum(u8) {
-    push_int = 0x01,
-    push_float = 0x02,
-    add = 0x10,
-    sub = 0x11,
-    mul = 0x12,
-    div = 0x13,
-    mod = 0x14,
-    neg = 0x15,
-    load = 0x20,
-    store = 0x21,
-    halt = 0xFF,
+/// Generated C code
+pub const GeneratedCode = struct {
+    c_source: []const u8,
 
-    pub fn format(
-        self: ByteCode,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype,
-    ) !void {
-        _ = fmt;
-        _ = options;
-        try writer.print("{s}(0x{X:0>2})", .{ @tagName(self), @intFromEnum(self) });
+    pub fn deinit(self: *GeneratedCode, allocator: Allocator) void {
+        allocator.free(self.c_source);
     }
 };
 
-/// Compiled bytecode with constant pools
-pub const CompiledCode = struct {
-    /// The bytecode instructions
-    code: []const u8,
-    /// Integer constant pool
-    constants_int: []const i64,
-    /// Float constant pool
-    constants_float: []const f64,
-    /// Variable name to index mapping
-    var_count: u8,
-
-    pub fn deinit(self: *CompiledCode, allocator: Allocator) void {
-        allocator.free(self.code);
-        allocator.free(self.constants_int);
-        allocator.free(self.constants_float);
-    }
-
-    /// Print bytecode for debugging
-    pub fn dump(self: *const CompiledCode, writer: anytype) !void {
-        try writer.writeAll("Bytecode:\n");
-
-        var i: usize = 0;
-        while (i < self.code.len) {
-            const op: ByteCode = @enumFromInt(self.code[i]);
-            try writer.print("  {d:3}: {any}", .{ i, op });
-
-            switch (op) {
-                .push_int => {
-                    const idx = self.code[i + 1];
-                    try writer.print(" [{d}] = {d}", .{ idx, self.constants_int[idx] });
-                    i += 2;
-                },
-                .push_float => {
-                    const idx = self.code[i + 1];
-                    try writer.print(" [{d}] = {d}", .{ idx, self.constants_float[idx] });
-                    i += 2;
-                },
-                .load, .store => {
-                    const idx = self.code[i + 1];
-                    try writer.print(" var[{d}]", .{idx});
-                    i += 2;
-                },
-                else => i += 1,
-            }
-            try writer.writeAll("\n");
-        }
-
-        try writer.print("\nConstants (int): {any}\n", .{self.constants_int});
-        try writer.print("Constants (float): {any}\n", .{self.constants_float});
-    }
-};
-
-/// Code Generator - converts IR to bytecode
+/// Code Generator
 pub const Generator = struct {
-    code: std.ArrayList(u8),
-    constants_int: std.ArrayList(i64),
-    constants_float: std.ArrayList(f64),
-    var_indices: std.StringHashMap(u8),
-    next_var_index: u8,
+    output: std.ArrayListUnmanaged(u8),
     allocator: Allocator,
+    indent: usize,
+    in_function: bool,
 
     pub fn init(allocator: Allocator) Generator {
         return .{
-            .code = .empty,
-            .constants_int = .empty,
-            .constants_float = .empty,
-            .var_indices = std.StringHashMap(u8).init(allocator),
-            .next_var_index = 0,
+            .output = .empty,
             .allocator = allocator,
+            .indent = 0,
+            .in_function = false,
         };
     }
 
     pub fn deinit(self: *Generator) void {
-        self.code.deinit(self.allocator);
-        self.constants_int.deinit(self.allocator);
-        self.constants_float.deinit(self.allocator);
-        self.var_indices.deinit();
+        self.output.deinit(self.allocator);
     }
 
-    /// Emit a single byte
-    fn emitByte(self: *Generator, byte: u8) !void {
-        try self.code.append(self.allocator, byte);
+    fn write(self: *Generator, str: []const u8) !void {
+        try self.output.appendSlice(self.allocator, str);
     }
 
-    /// Get or create variable index
-    fn getOrCreateVarIndex(self: *Generator, name: []const u8) !u8 {
-        if (self.var_indices.get(name)) |idx| {
-            return idx;
+    fn print(self: *Generator, comptime fmt: []const u8, args: anytype) !void {
+        const writer = self.output.writer(self.allocator);
+        try writer.print(fmt, args);
+    }
+
+    fn writeIndent(self: *Generator) !void {
+        for (0..self.indent) |_| {
+            try self.write("    ");
         }
-        const idx = self.next_var_index;
-        self.next_var_index += 1;
-        try self.var_indices.put(name, idx);
-        return idx;
     }
 
-    /// Generate bytecode from IR instructions
-    pub fn generate(self: *Generator, ir: []const Instruction) !void {
-        for (ir) |inst| {
-            switch (inst.op) {
-                .push_int => {
-                    try self.emitByte(@intFromEnum(ByteCode.push_int));
-                    const idx: u8 = @intCast(self.constants_int.items.len);
-                    try self.constants_int.append(self.allocator, inst.operand.int_value);
-                    try self.emitByte(idx);
+    fn typeToCType(t: Type) []const u8 {
+        return switch (t) {
+            .int => |i| switch (i.bits) {
+                8 => if (i.signed) "int8_t" else "uint8_t",
+                16 => if (i.signed) "int16_t" else "uint16_t",
+                32 => if (i.signed) "int32_t" else "uint32_t",
+                64 => if (i.signed) "int64_t" else "uint64_t",
+                else => "int64_t",
+            },
+            .float => |f| switch (f.bits) {
+                32 => "float",
+                64 => "double",
+                else => "double",
+            },
+            .bool => "bool",
+            .void => "void",
+            .function => "void*",
+        };
+    }
+
+    /// Generate C code from AIR
+    pub fn generate(self: *Generator, air: []const Air) !void {
+        // Header
+        try self.write("#include <stdio.h>\n");
+        try self.write("#include <stdint.h>\n");
+        try self.write("#include <stdbool.h>\n\n");
+
+        // Forward declarations
+        for (air) |inst| {
+            switch (inst) {
+                .decl_fn => |f| {
+                    try self.write(typeToCType(f.return_type));
+                    try self.print(" {s}(", .{f.name});
+
+                    for (f.params, 0..) |param_type, i| {
+                        if (i > 0) try self.write(", ");
+                        try self.write(typeToCType(param_type));
+                        try self.print(" p{d}", .{i});
+                    }
+                    try self.write(");\n");
                 },
-                .push_float => {
-                    try self.emitByte(@intFromEnum(ByteCode.push_float));
-                    const idx: u8 = @intCast(self.constants_float.items.len);
-                    try self.constants_float.append(self.allocator, inst.operand.float_value);
-                    try self.emitByte(idx);
-                },
-                .add => try self.emitByte(@intFromEnum(ByteCode.add)),
-                .sub => try self.emitByte(@intFromEnum(ByteCode.sub)),
-                .mul => try self.emitByte(@intFromEnum(ByteCode.mul)),
-                .div => try self.emitByte(@intFromEnum(ByteCode.div)),
-                .mod => try self.emitByte(@intFromEnum(ByteCode.mod)),
-                .neg => try self.emitByte(@intFromEnum(ByteCode.neg)),
-                .load => {
-                    try self.emitByte(@intFromEnum(ByteCode.load));
-                    const idx = try self.getOrCreateVarIndex(inst.operand.var_name);
-                    try self.emitByte(idx);
-                },
-                .store => {
-                    try self.emitByte(@intFromEnum(ByteCode.store));
-                    const idx = try self.getOrCreateVarIndex(inst.operand.var_name);
-                    try self.emitByte(idx);
-                },
-                .int_to_float => {}, // Not used in bytecode
+                else => {},
             }
         }
-        try self.emitByte(@intFromEnum(ByteCode.halt));
+        try self.write("\n");
+
+        // Generate code for each instruction
+        var i: usize = 0;
+        while (i < air.len) : (i += 1) {
+            try self.genInst(air, @intCast(i));
+        }
     }
 
-    /// Finalize and return the compiled code
-    /// Transfers ownership of bytecode and constants, cleans up internal state
-    /// After finalize(), deinit() can still be safely called (it becomes a no-op)
-    pub fn finalize(self: *Generator) !CompiledCode {
-        // Clean up var_indices since we're done with it (not needed in output)
-        self.var_indices.deinit();
-        // Re-initialize to empty so deinit() is safe to call after finalize()
-        self.var_indices = std.StringHashMap(u8).init(self.allocator);
+    fn genInst(self: *Generator, air: []const Air, idx: AirIndex) !void {
+        const inst = air[idx];
 
+        switch (inst) {
+            .const_int => |c| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(c.type_));
+                    try self.print(" t{d} = {d};\n", .{ idx, c.value });
+                }
+            },
+            .const_float => |c| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(c.type_));
+                    try self.print(" t{d} = {d};\n", .{ idx, c.value });
+                }
+            },
+            .const_bool => |b| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("bool t{d} = {s};\n", .{ idx, if (b) "true" else "false" });
+                }
+            },
+            .add => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(op.type_));
+                    try self.print(" t{d} = t{d} + t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .sub => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(op.type_));
+                    try self.print(" t{d} = t{d} - t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .mul => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(op.type_));
+                    try self.print(" t{d} = t{d} * t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .div => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(op.type_));
+                    try self.print(" t{d} = t{d} / t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .neg => |n| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(n.type_));
+                    try self.print(" t{d} = -t{d};\n", .{ idx, n.operand });
+                }
+            },
+            .cmp_eq => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("bool t{d} = t{d} == t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .cmp_neq => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("bool t{d} = t{d} != t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .cmp_lt => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("bool t{d} = t{d} < t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .cmp_lte => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("bool t{d} = t{d} <= t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .cmp_gt => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("bool t{d} = t{d} > t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .cmp_gte => |op| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("bool t{d} = t{d} >= t{d};\n", .{ idx, op.lhs, op.rhs });
+                }
+            },
+            .load => |l| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(l.type_));
+                    try self.print(" t{d} = t{d};\n", .{ idx, l.local_idx });
+                }
+            },
+            .store => |s| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("t{d} = t{d};\n", .{ s.local_idx, s.value });
+                }
+            },
+            .param => |p| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(p.type_));
+                    try self.print(" t{d} = p{d};\n", .{ idx, p.idx });
+                }
+            },
+            .decl_const => |d| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write("const ");
+                    try self.write(typeToCType(d.type_));
+                    try self.print(" t{d} = t{d}; // {s}\n", .{ idx, d.value, d.name });
+                }
+            },
+            .decl_var => |d| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(d.type_));
+                    try self.print(" t{d}", .{idx});
+                    if (d.value) |v| {
+                        try self.print(" = t{d}", .{v});
+                    }
+                    try self.print("; // {s}\n", .{d.name});
+                }
+            },
+            .decl_fn => |f| {
+                try self.write(typeToCType(f.return_type));
+                try self.print(" {s}(", .{f.name});
+
+                for (f.params, 0..) |param_type, i| {
+                    if (i > 0) try self.write(", ");
+                    try self.write(typeToCType(param_type));
+                    try self.print(" p{d}", .{i});
+                }
+                try self.write(") {\n");
+                self.in_function = true;
+                self.indent = 1;
+            },
+            .block_start => {},
+            .block_end => {},
+            .ret => |r| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    if (r.value) |v| {
+                        try self.print("return t{d};\n", .{v});
+                    } else {
+                        try self.write("return;\n");
+                    }
+
+                    // Close function
+                    self.indent = 0;
+                    try self.write("}\n\n");
+                    self.in_function = false;
+                }
+            },
+            .cond_br => |br| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.print("if (t{d}) {{\n", .{br.cond});
+                    self.indent += 1;
+                }
+            },
+            .loop_start => {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write("while (1) {\n");
+                    self.indent += 1;
+                }
+            },
+            .loop_end => {
+                if (self.in_function) {
+                    self.indent -= 1;
+                    try self.writeIndent();
+                    try self.write("}\n");
+                }
+            },
+            .loop_break => {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write("break;\n");
+                }
+            },
+            .loop_continue => {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write("continue;\n");
+                }
+            },
+            .call => |c| {
+                if (self.in_function) {
+                    try self.writeIndent();
+                    try self.write(typeToCType(c.return_type));
+                    try self.print(" t{d} = {s}(", .{ idx, c.callee });
+
+                    for (c.args, 0..) |arg, i| {
+                        if (i > 0) try self.write(", ");
+                        try self.print("t{d}", .{arg});
+                    }
+                    try self.write(");\n");
+                }
+            },
+        }
+    }
+
+    /// Finalize and return the generated C code
+    pub fn finalize(self: *Generator) !GeneratedCode {
         return .{
-            .code = try self.code.toOwnedSlice(self.allocator),
-            .constants_int = try self.constants_int.toOwnedSlice(self.allocator),
-            .constants_float = try self.constants_float.toOwnedSlice(self.allocator),
-            .var_count = self.next_var_index,
+            .c_source = try self.output.toOwnedSlice(self.allocator),
         };
     }
 };
@@ -190,31 +332,30 @@ pub const Generator = struct {
 // Tests
 // ============================================================================
 
-test "generate bytecode for push and add" {
+test "generate simple addition" {
     const allocator = std.testing.allocator;
 
-    const ir = [_]Instruction{
-        .{ .op = .push_int, .operand = .{ .int_value = 3 } },
-        .{ .op = .push_int, .operand = .{ .int_value = 5 } },
-        .{ .op = .add, .operand = .{ .none = {} } },
+    const air = [_]Air{
+        .{ .decl_fn = .{
+            .name = "main",
+            .params = &.{},
+            .return_type = .{ .int = .{ .bits = 32, .signed = true } },
+            .body_start = 1,
+            .body_end = 4,
+        } },
+        .{ .const_int = .{ .value = 5, .type_ = .{ .int = .{ .bits = 64, .signed = true } } } },
+        .{ .const_int = .{ .value = 3, .type_ = .{ .int = .{ .bits = 64, .signed = true } } } },
+        .{ .add = .{ .lhs = 1, .rhs = 2, .type_ = .{ .int = .{ .bits = 64, .signed = true } } } },
+        .{ .ret = .{ .value = 3, .type_ = .{ .int = .{ .bits = 32, .signed = true } } } },
     };
 
     var gen = Generator.init(allocator);
     defer gen.deinit();
 
-    try gen.generate(&ir);
-    var compiled = try gen.finalize();
-    defer compiled.deinit(allocator);
+    try gen.generate(&air);
+    var code = try gen.finalize();
+    defer code.deinit(allocator);
 
-    // Expected: PUSH_INT 0, PUSH_INT 1, ADD, HALT
-    try std.testing.expectEqual(@as(usize, 6), compiled.code.len);
-    try std.testing.expectEqual(@as(u8, 0x01), compiled.code[0]); // push_int
-    try std.testing.expectEqual(@as(u8, 0x00), compiled.code[1]); // index 0
-    try std.testing.expectEqual(@as(u8, 0x01), compiled.code[2]); // push_int
-    try std.testing.expectEqual(@as(u8, 0x01), compiled.code[3]); // index 1
-    try std.testing.expectEqual(@as(u8, 0x10), compiled.code[4]); // add
-    try std.testing.expectEqual(@as(u8, 0xFF), compiled.code[5]); // halt
-
-    try std.testing.expectEqual(@as(i64, 3), compiled.constants_int[0]);
-    try std.testing.expectEqual(@as(i64, 5), compiled.constants_int[1]);
+    // Should contain C code
+    try std.testing.expect(std.mem.indexOf(u8, code.c_source, "int32_t main()") != null);
 }

@@ -1,7 +1,14 @@
-//! Mini Math Compiler - Main Entry Point
+//! Mini Zig Compiler
 //!
-//! Demonstrates the complete compiler pipeline:
-//! Lexer → Parser → Semantic Analysis → Optimizer → IR → CodeGen → VM
+//! A subset Zig compiler demonstrating the real Zig compiler pipeline:
+//! Source → Lexer → Parser → AST → ZIR → Sema → AIR → Codegen → C
+//!
+//! Supports:
+//! - Functions: pub fn add(a: i32, b: i32) i32 { ... }
+//! - Declarations: const x: i32 = 5; var y: i32 = 10;
+//! - Arithmetic: + - * /
+//! - Control flow: if/else, while
+//! - Types: i32, i64, bool, void
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -11,11 +18,10 @@ pub const token = @import("token.zig");
 pub const lexer = @import("lexer.zig");
 pub const ast = @import("ast.zig");
 pub const parser = @import("parser.zig");
+pub const zir = @import("zir.zig");
 pub const sema = @import("sema.zig");
-pub const optimizer = @import("optimizer.zig");
-pub const ir = @import("ir.zig");
+pub const air = @import("air.zig");
 pub const codegen = @import("codegen.zig");
-pub const vm = @import("vm.zig");
 
 // Re-export key types
 pub const Token = token.Token;
@@ -23,128 +29,106 @@ pub const TokenType = token.TokenType;
 pub const Lexer = lexer.Lexer;
 pub const Node = ast.Node;
 pub const Parser = parser.Parser;
+pub const ZirGenerator = zir.Generator;
 pub const Analyzer = sema.Analyzer;
-pub const Optimizer = optimizer.Optimizer;
-pub const IrGenerator = ir.Generator;
 pub const CodeGenerator = codegen.Generator;
-pub const VM = vm.VM;
-pub const Value = vm.Value;
-pub const CompiledCode = codegen.CompiledCode;
+pub const GeneratedCode = codegen.GeneratedCode;
 
 /// Compilation errors
 pub const CompileError = error{
     LexError,
     ParseError,
-    SemanticError,
-    OptimizeError,
-    IrGenError,
+    ZirGenError,
+    SemaError,
     CodeGenError,
     OutOfMemory,
 };
 
-/// Compile source code to bytecode
-/// Uses an arena allocator internally for AST nodes, freeing them after codegen
-pub fn compile(source: []const u8, allocator: Allocator) CompileError!CompiledCode {
-    // Use arena for temporary AST allocations - all freed at once when done
+/// Compile source code to C code
+pub fn compile(source: []const u8, allocator: Allocator) !GeneratedCode {
+    // Use arena for temporary allocations
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
-
     const arena_alloc = arena.allocator();
 
-    // Stage 1 & 2: Lexing and Parsing (uses arena)
+    // Stage 1: Parse source to AST
     var p = Parser.init(source, arena_alloc);
     const ast_root = p.parse() catch return CompileError.ParseError;
 
-    // Stage 3: Semantic Analysis (uses arena)
+    // Stage 2: Generate ZIR from AST
+    var zir_gen = ZirGenerator.init(arena_alloc);
+    zir_gen.generate(ast_root) catch return CompileError.ZirGenError;
+
+    // Stage 3: Semantic analysis (ZIR → AIR)
     var analyzer = Analyzer.init(arena_alloc);
-    _ = analyzer.analyze(ast_root) catch return CompileError.SemanticError;
+    const air_insts = analyzer.analyze(zir_gen.getInstructions()) catch return CompileError.SemaError;
 
-    // Stage 4: Optimization (uses arena)
-    var opt = Optimizer.init(arena_alloc);
-    const optimized_ast = opt.optimize(ast_root) catch return CompileError.OptimizeError;
-
-    // Stage 5: IR Generation (uses arena)
-    var ir_gen = IrGenerator.init(arena_alloc);
-    ir_gen.generate(optimized_ast) catch return CompileError.IrGenError;
-
-    // Stage 6: Code Generation - uses MAIN allocator for output bytecode
+    // Stage 4: Code generation (AIR → C)
     var code_gen = CodeGenerator.init(allocator);
-    code_gen.generate(ir_gen.getInstructions()) catch return CompileError.CodeGenError;
+    code_gen.generate(air_insts) catch return CompileError.CodeGenError;
 
     return code_gen.finalize() catch return CompileError.OutOfMemory;
-    // arena freed here - all AST nodes, IR instructions cleaned up
 }
 
-/// Compile and run source code, returning the result
-pub fn run(source: []const u8, allocator: Allocator) !Value {
-    var compiled = try compile(source, allocator);
-    defer compiled.deinit(allocator);
+/// Compile with debug output showing all stages
+pub fn compileWithDebug(source: []const u8, allocator: Allocator) !GeneratedCode {
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const arena_alloc = arena.allocator();
 
-    var virtual_machine = VM.init(compiled);
-    return virtual_machine.run();
-}
+    std.debug.print("\n============================================================\n", .{});
+    std.debug.print("SOURCE:\n============================================================\n{s}\n", .{source});
 
-/// Compile and run with debug output
-pub fn runWithDebug(source: []const u8, allocator: Allocator) !Value {
-    // Zig 0.15 buffered I/O API
-    const stderr_file = std.fs.File.stderr();
-    var stderr_buf: [4096]u8 = undefined;
-    var stderr_writer = stderr_file.writer(&stderr_buf);
-    const stderr = &stderr_writer.interface;
-    defer stderr.flush() catch {};
-
-    try stderr.print("\n=== Source ===\n{s}\n", .{source});
-
-    // Parse
-    var p = Parser.init(source, allocator);
+    // Stage 1: Parse
+    var p = Parser.init(source, arena_alloc);
     const ast_root = p.parse() catch |err| {
-        try stderr.print("Parse error: {any}\n", .{err});
+        std.debug.print("Parse error: {any}\n", .{err});
         return CompileError.ParseError;
     };
 
-    try stderr.writeAll("\n=== AST ===\n");
-    try ast_root.dump(stderr, 0);
+    std.debug.print("\n============================================================\n", .{});
+    std.debug.print("AST:\n============================================================\n", .{});
+    const stderr_file = std.fs.File.stderr();
+    var stderr_buf: [4096]u8 = undefined;
+    var stderr_writer = stderr_file.writer(&stderr_buf);
+    ast_root.dump(&stderr_writer.interface, 0) catch {};
+    stderr_writer.interface.flush() catch {};
 
-    // Semantic Analysis
-    var analyzer = Analyzer.init(allocator);
-    defer analyzer.deinit();
-    const typed = analyzer.analyze(ast_root) catch |err| {
-        try stderr.print("Semantic error: {any}\n", .{err});
-        return CompileError.SemanticError;
+    // Stage 2: ZIR
+    var zir_gen = ZirGenerator.init(arena_alloc);
+    zir_gen.generate(ast_root) catch |err| {
+        std.debug.print("ZIR error: {any}\n", .{err});
+        return CompileError.ZirGenError;
     };
-    try stderr.print("\n=== Type ===\n{any}\n", .{typed.value_type});
 
-    // Optimization
-    var opt = Optimizer.init(allocator);
-    const optimized_ast = try opt.optimize(ast_root);
-    try stderr.print("\n=== Optimized AST ({d} optimizations) ===\n", .{opt.getOptimizationCount()});
-    try optimized_ast.dump(stderr, 0);
+    std.debug.print("\n", .{});
+    zir_gen.dump(&stderr_writer.interface) catch {};
+    stderr_writer.interface.flush() catch {};
 
-    // IR Generation
-    var ir_gen = IrGenerator.init(allocator);
-    defer ir_gen.deinit();
-    try ir_gen.generate(optimized_ast);
-    try stderr.writeAll("\n=== IR ===\n");
-    try ir_gen.dump(stderr);
+    // Stage 3: Sema → AIR
+    var analyzer = Analyzer.init(arena_alloc);
+    const air_insts = analyzer.analyze(zir_gen.getInstructions()) catch |err| {
+        std.debug.print("Sema error: {any}\n", .{err});
+        return CompileError.SemaError;
+    };
 
-    // Code Generation
+    std.debug.print("\n", .{});
+    air.dump(air_insts, &stderr_writer.interface) catch {};
+    stderr_writer.interface.flush() catch {};
+
+    // Stage 4: Codegen
     var code_gen = CodeGenerator.init(allocator);
-    defer code_gen.deinit();
-    try code_gen.generate(ir_gen.getInstructions());
-    var compiled = try code_gen.finalize();
-    defer compiled.deinit(allocator);
+    code_gen.generate(air_insts) catch |err| {
+        std.debug.print("Codegen error: {any}\n", .{err});
+        return CompileError.CodeGenError;
+    };
 
-    try stderr.writeAll("\n=== Bytecode ===\n");
-    try compiled.dump(stderr);
+    const generated = code_gen.finalize() catch return CompileError.OutOfMemory;
 
-    // Execution
-    try stderr.writeAll("\n=== Execution ===\n");
-    var virtual_machine = VM.init(compiled);
-    virtual_machine.enableTrace();
-    const result = try virtual_machine.run();
+    std.debug.print("\n============================================================\n", .{});
+    std.debug.print("GENERATED C:\n============================================================\n{s}\n", .{generated.c_source});
 
-    try stderr.print("\n=== Result ===\n{any}\n", .{result});
-    return result;
+    return generated;
 }
 
 pub fn main() !void {
@@ -152,87 +136,70 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const test_cases = [_]struct { source: []const u8, expected: []const u8 }{
-        .{ .source = "42", .expected = "42" },
-        .{ .source = "3 + 5", .expected = "8" },
-        .{ .source = "3 + 5 * 2", .expected = "13" },
-        .{ .source = "(3 + 5) * 2", .expected = "16" },
-        .{ .source = "-5 + 3", .expected = "-2" },
-        .{ .source = "10 - 3 - 2", .expected = "5" },
-        .{ .source = "100 / 10 / 2", .expected = "5" },
-        .{ .source = "17 % 5", .expected = "2" },
-        .{ .source = "2.5 * 4", .expected = "10" },
-        .{ .source = "3.14 + 2.86", .expected = "6" },
-        .{ .source = "x = 10; y = 20; x + y", .expected = "30" },
-        .{ .source = "a = 5; b = a * 2; b + 3", .expected = "13" },
-        .{ .source = "-(3 + 4)", .expected = "-7" },
-        .{ .source = "--5", .expected = "5" },
-    };
+    // Test program
+    const source =
+        \\pub fn add(a: i32, b: i32) i32 {
+        \\    return a + b;
+        \\}
+        \\
+        \\pub fn main() i32 {
+        \\    const x: i32 = 5;
+        \\    const y: i32 = 3;
+        \\    const result: i32 = add(x, y);
+        \\    return result;
+        \\}
+    ;
 
     std.debug.print("\n", .{});
     std.debug.print("╔══════════════════════════════════════════════════════════════╗\n", .{});
-    std.debug.print("║        MINI MATH COMPILER (Modular) - Test Results           ║\n", .{});
-    std.debug.print("╠══════════════════════════════════════════════════════════════╣\n", .{});
-
-    var passed: usize = 0;
-    var failed: usize = 0;
-
-    for (test_cases) |tc| {
-        const result = run(tc.source, allocator) catch |err| {
-            std.debug.print("║ FAIL: \"{s}\"\n", .{tc.source});
-            std.debug.print("║       Error: {any}\n", .{err});
-            failed += 1;
-            continue;
-        };
-
-        var buf: [32]u8 = undefined;
-        const result_str = switch (result) {
-            .int => |i| std.fmt.bufPrint(&buf, "{d}", .{i}) catch "?",
-            .float => |f| std.fmt.bufPrint(&buf, "{d:.0}", .{f}) catch "?",
-        };
-
-        const status = if (std.mem.eql(u8, result_str, tc.expected)) "PASS" else "FAIL";
-        if (std.mem.eql(u8, status, "PASS")) {
-            passed += 1;
-        } else {
-            failed += 1;
-        }
-
-        std.debug.print("║ {s}: \"{s}\" = {s}", .{ status, tc.source, result_str });
-        if (!std.mem.eql(u8, result_str, tc.expected)) {
-            std.debug.print(" (expected {s})", .{tc.expected});
-        }
-        std.debug.print("\n", .{});
-    }
-
-    std.debug.print("╠══════════════════════════════════════════════════════════════╣\n", .{});
-    std.debug.print("║ Results: {d} passed, {d} failed                                 ║\n", .{ passed, failed });
+    std.debug.print("║           MINI ZIG COMPILER - Pipeline Demo                  ║\n", .{});
+    std.debug.print("║   Source → Lexer → Parser → AST → ZIR → Sema → AIR → C      ║\n", .{});
     std.debug.print("╚══════════════════════════════════════════════════════════════╝\n", .{});
+
+    var generated = compileWithDebug(source, allocator) catch |err| {
+        std.debug.print("\nCompilation failed: {any}\n", .{err});
+        return;
+    };
+    defer generated.deinit(allocator);
+
+    std.debug.print("\n============================================================\n", .{});
+    std.debug.print("SUCCESS! Generated {d} bytes of C code.\n", .{generated.c_source.len});
+    std.debug.print("============================================================\n", .{});
 }
 
 // ============================================================================
 // Tests
 // ============================================================================
 
-test "end-to-end compile and run" {
+test "compile simple function" {
     const allocator = std.testing.allocator;
 
-    const result = try run("3 + 5 * 2", allocator);
-    try std.testing.expectEqual(Value{ .int = 13 }, result);
+    const source =
+        \\pub fn add(a: i32, b: i32) i32 {
+        \\    return a + b;
+        \\}
+    ;
+
+    var generated = try compile(source, allocator);
+    defer generated.deinit(allocator);
+
+    try std.testing.expect(generated.c_source.len > 0);
+    try std.testing.expect(std.mem.indexOf(u8, generated.c_source, "add") != null);
 }
 
-test "variables" {
+test "compile with arithmetic" {
     const allocator = std.testing.allocator;
 
-    const result = try run("x = 10; y = 20; x + y", allocator);
-    try std.testing.expectEqual(Value{ .int = 30 }, result);
-}
+    const source =
+        \\pub fn calc(x: i32) i32 {
+        \\    return x + 5 * 2;
+        \\}
+    ;
 
-test "float arithmetic" {
-    const allocator = std.testing.allocator;
+    var generated = try compile(source, allocator);
+    defer generated.deinit(allocator);
 
-    const result = try run("2.5 * 4", allocator);
-    try std.testing.expectEqual(@as(f64, 10.0), result.float);
+    try std.testing.expect(generated.c_source.len > 0);
 }
 
 test {
