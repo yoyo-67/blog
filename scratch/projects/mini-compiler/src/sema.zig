@@ -1,4 +1,4 @@
-//! Sema (Semantic Analysis)
+//! Sema (Semantic Analysis) - Simplified
 //!
 //! Takes ZIR and produces AIR by:
 //! 1. Resolving references (names → indices)
@@ -102,16 +102,8 @@ pub const Analyzer = struct {
     }
 
     fn typeFromName(name: []const u8) Type {
-        if (std.mem.eql(u8, name, "i8")) return Type{ .int = .{ .bits = 8, .signed = true } };
-        if (std.mem.eql(u8, name, "i16")) return Type{ .int = .{ .bits = 16, .signed = true } };
         if (std.mem.eql(u8, name, "i32")) return Type{ .int = .{ .bits = 32, .signed = true } };
         if (std.mem.eql(u8, name, "i64")) return Type{ .int = .{ .bits = 64, .signed = true } };
-        if (std.mem.eql(u8, name, "u8")) return Type{ .int = .{ .bits = 8, .signed = false } };
-        if (std.mem.eql(u8, name, "u16")) return Type{ .int = .{ .bits = 16, .signed = false } };
-        if (std.mem.eql(u8, name, "u32")) return Type{ .int = .{ .bits = 32, .signed = false } };
-        if (std.mem.eql(u8, name, "u64")) return Type{ .int = .{ .bits = 64, .signed = false } };
-        if (std.mem.eql(u8, name, "f32")) return Type{ .float = .{ .bits = 32 } };
-        if (std.mem.eql(u8, name, "f64")) return Type{ .float = .{ .bits = 64 } };
         if (std.mem.eql(u8, name, "bool")) return Type.bool;
         if (std.mem.eql(u8, name, "void")) return Type.void;
         return Type{ .int = .{ .bits = 32, .signed = true } }; // default
@@ -156,12 +148,6 @@ pub const Analyzer = struct {
                     .type_ = .{ .int = .{ .bits = 64, .signed = true } },
                 } });
             },
-            .float => |val| {
-                return self.emit(.{ .const_float = .{
-                    .value = val,
-                    .type_ = .{ .float = .{ .bits = 64 } },
-                } });
-            },
             .bool => |val| {
                 return self.emit(.{ .const_bool = val });
             },
@@ -184,20 +170,6 @@ pub const Analyzer = struct {
                     .operand = operand_air,
                     .type_ = .{ .int = .{ .bits = 64, .signed = true } },
                 } });
-            },
-            .cmp_eq, .cmp_neq, .cmp_lt, .cmp_lte, .cmp_gt, .cmp_gte => |op| {
-                const lhs_air = self.getAirIdx(op.lhs) orelse return SemaError.UndefinedVariable;
-                const rhs_air = self.getAirIdx(op.rhs) orelse return SemaError.UndefinedVariable;
-
-                return self.emit(switch (inst) {
-                    .cmp_eq => .{ .cmp_eq = .{ .lhs = lhs_air, .rhs = rhs_air } },
-                    .cmp_neq => .{ .cmp_neq = .{ .lhs = lhs_air, .rhs = rhs_air } },
-                    .cmp_lt => .{ .cmp_lt = .{ .lhs = lhs_air, .rhs = rhs_air } },
-                    .cmp_lte => .{ .cmp_lte = .{ .lhs = lhs_air, .rhs = rhs_air } },
-                    .cmp_gt => .{ .cmp_gt = .{ .lhs = lhs_air, .rhs = rhs_air } },
-                    .cmp_gte => .{ .cmp_gte = .{ .lhs = lhs_air, .rhs = rhs_air } },
-                    else => unreachable,
-                });
             },
             .decl_ref => |name| {
                 // Look up variable
@@ -296,27 +268,6 @@ pub const Analyzer = struct {
                 return self.emit(.{ .ret = .{
                     .value = value_air,
                     .type_ = ret_type,
-                } });
-            },
-            .cond_br => |br| {
-                const cond_air = self.getAirIdx(br.cond) orelse return SemaError.UndefinedVariable;
-                return self.emit(.{ .cond_br = .{
-                    .cond = cond_air,
-                    .then_block = br.then_block,
-                    .else_block = br.else_block,
-                } });
-            },
-            .loop_start => |id| return self.emit(.{ .loop_start = id }),
-            .loop_end => |id| return self.emit(.{ .loop_end = id }),
-            .loop_break => |id| return self.emit(.{ .loop_break = id }),
-            .loop_continue => |id| return self.emit(.{ .loop_continue = id }),
-            .store => |s| {
-                const sym = self.lookupVar(s.name) orelse return SemaError.UndefinedVariable;
-                const value_air = self.getAirIdx(s.value) orelse return SemaError.UndefinedVariable;
-
-                return self.emit(.{ .store = .{
-                    .local_idx = sym.air_idx,
-                    .value = value_air,
                 } });
             },
             .call => |c| {

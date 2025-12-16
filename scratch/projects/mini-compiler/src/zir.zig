@@ -1,4 +1,4 @@
-//! ZIR (Zig Intermediate Representation)
+//! ZIR (Zig Intermediate Representation) - Simplified
 //!
 //! ZIR is produced from the AST before semantic analysis.
 //! It's a flat, untyped representation - names are still unresolved strings.
@@ -11,7 +11,6 @@ pub const Node = ast_mod.Node;
 pub const TypeExpr = ast_mod.TypeExpr;
 pub const BinaryOp = ast_mod.BinaryOp;
 pub const UnaryOp = ast_mod.UnaryOp;
-pub const AssignOp = ast_mod.AssignOp;
 
 /// ZIR instruction index
 pub const Index = u32;
@@ -22,9 +21,6 @@ pub const Inst = union(enum) {
 
     /// Integer constant
     int: i64,
-
-    /// Float constant
-    float: f64,
 
     /// Boolean constant
     bool: bool,
@@ -45,26 +41,6 @@ pub const Inst = union(enum) {
 
     /// %result = -%operand
     neg: Index,
-
-    // ==================== Comparison ====================
-
-    /// %result = %lhs == %rhs
-    cmp_eq: BinOp,
-
-    /// %result = %lhs != %rhs
-    cmp_neq: BinOp,
-
-    /// %result = %lhs < %rhs
-    cmp_lt: BinOp,
-
-    /// %result = %lhs <= %rhs
-    cmp_lte: BinOp,
-
-    /// %result = %lhs > %rhs
-    cmp_gt: BinOp,
-
-    /// %result = %lhs >= %rhs
-    cmp_gte: BinOp,
 
     // ==================== References (unresolved) ====================
 
@@ -110,33 +86,6 @@ pub const Inst = union(enum) {
     /// return %value (or return void)
     ret: ?Index,
 
-    /// Conditional branch: if %cond goto %then_block else %else_block
-    cond_br: struct {
-        cond: Index,
-        then_block: u32,
-        else_block: ?u32,
-    },
-
-    /// Loop header
-    loop_start: u32, // loop id
-
-    /// Loop end
-    loop_end: u32, // loop id
-
-    /// Break out of loop
-    loop_break: u32, // loop id
-
-    /// Continue to loop start
-    loop_continue: u32, // loop id
-
-    // ==================== Store/Load ====================
-
-    /// Store value to variable: name = %value
-    store: struct {
-        name: []const u8,
-        value: Index,
-    },
-
     // ==================== Calls ====================
 
     /// Function call: %result = name(%args...)
@@ -161,7 +110,6 @@ pub const Generator = struct {
     instructions: std.ArrayListUnmanaged(Inst),
     allocator: Allocator,
     block_id: u32,
-    loop_id: u32,
     current_fn_params: []const ast_mod.Param,
 
     pub fn init(allocator: Allocator) Generator {
@@ -169,7 +117,6 @@ pub const Generator = struct {
             .instructions = .empty,
             .allocator = allocator,
             .block_id = 0,
-            .loop_id = 0,
             .current_fn_params = &.{},
         };
     }
@@ -187,12 +134,6 @@ pub const Generator = struct {
     fn nextBlockId(self: *Generator) u32 {
         const id = self.block_id;
         self.block_id += 1;
-        return id;
-    }
-
-    fn nextLoopId(self: *Generator) u32 {
-        const id = self.loop_id;
-        self.loop_id += 1;
         return id;
     }
 
@@ -299,90 +240,6 @@ pub const Generator = struct {
                 const value_idx = if (ret.value) |v| try self.genExpr(v) else null;
                 _ = try self.emit(.{ .ret = value_idx });
             },
-            .if_stmt => |if_s| {
-                const cond_idx = try self.genExpr(if_s.condition);
-                const then_id = self.nextBlockId();
-                const else_id = if (if_s.else_block != null) self.nextBlockId() else null;
-
-                _ = try self.emit(.{
-                    .cond_br = .{
-                        .cond = cond_idx,
-                        .then_block = then_id,
-                        .else_block = else_id,
-                    },
-                });
-
-                _ = try self.emit(.{ .block_start = then_id });
-                try self.genStmt(if_s.then_block);
-                _ = try self.emit(.{ .block_end = then_id });
-
-                if (if_s.else_block) |else_blk| {
-                    _ = try self.emit(.{ .block_start = else_id.? });
-                    try self.genStmt(else_blk);
-                    _ = try self.emit(.{ .block_end = else_id.? });
-                }
-            },
-            .while_stmt => |while_s| {
-                const loop_id = self.nextLoopId();
-                _ = try self.emit(.{ .loop_start = loop_id });
-
-                const cond_idx = try self.genExpr(while_s.condition);
-                const body_id = self.nextBlockId();
-
-                _ = try self.emit(.{
-                    .cond_br = .{
-                        .cond = cond_idx,
-                        .then_block = body_id,
-                        .else_block = null,
-                    },
-                });
-
-                _ = try self.emit(.{ .block_start = body_id });
-                try self.genStmt(while_s.body);
-                _ = try self.emit(.{ .block_end = body_id });
-
-                _ = try self.emit(.{ .loop_end = loop_id });
-            },
-            .break_stmt => {
-                _ = try self.emit(.{ .loop_break = self.loop_id - 1 });
-            },
-            .continue_stmt => {
-                _ = try self.emit(.{ .loop_continue = self.loop_id - 1 });
-            },
-            .assign_stmt => |assign| {
-                // Get target name (must be identifier)
-                const name = switch (assign.target.*) {
-                    .identifier => |n| n,
-                    else => return error.InvalidAssignTarget,
-                };
-
-                // Generate value (handle compound assignment)
-                const value_idx = switch (assign.op) {
-                    .assign => try self.genExpr(assign.value),
-                    .add_assign => blk: {
-                        const lhs = try self.emit(.{ .decl_ref = name });
-                        const rhs = try self.genExpr(assign.value);
-                        break :blk try self.emit(.{ .add = .{ .lhs = lhs, .rhs = rhs } });
-                    },
-                    .sub_assign => blk: {
-                        const lhs = try self.emit(.{ .decl_ref = name });
-                        const rhs = try self.genExpr(assign.value);
-                        break :blk try self.emit(.{ .sub = .{ .lhs = lhs, .rhs = rhs } });
-                    },
-                    .mul_assign => blk: {
-                        const lhs = try self.emit(.{ .decl_ref = name });
-                        const rhs = try self.genExpr(assign.value);
-                        break :blk try self.emit(.{ .mul = .{ .lhs = lhs, .rhs = rhs } });
-                    },
-                    .div_assign => blk: {
-                        const lhs = try self.emit(.{ .decl_ref = name });
-                        const rhs = try self.genExpr(assign.value);
-                        break :blk try self.emit(.{ .div = .{ .lhs = lhs, .rhs = rhs } });
-                    },
-                };
-
-                _ = try self.emit(.{ .store = .{ .name = name, .value = value_idx } });
-            },
             .expr_stmt => |expr_s| {
                 _ = try self.genExpr(expr_s.expr);
             },
@@ -393,7 +250,6 @@ pub const Generator = struct {
     fn genExpr(self: *Generator, node: *Node) !Index {
         switch (node.*) {
             .int_literal => |val| return self.emit(.{ .int = val }),
-            .float_literal => |val| return self.emit(.{ .float = val }),
             .bool_literal => |val| return self.emit(.{ .bool = val }),
             .identifier => |name| {
                 // Check if it's a parameter
@@ -414,22 +270,12 @@ pub const Generator = struct {
                     .sub => .{ .sub = op },
                     .mul => .{ .mul = op },
                     .div => .{ .div = op },
-                    .mod => .{ .div = op }, // simplified
-                    .eq => .{ .cmp_eq = op },
-                    .neq => .{ .cmp_neq = op },
-                    .lt => .{ .cmp_lt = op },
-                    .lte => .{ .cmp_lte = op },
-                    .gt => .{ .cmp_gt = op },
-                    .gte => .{ .cmp_gte = op },
-                    .@"and" => .{ .cmp_eq = op }, // simplified
-                    .@"or" => .{ .cmp_neq = op }, // simplified
                 });
             },
             .unary => |un| {
                 const operand = try self.genExpr(un.operand);
                 return switch (un.op) {
                     .neg => self.emit(.{ .neg = operand }),
-                    .not => self.emit(.{ .neg = operand }), // simplified
                 };
             },
             .call => |c| {
@@ -472,17 +318,12 @@ pub const Generator = struct {
     fn dumpInst(inst: Inst, writer: anytype) !void {
         switch (inst) {
             .int => |v| try writer.print("int({d})", .{v}),
-            .float => |v| try writer.print("float({d})", .{v}),
             .bool => |v| try writer.print("bool({any})", .{v}),
             .add => |op| try writer.print("add(%{d}, %{d})", .{ op.lhs, op.rhs }),
             .sub => |op| try writer.print("sub(%{d}, %{d})", .{ op.lhs, op.rhs }),
             .mul => |op| try writer.print("mul(%{d}, %{d})", .{ op.lhs, op.rhs }),
             .div => |op| try writer.print("div(%{d}, %{d})", .{ op.lhs, op.rhs }),
             .neg => |idx| try writer.print("neg(%{d})", .{idx}),
-            .cmp_eq => |op| try writer.print("cmp_eq(%{d}, %{d})", .{ op.lhs, op.rhs }),
-            .cmp_lt => |op| try writer.print("cmp_lt(%{d}, %{d})", .{ op.lhs, op.rhs }),
-            .cmp_gt => |op| try writer.print("cmp_gt(%{d}, %{d})", .{ op.lhs, op.rhs }),
-            .cmp_neq, .cmp_lte, .cmp_gte => try writer.writeAll("cmp_..."),
             .decl_ref => |name| try writer.print("decl_ref(\"{s}\")", .{name}),
             .param_ref => |idx| try writer.print("param_ref({d})", .{idx}),
             .decl_const => |d| try writer.print("decl_const(\"{s}\", %{d})", .{ d.name, d.value }),
@@ -497,12 +338,6 @@ pub const Generator = struct {
                     try writer.writeAll("ret(void)");
                 }
             },
-            .cond_br => |br| try writer.print("cond_br(%{d}, then={d})", .{ br.cond, br.then_block }),
-            .loop_start => |id| try writer.print("loop_start({d})", .{id}),
-            .loop_end => |id| try writer.print("loop_end({d})", .{id}),
-            .loop_break => |id| try writer.print("loop_break({d})", .{id}),
-            .loop_continue => |id| try writer.print("loop_continue({d})", .{id}),
-            .store => |s| try writer.print("store(\"{s}\", %{d})", .{ s.name, s.value }),
             .call => |c| try writer.print("call(\"{s}\", {d} args)", .{ c.callee, c.args.len }),
         }
     }
@@ -512,7 +347,6 @@ fn typeExprToString(t: TypeExpr) []const u8 {
     return switch (t) {
         .primitive => |p| @tagName(p),
         .named => |n| n,
-        .pointer, .optional => "ptr",
     };
 }
 

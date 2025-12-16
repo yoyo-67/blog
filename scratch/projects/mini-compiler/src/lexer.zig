@@ -1,4 +1,4 @@
-//! Lexer (Tokenizer) for Zig subset compiler
+//! Lexer (Tokenizer) for Zig subset compiler (simplified)
 //!
 //! Converts source text into a stream of tokens.
 
@@ -84,27 +84,16 @@ pub const Lexer = struct {
         return isAlpha(c) or isDigit(c);
     }
 
-    /// Scan a number literal (integer or float)
+    /// Scan an integer literal
     fn scanNumber(self: *Lexer) Token {
         const start = self.pos;
-        var is_float = false;
 
-        // Scan integer part
         while (isDigit(self.peek())) {
             _ = self.advance();
         }
 
-        // Check for decimal part
-        if (self.peek() == '.' and isDigit(self.peekAhead(1))) {
-            is_float = true;
-            _ = self.advance(); // consume '.'
-            while (isDigit(self.peek())) {
-                _ = self.advance();
-            }
-        }
-
         return .{
-            .type = if (is_float) .float_literal else .int_literal,
+            .type = .int_literal,
             .lexeme = self.source[start..self.pos],
             .line = self.line,
             .column = self.start_column,
@@ -123,52 +112,6 @@ pub const Lexer = struct {
         return .{
             .type = token.lookupIdentifier(lexeme),
             .lexeme = lexeme,
-            .line = self.line,
-            .column = self.start_column,
-        };
-    }
-
-    /// Scan a string literal
-    fn scanString(self: *Lexer) Token {
-        const start = self.pos;
-        _ = self.advance(); // consume opening "
-
-        while (self.peek() != '"' and self.peek() != 0) {
-            if (self.peek() == '\\') {
-                _ = self.advance(); // skip escape char
-            }
-            _ = self.advance();
-        }
-
-        if (self.peek() == '"') {
-            _ = self.advance(); // consume closing "
-        }
-
-        return .{
-            .type = .string_literal,
-            .lexeme = self.source[start..self.pos],
-            .line = self.line,
-            .column = self.start_column,
-        };
-    }
-
-    /// Scan a char literal
-    fn scanChar(self: *Lexer) Token {
-        const start = self.pos;
-        _ = self.advance(); // consume opening '
-
-        if (self.peek() == '\\') {
-            _ = self.advance(); // skip escape char
-        }
-        _ = self.advance(); // consume char
-
-        if (self.peek() == '\'') {
-            _ = self.advance(); // consume closing '
-        }
-
-        return .{
-            .type = .char_literal,
-            .lexeme = self.source[start..self.pos],
             .line = self.line,
             .column = self.start_column,
         };
@@ -214,65 +157,20 @@ pub const Lexer = struct {
             return self.scanIdentifier();
         }
 
-        // String literals
-        if (c == '"') {
-            return self.scanString();
-        }
-
-        // Char literals
-        if (c == '\'') {
-            return self.scanChar();
-        }
-
-        // Multi-character operators
-        const next = self.peekAhead(1);
-
+        // Single-character tokens
         switch (c) {
-            '=' => {
-                if (next == '=') return self.makeToken(.equal_equal, 2);
-                return self.makeToken(.equal, 1);
-            },
-            '!' => {
-                if (next == '=') return self.makeToken(.bang_equal, 2);
-                return self.makeToken(.bang, 1);
-            },
-            '<' => {
-                if (next == '=') return self.makeToken(.less_equal, 2);
-                return self.makeToken(.less, 1);
-            },
-            '>' => {
-                if (next == '=') return self.makeToken(.greater_equal, 2);
-                return self.makeToken(.greater, 1);
-            },
-            '+' => {
-                if (next == '=') return self.makeToken(.plus_equal, 2);
-                return self.makeToken(.plus, 1);
-            },
-            '-' => {
-                if (next == '>') return self.makeToken(.arrow, 2);
-                if (next == '=') return self.makeToken(.minus_equal, 2);
-                return self.makeToken(.minus, 1);
-            },
-            '*' => {
-                if (next == '=') return self.makeToken(.star_equal, 2);
-                return self.makeToken(.star, 1);
-            },
-            '/' => {
-                if (next == '=') return self.makeToken(.slash_equal, 2);
-                return self.makeToken(.slash, 1);
-            },
-            '%' => return self.makeToken(.percent, 1),
+            '+' => return self.makeToken(.plus, 1),
+            '-' => return self.makeToken(.minus, 1),
+            '*' => return self.makeToken(.star, 1),
+            '/' => return self.makeToken(.slash, 1),
+            '=' => return self.makeToken(.equal, 1),
             '(' => return self.makeToken(.lparen, 1),
             ')' => return self.makeToken(.rparen, 1),
             '{' => return self.makeToken(.lbrace, 1),
             '}' => return self.makeToken(.rbrace, 1),
-            '[' => return self.makeToken(.lbracket, 1),
-            ']' => return self.makeToken(.rbracket, 1),
             ',' => return self.makeToken(.comma, 1),
             ':' => return self.makeToken(.colon, 1),
             ';' => return self.makeToken(.semicolon, 1),
-            '.' => return self.makeToken(.dot, 1),
-            '@' => return self.makeToken(.at, 1),
             else => return self.makeToken(.invalid, 1),
         }
     }
@@ -297,40 +195,32 @@ pub const Lexer = struct {
 // ============================================================================
 
 test "lexer keywords" {
-    var lexer = Lexer.init("fn pub const var return if else while");
+    var lexer = Lexer.init("fn pub const var return");
 
     try std.testing.expectEqual(TokenType.keyword_fn, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.keyword_pub, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.keyword_const, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.keyword_var, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.keyword_return, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.keyword_if, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.keyword_else, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.keyword_while, lexer.nextToken().type);
 }
 
 test "lexer types" {
-    var lexer = Lexer.init("i32 u8 bool void");
+    var lexer = Lexer.init("i32 i64 bool void");
 
     try std.testing.expectEqual(TokenType.type_i32, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.type_u8, lexer.nextToken().type);
+    try std.testing.expectEqual(TokenType.type_i64, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.type_bool, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.type_void, lexer.nextToken().type);
 }
 
 test "lexer operators" {
-    var lexer = Lexer.init("+ - * / == != <= >= += -=");
+    var lexer = Lexer.init("+ - * / =");
 
     try std.testing.expectEqual(TokenType.plus, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.minus, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.star, lexer.nextToken().type);
     try std.testing.expectEqual(TokenType.slash, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.equal_equal, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.bang_equal, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.less_equal, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.greater_equal, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.plus_equal, lexer.nextToken().type);
-    try std.testing.expectEqual(TokenType.minus_equal, lexer.nextToken().type);
+    try std.testing.expectEqual(TokenType.equal, lexer.nextToken().type);
 }
 
 test "lexer function declaration" {

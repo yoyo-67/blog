@@ -1,4 +1,4 @@
-//! Abstract Syntax Tree (AST) definitions for Zig subset compiler
+//! Abstract Syntax Tree (AST) definitions for Zig subset compiler (simplified)
 //!
 //! The AST represents the hierarchical structure of the source code.
 
@@ -7,41 +7,21 @@ const Allocator = std.mem.Allocator;
 
 /// Type representation in AST (unresolved - just names)
 pub const TypeExpr = union(enum) {
-    /// Primitive type: i32, u8, bool, void
+    /// Primitive type: i32, i64, bool, void
     primitive: PrimitiveType,
     /// Named type (identifier)
     named: []const u8,
-    /// Pointer type: *T
-    pointer: *const TypeExpr,
-    /// Optional type: ?T
-    optional: *const TypeExpr,
 
     pub const PrimitiveType = enum {
-        i8,
-        i16,
         i32,
         i64,
-        u8,
-        u16,
-        u32,
-        u64,
-        f32,
-        f64,
         bool,
         void,
 
         pub fn fromString(s: []const u8) ?PrimitiveType {
             const map = std.StaticStringMap(PrimitiveType).initComptime(.{
-                .{ "i8", .i8 },
-                .{ "i16", .i16 },
                 .{ "i32", .i32 },
                 .{ "i64", .i64 },
-                .{ "u8", .u8 },
-                .{ "u16", .u16 },
-                .{ "u32", .u32 },
-                .{ "u64", .u64 },
-                .{ "f32", .f32 },
-                .{ "f64", .f64 },
                 .{ "bool", .bool },
                 .{ "void", .void },
             });
@@ -50,26 +30,12 @@ pub const TypeExpr = union(enum) {
     };
 };
 
-/// Binary operators
+/// Binary operators (arithmetic only)
 pub const BinaryOp = enum {
-    // Arithmetic
     add, // +
     sub, // -
     mul, // *
     div, // /
-    mod, // %
-
-    // Comparison
-    eq, // ==
-    neq, // !=
-    lt, // <
-    lte, // <=
-    gt, // >
-    gte, // >=
-
-    // Logical
-    @"and", // and
-    @"or", // or
 
     pub fn symbol(self: BinaryOp) []const u8 {
         return switch (self) {
@@ -77,15 +43,6 @@ pub const BinaryOp = enum {
             .sub => "-",
             .mul => "*",
             .div => "/",
-            .mod => "%",
-            .eq => "==",
-            .neq => "!=",
-            .lt => "<",
-            .lte => "<=",
-            .gt => ">",
-            .gte => ">=",
-            .@"and" => "and",
-            .@"or" => "or",
         };
     }
 };
@@ -93,31 +50,10 @@ pub const BinaryOp = enum {
 /// Unary operators
 pub const UnaryOp = enum {
     neg, // -
-    not, // !
 
     pub fn symbol(self: UnaryOp) []const u8 {
         return switch (self) {
             .neg => "-",
-            .not => "!",
-        };
-    }
-};
-
-/// Assignment operators
-pub const AssignOp = enum {
-    assign, // =
-    add_assign, // +=
-    sub_assign, // -=
-    mul_assign, // *=
-    div_assign, // /=
-
-    pub fn symbol(self: AssignOp) []const u8 {
-        return switch (self) {
-            .assign => "=",
-            .add_assign => "+=",
-            .sub_assign => "-=",
-            .mul_assign => "*=",
-            .div_assign => "/=",
         };
     }
 };
@@ -167,35 +103,9 @@ pub const Node = union(enum) {
         value: ?*Node,
     },
 
-    /// If statement: if (cond) then_block else else_block
-    if_stmt: struct {
-        condition: *Node,
-        then_block: *Node,
-        else_block: ?*Node,
-    },
-
-    /// While loop: while (cond) body
-    while_stmt: struct {
-        condition: *Node,
-        body: *Node,
-    },
-
-    /// Break statement
-    break_stmt,
-
-    /// Continue statement
-    continue_stmt,
-
     /// Expression statement (expression followed by ;)
     expr_stmt: struct {
         expr: *Node,
-    },
-
-    /// Assignment: target = value; or target += value; etc.
-    assign_stmt: struct {
-        target: *Node,
-        op: AssignOp,
-        value: *Node,
     },
 
     // ==================== Expressions ====================
@@ -203,14 +113,8 @@ pub const Node = union(enum) {
     /// Integer literal: 42
     int_literal: i64,
 
-    /// Float literal: 3.14
-    float_literal: f64,
-
     /// Boolean literal: true, false
     bool_literal: bool,
-
-    /// String literal: "hello"
-    string_literal: []const u8,
 
     /// Identifier: foo
     identifier: []const u8,
@@ -259,9 +163,9 @@ pub const Node = union(enum) {
         const prefix = spaces[0..@min(indent * 2, spaces.len)];
 
         switch (self.*) {
-            .root => |root| {
+            .root => |r| {
                 try writer.print("{s}Root\n", .{prefix});
-                for (root.decls) |decl| {
+                for (r.decls) |decl| {
                     try decl.dump(writer, indent + 1);
                 }
             },
@@ -296,37 +200,12 @@ pub const Node = union(enum) {
                     try val.dump(writer, indent + 1);
                 }
             },
-            .if_stmt => |if_s| {
-                try writer.print("{s}If\n", .{prefix});
-                try writer.print("{s}  condition:\n", .{prefix});
-                try if_s.condition.dump(writer, indent + 2);
-                try writer.print("{s}  then:\n", .{prefix});
-                try if_s.then_block.dump(writer, indent + 2);
-                if (if_s.else_block) |else_blk| {
-                    try writer.print("{s}  else:\n", .{prefix});
-                    try else_blk.dump(writer, indent + 2);
-                }
-            },
-            .while_stmt => |while_s| {
-                try writer.print("{s}While\n", .{prefix});
-                try while_s.condition.dump(writer, indent + 1);
-                try while_s.body.dump(writer, indent + 1);
-            },
-            .break_stmt => try writer.print("{s}Break\n", .{prefix}),
-            .continue_stmt => try writer.print("{s}Continue\n", .{prefix}),
             .expr_stmt => |expr_s| {
                 try writer.print("{s}ExprStmt\n", .{prefix});
                 try expr_s.expr.dump(writer, indent + 1);
             },
-            .assign_stmt => |assign| {
-                try writer.print("{s}Assign({s})\n", .{ prefix, assign.op.symbol() });
-                try assign.target.dump(writer, indent + 1);
-                try assign.value.dump(writer, indent + 1);
-            },
             .int_literal => |val| try writer.print("{s}Int({d})\n", .{ prefix, val }),
-            .float_literal => |val| try writer.print("{s}Float({d})\n", .{ prefix, val }),
             .bool_literal => |val| try writer.print("{s}Bool({any})\n", .{ prefix, val }),
-            .string_literal => |val| try writer.print("{s}String(\"{s}\")\n", .{ prefix, val }),
             .identifier => |name| try writer.print("{s}Ident({s})\n", .{ prefix, name }),
             .binary => |bin| {
                 try writer.print("{s}Binary({s})\n", .{ prefix, bin.op.symbol() });

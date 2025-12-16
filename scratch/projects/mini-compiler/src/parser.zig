@@ -1,7 +1,7 @@
-//! Parser for Zig subset compiler
+//! Parser for Zig subset compiler (simplified)
 //!
 //! Parses tokens into an Abstract Syntax Tree (AST).
-//! Supports: functions, const/var declarations, if/while, expressions.
+//! Supports: functions, const/var declarations, expressions with arithmetic.
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -16,7 +16,6 @@ pub const Node = ast_mod.Node;
 pub const TypeExpr = ast_mod.TypeExpr;
 pub const BinaryOp = ast_mod.BinaryOp;
 pub const UnaryOp = ast_mod.UnaryOp;
-pub const AssignOp = ast_mod.AssignOp;
 pub const Param = ast_mod.Param;
 
 pub const ParseError = error{
@@ -51,12 +50,6 @@ pub const Parser = struct {
             return .{ .type = .eof, .lexeme = "", .line = 0, .column = 0 };
         }
         return self.tokens[self.pos];
-    }
-
-    fn peek(self: *Parser, offset: usize) TokenType {
-        const idx = self.pos + offset;
-        if (idx >= self.tokens.len) return .eof;
-        return self.tokens[idx].type;
     }
 
     fn advance(self: *Parser) Token {
@@ -233,16 +226,8 @@ pub const Parser = struct {
 
         // Primitive types
         const prim: ?TypeExpr.PrimitiveType = switch (tok.type) {
-            .type_i8 => .i8,
-            .type_i16 => .i16,
             .type_i32 => .i32,
             .type_i64 => .i64,
-            .type_u8 => .u8,
-            .type_u16 => .u16,
-            .type_u32 => .u32,
-            .type_u64 => .u64,
-            .type_f32 => .f32,
-            .type_f64 => .f64,
             .type_bool => .bool,
             .type_void => .void,
             else => null,
@@ -300,30 +285,8 @@ pub const Parser = struct {
             return self.parseReturnStmt();
         }
 
-        // if statement
-        if (self.check(.keyword_if)) {
-            return self.parseIfStmt();
-        }
-
-        // while statement
-        if (self.check(.keyword_while)) {
-            return self.parseWhileStmt();
-        }
-
-        // break
-        if (self.match(.keyword_break)) {
-            _ = try self.expect(.semicolon);
-            return self.createNode(.break_stmt);
-        }
-
-        // continue
-        if (self.match(.keyword_continue)) {
-            _ = try self.expect(.semicolon);
-            return self.createNode(.continue_stmt);
-        }
-
-        // Expression statement or assignment
-        return self.parseExpressionOrAssignStmt();
+        // Expression statement
+        return self.parseExprStmt();
     }
 
     fn parseReturnStmt(self: *Parser) ParseError!*Node {
@@ -341,76 +304,8 @@ pub const Parser = struct {
         });
     }
 
-    fn parseIfStmt(self: *Parser) ParseError!*Node {
-        _ = try self.expect(.keyword_if);
-        _ = try self.expect(.lparen);
-        const condition = try self.parseExpression();
-        _ = try self.expect(.rparen);
-
-        const then_block = try self.parseBlock();
-
-        var else_block: ?*Node = null;
-        if (self.match(.keyword_else)) {
-            if (self.check(.keyword_if)) {
-                // else if
-                else_block = try self.parseIfStmt();
-            } else {
-                else_block = try self.parseBlock();
-            }
-        }
-
-        return self.createNode(.{
-            .if_stmt = .{
-                .condition = condition,
-                .then_block = then_block,
-                .else_block = else_block,
-            },
-        });
-    }
-
-    fn parseWhileStmt(self: *Parser) ParseError!*Node {
-        _ = try self.expect(.keyword_while);
-        _ = try self.expect(.lparen);
-        const condition = try self.parseExpression();
-        _ = try self.expect(.rparen);
-
-        const body = try self.parseBlock();
-
-        return self.createNode(.{
-            .while_stmt = .{
-                .condition = condition,
-                .body = body,
-            },
-        });
-    }
-
-    fn parseExpressionOrAssignStmt(self: *Parser) ParseError!*Node {
+    fn parseExprStmt(self: *Parser) ParseError!*Node {
         const expr = try self.parseExpression();
-
-        // Check for assignment operators
-        const assign_op: ?AssignOp = switch (self.current().type) {
-            .equal => .assign,
-            .plus_equal => .add_assign,
-            .minus_equal => .sub_assign,
-            .star_equal => .mul_assign,
-            .slash_equal => .div_assign,
-            else => null,
-        };
-
-        if (assign_op) |op| {
-            _ = self.advance();
-            const value = try self.parseExpression();
-            _ = try self.expect(.semicolon);
-
-            return self.createNode(.{
-                .assign_stmt = .{
-                    .target = expr,
-                    .op = op,
-                    .value = value,
-                },
-            });
-        }
-
         _ = try self.expect(.semicolon);
         return self.createNode(.{
             .expr_stmt = .{ .expr = expr },
@@ -419,31 +314,15 @@ pub const Parser = struct {
 
     // ==================== Expressions (Precedence Climbing) ====================
     //
-    // Precedence climbing algorithm:
-    //   1. Parse the first operand (atom)
-    //   2. While the next operator has precedence >= min_prec:
-    //      - Take the operator
-    //      - Recurse with min_prec = op_prec + 1 (for left-associativity)
-    //      - Combine: left OP right
-    //   3. Return the result
-    //
     // Precedence Table (higher = binds tighter):
-    //   or:          10
-    //   and:         20
-    //   == !=:       30
-    //   < > <= >=:   40
-    //   + -:         60
-    //   * / %:       70
+    //   + -:   60
+    //   * /:   70
 
     /// Get the precedence of a binary operator token
     fn getPrec(token_type: TokenType) i32 {
         return switch (token_type) {
-            .keyword_or => 10,
-            .keyword_and => 20,
-            .equal_equal, .bang_equal => 30,
-            .less, .less_equal, .greater, .greater_equal => 40,
             .plus, .minus => 60,
-            .star, .slash, .percent => 70,
+            .star, .slash => 70,
             else => -1, // not an operator
         };
     }
@@ -451,19 +330,10 @@ pub const Parser = struct {
     /// Get the binary operator for a token
     fn getBinaryOp(token_type: TokenType) ?BinaryOp {
         return switch (token_type) {
-            .keyword_or => .@"or",
-            .keyword_and => .@"and",
-            .equal_equal => .eq,
-            .bang_equal => .neq,
-            .less => .lt,
-            .less_equal => .lte,
-            .greater => .gt,
-            .greater_equal => .gte,
             .plus => .add,
             .minus => .sub,
             .star => .mul,
             .slash => .div,
-            .percent => .mod,
             else => null,
         };
     }
@@ -474,14 +344,6 @@ pub const Parser = struct {
     }
 
     /// Precedence climbing parser
-    ///
-    /// The key insight:
-    ///   - If op_prec >= min_prec: I handle this operator
-    ///   - If op_prec < min_prec: Let my CALLER handle it
-    ///
-    /// Recursing with (op_prec + 1) creates a "precedence barrier"
-    /// that only higher-precedence operators can cross, giving us
-    /// left-associativity for operators at the same level.
     fn parseExprPrecedence(self: *Parser, min_prec: i32) ParseError!*Node {
         // Step 1: Parse the left operand (prefix expression or atom)
         var left = try self.parsePrefixExpr();
@@ -497,8 +359,7 @@ pub const Parser = struct {
             const op = getBinaryOp(self.current().type) orelse break;
             _ = self.advance();
 
-            // Get right side, but only let STRONGER ops steal it
-            // The +1 is THE KEY to left-associativity!
+            // Get right side with (op_prec + 1) for left-associativity
             const right = try self.parseExprPrecedence(op_prec + 1);
 
             // Combine into a single node
@@ -517,14 +378,6 @@ pub const Parser = struct {
             const operand = try self.parsePrefixExpr();
             return self.createNode(.{
                 .unary = .{ .op = .neg, .operand = operand },
-            });
-        }
-
-        // Unary not: !x
-        if (self.match(.bang)) {
-            const operand = try self.parsePrefixExpr();
-            return self.createNode(.{
-                .unary = .{ .op = .not, .operand = operand },
             });
         }
 
@@ -579,12 +432,6 @@ pub const Parser = struct {
                     return ParseError.InvalidNumber;
                 return self.createNode(.{ .int_literal = value });
             },
-            .float_literal => {
-                _ = self.advance();
-                const value = std.fmt.parseFloat(f64, tok.lexeme) catch
-                    return ParseError.InvalidNumber;
-                return self.createNode(.{ .float_literal = value });
-            },
             .keyword_true => {
                 _ = self.advance();
                 return self.createNode(.{ .bool_literal = true });
@@ -592,13 +439,6 @@ pub const Parser = struct {
             .keyword_false => {
                 _ = self.advance();
                 return self.createNode(.{ .bool_literal = false });
-            },
-            .string_literal => {
-                _ = self.advance();
-                // Remove quotes
-                const s = tok.lexeme;
-                const content = if (s.len >= 2) s[1 .. s.len - 1] else s;
-                return self.createNode(.{ .string_literal = content });
             },
             .identifier => {
                 _ = self.advance();
@@ -644,28 +484,6 @@ test "parse function declaration" {
     try std.testing.expect(func.is_pub);
     try std.testing.expectEqualStrings("add", func.name);
     try std.testing.expectEqual(@as(usize, 2), func.params.len);
-}
-
-test "parse if statement" {
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    var parser = Parser.init("fn test() void { if (x > 5) { return; } }", allocator);
-    const ast = try parser.parse();
-
-    try std.testing.expectEqual(@as(usize, 1), ast.root.decls.len);
-}
-
-test "parse while statement" {
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    var parser = Parser.init("fn test() void { while (x > 0) { x -= 1; } }", allocator);
-    const ast = try parser.parse();
-
-    try std.testing.expectEqual(@as(usize, 1), ast.root.decls.len);
 }
 
 test "parse expression with precedence" {

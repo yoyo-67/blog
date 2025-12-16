@@ -1,4 +1,4 @@
-//! Code Generator
+//! Code Generator - Simplified
 //!
 //! Generates C code from AIR.
 
@@ -57,16 +57,9 @@ pub const Generator = struct {
     fn typeToCType(t: Type) []const u8 {
         return switch (t) {
             .int => |i| switch (i.bits) {
-                8 => if (i.signed) "int8_t" else "uint8_t",
-                16 => if (i.signed) "int16_t" else "uint16_t",
                 32 => if (i.signed) "int32_t" else "uint32_t",
                 64 => if (i.signed) "int64_t" else "uint64_t",
                 else => "int64_t",
-            },
-            .float => |f| switch (f.bits) {
-                32 => "float",
-                64 => "double",
-                else => "double",
             },
             .bool => "bool",
             .void => "void",
@@ -118,13 +111,6 @@ pub const Generator = struct {
                     try self.print(" t{d} = {d};\n", .{ idx, c.value });
                 }
             },
-            .const_float => |c| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.write(typeToCType(c.type_));
-                    try self.print(" t{d} = {d};\n", .{ idx, c.value });
-                }
-            },
             .const_bool => |b| {
                 if (self.in_function) {
                     try self.writeIndent();
@@ -166,53 +152,11 @@ pub const Generator = struct {
                     try self.print(" t{d} = -t{d};\n", .{ idx, n.operand });
                 }
             },
-            .cmp_eq => |op| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("bool t{d} = t{d} == t{d};\n", .{ idx, op.lhs, op.rhs });
-                }
-            },
-            .cmp_neq => |op| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("bool t{d} = t{d} != t{d};\n", .{ idx, op.lhs, op.rhs });
-                }
-            },
-            .cmp_lt => |op| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("bool t{d} = t{d} < t{d};\n", .{ idx, op.lhs, op.rhs });
-                }
-            },
-            .cmp_lte => |op| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("bool t{d} = t{d} <= t{d};\n", .{ idx, op.lhs, op.rhs });
-                }
-            },
-            .cmp_gt => |op| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("bool t{d} = t{d} > t{d};\n", .{ idx, op.lhs, op.rhs });
-                }
-            },
-            .cmp_gte => |op| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("bool t{d} = t{d} >= t{d};\n", .{ idx, op.lhs, op.rhs });
-                }
-            },
             .load => |l| {
                 if (self.in_function) {
                     try self.writeIndent();
                     try self.write(typeToCType(l.type_));
                     try self.print(" t{d} = t{d};\n", .{ idx, l.local_idx });
-                }
-            },
-            .store => |s| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("t{d} = t{d};\n", .{ s.local_idx, s.value });
                 }
             },
             .param => |p| {
@@ -269,39 +213,6 @@ pub const Generator = struct {
                     self.indent = 0;
                     try self.write("}\n\n");
                     self.in_function = false;
-                }
-            },
-            .cond_br => |br| {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.print("if (t{d}) {{\n", .{br.cond});
-                    self.indent += 1;
-                }
-            },
-            .loop_start => {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.write("while (1) {\n");
-                    self.indent += 1;
-                }
-            },
-            .loop_end => {
-                if (self.in_function) {
-                    self.indent -= 1;
-                    try self.writeIndent();
-                    try self.write("}\n");
-                }
-            },
-            .loop_break => {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.write("break;\n");
-                }
-            },
-            .loop_continue => {
-                if (self.in_function) {
-                    try self.writeIndent();
-                    try self.write("continue;\n");
                 }
             },
             .call => |c| {

@@ -1,4 +1,4 @@
-//! LLVM IR Code Generator
+//! LLVM IR Code Generator - Simplified
 //!
 //! Generates LLVM IR from AIR, similar to how the real Zig compiler
 //! can target LLVM for code generation.
@@ -82,16 +82,9 @@ pub const Generator = struct {
         return switch (t) {
             .int => |i| switch (i.bits) {
                 1 => "i1",
-                8 => "i8",
-                16 => "i16",
                 32 => "i32",
                 64 => "i64",
                 else => "i64",
-            },
-            .float => |f| switch (f.bits) {
-                32 => "float",
-                64 => "double",
-                else => "double",
             },
             .bool => "i1",
             .void => "void",
@@ -140,16 +133,6 @@ pub const Generator = struct {
                 if (self.in_function) {
                     const reg = self.nextReg();
                     try self.mapAirToReg(idx, reg);
-                    // In LLVM IR, we can just use the constant directly in operations,
-                    // but for consistency we'll create a register
-                    // Actually, LLVM doesn't need explicit constant assignments
-                    // We'll handle constants inline in operations
-                    // For now, store the value mapping
-                    _ = c;
-                }
-            },
-            .const_float => |c| {
-                if (self.in_function) {
                     _ = c;
                 }
             },
@@ -203,7 +186,6 @@ pub const Generator = struct {
                     const rhs_str = try self.getOperandStr(air, op.rhs);
                     const type_str = typeToLLVM(op.type_);
 
-                    // Use sdiv for signed division
                     try self.print("  %{d} = sdiv {s} {s}, {s}\n", .{ reg, type_str, lhs_str, rhs_str });
                 }
             },
@@ -215,113 +197,26 @@ pub const Generator = struct {
                     const operand_str = try self.getOperandStr(air, n.operand);
                     const type_str = typeToLLVM(n.type_);
 
-                    // Negate by subtracting from 0
                     try self.print("  %{d} = sub {s} 0, {s}\n", .{ reg, type_str, operand_str });
-                }
-            },
-            .cmp_eq => |op| {
-                if (self.in_function) {
-                    const reg = self.nextReg();
-                    try self.mapAirToReg(idx, reg);
-
-                    const lhs_str = try self.getOperandStr(air, op.lhs);
-                    const rhs_str = try self.getOperandStr(air, op.rhs);
-                    const lhs_type = self.getOperandType(air, op.lhs);
-
-                    try self.print("  %{d} = icmp eq {s} {s}, {s}\n", .{ reg, typeToLLVM(lhs_type), lhs_str, rhs_str });
-                }
-            },
-            .cmp_neq => |op| {
-                if (self.in_function) {
-                    const reg = self.nextReg();
-                    try self.mapAirToReg(idx, reg);
-
-                    const lhs_str = try self.getOperandStr(air, op.lhs);
-                    const rhs_str = try self.getOperandStr(air, op.rhs);
-                    const lhs_type = self.getOperandType(air, op.lhs);
-
-                    try self.print("  %{d} = icmp ne {s} {s}, {s}\n", .{ reg, typeToLLVM(lhs_type), lhs_str, rhs_str });
-                }
-            },
-            .cmp_lt => |op| {
-                if (self.in_function) {
-                    const reg = self.nextReg();
-                    try self.mapAirToReg(idx, reg);
-
-                    const lhs_str = try self.getOperandStr(air, op.lhs);
-                    const rhs_str = try self.getOperandStr(air, op.rhs);
-                    const lhs_type = self.getOperandType(air, op.lhs);
-
-                    try self.print("  %{d} = icmp slt {s} {s}, {s}\n", .{ reg, typeToLLVM(lhs_type), lhs_str, rhs_str });
-                }
-            },
-            .cmp_lte => |op| {
-                if (self.in_function) {
-                    const reg = self.nextReg();
-                    try self.mapAirToReg(idx, reg);
-
-                    const lhs_str = try self.getOperandStr(air, op.lhs);
-                    const rhs_str = try self.getOperandStr(air, op.rhs);
-                    const lhs_type = self.getOperandType(air, op.lhs);
-
-                    try self.print("  %{d} = icmp sle {s} {s}, {s}\n", .{ reg, typeToLLVM(lhs_type), lhs_str, rhs_str });
-                }
-            },
-            .cmp_gt => |op| {
-                if (self.in_function) {
-                    const reg = self.nextReg();
-                    try self.mapAirToReg(idx, reg);
-
-                    const lhs_str = try self.getOperandStr(air, op.lhs);
-                    const rhs_str = try self.getOperandStr(air, op.rhs);
-                    const lhs_type = self.getOperandType(air, op.lhs);
-
-                    try self.print("  %{d} = icmp sgt {s} {s}, {s}\n", .{ reg, typeToLLVM(lhs_type), lhs_str, rhs_str });
-                }
-            },
-            .cmp_gte => |op| {
-                if (self.in_function) {
-                    const reg = self.nextReg();
-                    try self.mapAirToReg(idx, reg);
-
-                    const lhs_str = try self.getOperandStr(air, op.lhs);
-                    const rhs_str = try self.getOperandStr(air, op.rhs);
-                    const lhs_type = self.getOperandType(air, op.lhs);
-
-                    try self.print("  %{d} = icmp sge {s} {s}, {s}\n", .{ reg, typeToLLVM(lhs_type), lhs_str, rhs_str });
                 }
             },
             .load => |l| {
                 if (self.in_function) {
-                    // In SSA form, we just reference the previous value
-                    // Map this AIR index to the same register as the source
                     if (self.getReg(l.local_idx)) |src_reg| {
                         try self.mapAirToReg(idx, src_reg);
                     }
                 }
             },
-            .store => |s| {
-                if (self.in_function) {
-                    // In SSA, we just map to the value register
-                    if (self.getReg(s.value)) |val_reg| {
-                        try self.mapAirToReg(s.local_idx, val_reg);
-                    }
-                }
-            },
             .param => |p| {
                 if (self.in_function) {
-                    // Parameters are %0, %1, etc in LLVM IR
-                    // We need to map them to our register system
                     const reg = self.nextReg();
                     try self.mapAirToReg(idx, reg);
 
-                    // Copy parameter to a new register for SSA
                     try self.print("  %{d} = add {s} %arg{d}, 0\n", .{ reg, typeToLLVM(p.type_), p.idx });
                 }
             },
             .decl_const => |d| {
                 if (self.in_function) {
-                    // Just map to the value's register
                     if (self.getReg(d.value)) |val_reg| {
                         try self.mapAirToReg(idx, val_reg);
                     }
@@ -337,7 +232,6 @@ pub const Generator = struct {
                 }
             },
             .decl_fn => |f| {
-                // Start function definition
                 try self.write("define ");
                 try self.write(typeToLLVM(f.return_type));
                 try self.print(" @{s}(", .{f.name});
@@ -366,38 +260,8 @@ pub const Generator = struct {
                         try self.write("  ret void\n");
                     }
 
-                    // Close function
                     try self.write("}\n\n");
                     self.in_function = false;
-                }
-            },
-            .cond_br => |br| {
-                if (self.in_function) {
-                    const cond_str = try self.getOperandStr(air, br.cond);
-                    try self.print("  br i1 {s}, label %then{d}, label %else{d}\n", .{ cond_str, br.then_block, br.then_block });
-                    try self.print("then{d}:\n", .{br.then_block});
-                }
-            },
-            .loop_start => |id| {
-                if (self.in_function) {
-                    try self.print("  br label %loop{d}\n", .{id});
-                    try self.print("loop{d}:\n", .{id});
-                }
-            },
-            .loop_end => |id| {
-                if (self.in_function) {
-                    try self.print("  br label %loop{d}\n", .{id});
-                    try self.print("loop_end{d}:\n", .{id});
-                }
-            },
-            .loop_break => |id| {
-                if (self.in_function) {
-                    try self.print("  br label %loop_end{d}\n", .{id});
-                }
-            },
-            .loop_continue => |id| {
-                if (self.in_function) {
-                    try self.print("  br label %loop{d}\n", .{id});
                 }
             },
             .call => |c| {
@@ -423,14 +287,11 @@ pub const Generator = struct {
     fn getOperandStr(self: *Generator, air: []const Air, air_idx: AirIndex) ![]const u8 {
         const arena_alloc = self.arena.allocator();
 
-        // Check if it's a constant that we can inline
         const inst = air[air_idx];
         switch (inst) {
             .const_int => |c| {
-                // Return the constant value as a string
                 var buf: [32]u8 = undefined;
                 const slice = std.fmt.bufPrint(&buf, "{d}", .{c.value}) catch return "0";
-                // Allocate from arena (no need to free)
                 const result = try arena_alloc.alloc(u8, slice.len);
                 @memcpy(result, slice);
                 return result;
@@ -439,7 +300,6 @@ pub const Generator = struct {
                 return if (b) "1" else "0";
             },
             else => {
-                // Use register reference
                 if (self.getReg(air_idx)) |reg| {
                     var buf: [16]u8 = undefined;
                     const slice = std.fmt.bufPrint(&buf, "%{d}", .{reg}) catch return "0";
@@ -458,11 +318,9 @@ pub const Generator = struct {
         const inst = air[air_idx];
         return switch (inst) {
             .const_int => |c| c.type_,
-            .const_float => |c| c.type_,
             .const_bool => Type.bool,
             .add, .sub, .mul, .div => |op| op.type_,
             .neg => |n| n.type_,
-            .cmp_eq, .cmp_neq, .cmp_lt, .cmp_lte, .cmp_gt, .cmp_gte => Type.bool,
             .load => |l| l.type_,
             .param => |p| p.type_,
             .decl_const => |d| d.type_,
