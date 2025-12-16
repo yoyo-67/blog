@@ -165,7 +165,10 @@ pub const Optimizer = struct {
 // ============================================================================
 
 test "fold integer addition" {
-    const allocator = std.testing.allocator;
+    // Use arena for AST nodes - automatically freed when test ends
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     // 3 + 5 should fold to 8
     const left = try Node.create(allocator, .{ .int_literal = 3 });
@@ -179,16 +182,12 @@ test "fold integer addition" {
 
     try std.testing.expectEqual(Node{ .int_literal = 8 }, result.*);
     try std.testing.expectEqual(@as(usize, 1), optimizer.getOptimizationCount());
-
-    // Cleanup
-    allocator.destroy(result);
-    allocator.destroy(left);
-    allocator.destroy(right);
-    allocator.destroy(binary);
 }
 
 test "fold chained operations" {
-    const allocator = std.testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     // 3 + 5 * 2 should fold to 13
     const three = try Node.create(allocator, .{ .int_literal = 3 });
@@ -207,13 +206,12 @@ test "fold chained operations" {
     const result = try optimizer.optimize(add);
 
     try std.testing.expectEqual(Node{ .int_literal = 13 }, result.*);
-
-    // Cleanup (simplified - in real code would track all allocations)
-    allocator.destroy(result);
 }
 
 test "fold negation" {
-    const allocator = std.testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     // -5 should fold to -5 (literal)
     const five = try Node.create(allocator, .{ .int_literal = 5 });
@@ -225,8 +223,4 @@ test "fold negation" {
     const result = try optimizer.optimize(neg);
 
     try std.testing.expectEqual(Node{ .int_literal = -5 }, result.*);
-
-    allocator.destroy(result);
-    allocator.destroy(five);
-    allocator.destroy(neg);
 }

@@ -169,7 +169,14 @@ pub const Generator = struct {
     }
 
     /// Finalize and return the compiled code
+    /// Transfers ownership of bytecode and constants, cleans up internal state
+    /// After finalize(), deinit() can still be safely called (it becomes a no-op)
     pub fn finalize(self: *Generator) !CompiledCode {
+        // Clean up var_indices since we're done with it (not needed in output)
+        self.var_indices.deinit();
+        // Re-initialize to empty so deinit() is safe to call after finalize()
+        self.var_indices = std.StringHashMap(u8).init(self.allocator);
+
         return .{
             .code = try self.code.toOwnedSlice(self.allocator),
             .constants_int = try self.constants_int.toOwnedSlice(self.allocator),

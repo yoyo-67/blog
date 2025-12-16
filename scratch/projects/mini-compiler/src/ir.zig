@@ -182,17 +182,17 @@ pub const Generator = struct {
 // ============================================================================
 
 test "generate simple addition" {
-    const allocator = std.testing.allocator;
+    // Use arena for AST nodes - automatically freed when test ends
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     // 3 + 5
     const left = try Node.create(allocator, .{ .int_literal = 3 });
-    defer allocator.destroy(left);
     const right = try Node.create(allocator, .{ .int_literal = 5 });
-    defer allocator.destroy(right);
     const binary = try Node.create(allocator, .{
         .binary = .{ .op = .add, .left = left, .right = right },
     });
-    defer allocator.destroy(binary);
 
     var gen = Generator.init(allocator);
     defer gen.deinit();
@@ -209,15 +209,15 @@ test "generate simple addition" {
 }
 
 test "generate variable assignment" {
-    const allocator = std.testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     // x = 42
     const value = try Node.create(allocator, .{ .int_literal = 42 });
-    defer allocator.destroy(value);
     const assign = try Node.create(allocator, .{
         .assignment = .{ .name = "x", .value = value },
     });
-    defer allocator.destroy(assign);
 
     var gen = Generator.init(allocator);
     defer gen.deinit();

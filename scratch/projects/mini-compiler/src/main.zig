@@ -43,31 +43,36 @@ pub const CompileError = error{
 };
 
 /// Compile source code to bytecode
+/// Uses an arena allocator internally for AST nodes, freeing them after codegen
 pub fn compile(source: []const u8, allocator: Allocator) CompileError!CompiledCode {
-    // Stage 1 & 2: Lexing and Parsing
-    var p = Parser.init(source, allocator);
+    // Use arena for temporary AST allocations - all freed at once when done
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+
+    const arena_alloc = arena.allocator();
+
+    // Stage 1 & 2: Lexing and Parsing (uses arena)
+    var p = Parser.init(source, arena_alloc);
     const ast_root = p.parse() catch return CompileError.ParseError;
 
-    // Stage 3: Semantic Analysis
-    var analyzer = Analyzer.init(allocator);
-    defer analyzer.deinit();
+    // Stage 3: Semantic Analysis (uses arena)
+    var analyzer = Analyzer.init(arena_alloc);
     _ = analyzer.analyze(ast_root) catch return CompileError.SemanticError;
 
-    // Stage 4: Optimization
-    var opt = Optimizer.init(allocator);
+    // Stage 4: Optimization (uses arena)
+    var opt = Optimizer.init(arena_alloc);
     const optimized_ast = opt.optimize(ast_root) catch return CompileError.OptimizeError;
 
-    // Stage 5: IR Generation
-    var ir_gen = IrGenerator.init(allocator);
-    defer ir_gen.deinit();
+    // Stage 5: IR Generation (uses arena)
+    var ir_gen = IrGenerator.init(arena_alloc);
     ir_gen.generate(optimized_ast) catch return CompileError.IrGenError;
 
-    // Stage 6: Code Generation
+    // Stage 6: Code Generation - uses MAIN allocator for output bytecode
     var code_gen = CodeGenerator.init(allocator);
-    defer code_gen.deinit();
     code_gen.generate(ir_gen.getInstructions()) catch return CompileError.CodeGenError;
 
     return code_gen.finalize() catch return CompileError.OutOfMemory;
+    // arena freed here - all AST nodes, IR instructions cleaned up
 }
 
 /// Compile and run source code, returning the result
@@ -81,7 +86,12 @@ pub fn run(source: []const u8, allocator: Allocator) !Value {
 
 /// Compile and run with debug output
 pub fn runWithDebug(source: []const u8, allocator: Allocator) !Value {
-    const stderr = std.io.getStdErr().writer();
+    // Zig 0.15 buffered I/O API
+    const stderr_file = std.fs.File.stderr();
+    var stderr_buf: [4096]u8 = undefined;
+    var stderr_writer = stderr_file.writer(&stderr_buf);
+    const stderr = &stderr_writer.interface;
+    defer stderr.flush() catch {};
 
     try stderr.print("\n=== Source ===\n{s}\n", .{source});
 

@@ -219,16 +219,20 @@ pub const Parser = struct {
 // ============================================================================
 
 test "parse simple expression" {
-    const allocator = std.testing.allocator;
-    var parser = Parser.init("3 + 5", allocator);
+    // Use arena for AST nodes - automatically freed when test ends
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
+    var parser = Parser.init("3 + 5", allocator);
     const ast = try parser.parse();
     _ = ast;
-    // Note: Would need proper cleanup for full test
 }
 
 test "parse operator precedence" {
-    const allocator = std.testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     // 3 + 5 * 2 should parse as 3 + (5 * 2)
     var parser = Parser.init("3 + 5 * 2", allocator);
@@ -243,7 +247,9 @@ test "parse operator precedence" {
 }
 
 test "parse parentheses" {
-    const allocator = std.testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     // (3 + 5) * 2 should be 16
     var parser = Parser.init("(3 + 5) * 2", allocator);
