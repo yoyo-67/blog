@@ -1156,6 +1156,31 @@ fn max(a: i32, b: i32) i32 {
 
 ---
 
+## Try It Yourself
+
+Dump the ZIR for any Zig file to see how your code is represented:
+
+```bash
+# Dump ZIR for a file
+zig ast-check -t your_file.zig
+```
+
+This is invaluable for understanding how Zig transforms your high-level code into intermediate representation.
+
+---
+
+## Further Reading
+
+For deeper exploration of ZIR and AstGen:
+
+- **[Zig AstGen: AST => ZIR](https://mitchellh.com/zig/astgen)** by Mitchell Hashimoto - Comprehensive walkthrough of how AST nodes become ZIR instructions.
+
+- **[Zig GitHub Wiki Glossary](https://github.com/ziglang/zig/wiki/Glossary)** - Official definitions including ZIR's ~400 instruction types.
+
+- **Source Code**: [`src/AstGen.zig`](https://github.com/ziglang/zig/blob/master/src/AstGen.zig) and [`lib/std/zig/Zir.zig`](https://github.com/ziglang/zig/blob/master/lib/std/zig/Zir.zig) - The implementations.
+
+---
+
 ## Conclusion
 
 ZIR is the bridge between the human-readable AST and the type-checked AIR. By keeping ZIR untyped, Zig enables:

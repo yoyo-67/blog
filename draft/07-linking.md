@@ -135,6 +135,141 @@ The linker combines all pieces and fills in the holes:
 
 ---
 
+## Zig's Different Approach: Single Compilation Unit
+
+Before diving into object files and symbols, let's address something important: **the traditional linking model above doesn't quite apply to pure Zig code**.
+
+### Traditional C/C++ vs Zig
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ TRADITIONAL C/C++ COMPILATION                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   main.c → compile → main.o ─┐                                      │
+│   utils.c → compile → utils.o ├─→ linker → executable               │
+│   math.c → compile → math.o ──┘                                     │
+│                                                                      │
+│   Each source file is a SEPARATE COMPILATION UNIT                   │
+│   • Compiled independently                                          │
+│   • Produces separate .o files                                      │
+│   • Linker combines them at the end                                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ZIG'S APPROACH: SINGLE COMPILATION UNIT                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   main.zig ──┐                                                       │
+│   utils.zig ──┼─→ ALL compiled as ONE UNIT → executable             │
+│   math.zig ───┘                                                      │
+│                                                                      │
+│   ALL Zig code is ONE compilation unit!                             │
+│   • @import() brings code into the SAME unit                        │
+│   • No intermediate .o files for Zig code                           │
+│   • Whole-program optimization by default                           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### What Does This Mean?
+
+Andrew Kelley (Zig's creator) explains it this way:
+
+> "Zig skips the middle man, and creates a single compilation unit with
+> everything in it, then runs the optimizations."
+
+When you write:
+```zig
+const utils = @import("utils.zig");
+const math = @import("math.zig");
+
+pub fn main() void {
+    utils.helper();
+    _ = math.add(5, 3);
+}
+```
+
+This is **NOT** like C's `#include` or traditional separate compilation. All three files become part of ONE semantic unit. The compiler sees everything at once.
+
+### Benefits of Single Compilation Unit
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ WHY SINGLE COMPILATION UNIT?                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. AGGRESSIVE CROSS-MODULE INLINING                                 │
+│    • Compiler can inline utils.helper() into main()                 │
+│    • No "translation unit barrier" to prevent optimization          │
+│                                                                      │
+│ 2. DEAD CODE ELIMINATION ACROSS ENTIRE CODEBASE                     │
+│    • If no one calls math.subtract(), it's not included             │
+│    • Works across file boundaries automatically                     │
+│                                                                      │
+│ 3. NO SYMBOL RESOLUTION OVERHEAD                                    │
+│    • No undefined symbols to resolve between Zig modules            │
+│    • No relocation entries needed for Zig-to-Zig calls              │
+│                                                                      │
+│ 4. BETTER THAN LTO                                                  │
+│    • Traditional compilers use Link-Time Optimization (LTO)         │
+│    • LTO re-analyzes object files at link time (slow, imperfect)    │
+│    • Zig just compiles everything together from the start           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### When Does Linking Actually Apply?
+
+If Zig uses single compilation unit, when do we need linking?
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ WHEN LINKING IS NEEDED IN ZIG                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Linking kicks in when you interact with NON-ZIG code:               │
+│                                                                      │
+│ 1. LINKING C LIBRARIES                                              │
+│    const c = @cImport(@cInclude("stdio.h"));                        │
+│    c.printf("Hello from C\n");                                      │
+│    → Need to link against libc                                      │
+│                                                                      │
+│ 2. LINKING SYSTEM LIBRARIES                                         │
+│    exe.linkSystemLibrary("SDL2");                                   │
+│    → Need to find and link libSDL2.so                              │
+│                                                                      │
+│ 3. LINKING PRE-COMPILED OBJECT FILES                               │
+│    exe.addObjectFile("legacy_code.o");                              │
+│    → External .o files need symbol resolution                      │
+│                                                                      │
+│ 4. PRODUCING SHARED LIBRARIES                                       │
+│    const lib = b.addSharedLibrary(...);                             │
+│    → Need GOT/PLT for position-independent code                    │
+│                                                                      │
+│                                                                      │
+│ For PURE ZIG code, the "linker" mostly just:                        │
+│   • Arranges code in memory                                        │
+│   • Writes the executable format headers (ELF, Mach-O, PE)         │
+│   • NO symbol resolution between Zig modules!                      │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### The Rest of This Article
+
+The concepts below (object files, symbols, relocations) still matter because:
+
+1. **C interop** - You'll likely link C libraries
+2. **Understanding linker errors** - Especially with extern functions
+3. **System understanding** - How executables work in general
+4. **Producing libraries** - If you export Zig code for others to use
+
+But keep in mind: for pure Zig-to-Zig code, most of this complexity disappears because everything is ONE compilation unit.
+
+---
+
 ## Part 2: What's Inside an Object File?
 
 ### Object File Structure
@@ -846,12 +981,16 @@ Each operating system has its own executable format:
 │               ├──→ zig (compiler + linker) → executable            │
 │   other.zig ──┘                                                     │
 │                                                                      │
+│   KEY INSIGHT: For pure Zig code, there are NO intermediate        │
+│   object files! The compiler writes DIRECTLY to the executable.    │
+│                                                                      │
 │   Benefits:                                                         │
 │   • Cross-compile to ANY target from ANY host                     │
 │   • No external tools needed                                       │
-│   • Incremental linking for fast rebuilds                         │
+│   • Incremental compilation with in-place binary patching         │
 │   • Reproducible builds                                            │
 │   • Full control over output                                       │
+│   • No object file overhead for pure Zig projects                 │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -887,9 +1026,9 @@ Zig implements linkers for all major platforms:
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Incremental Linking
+### Incremental Compilation: In-Place Binary Patching
 
-One of Zig's killer features:
+One of Zig's killer features - enabled by the single compilation unit approach:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -932,6 +1071,21 @@ One of Zig's killer features:
 │   Time: milliseconds!                                               │
 │                                                                      │
 │   This is why `zig build` is so fast during development.           │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ WHY THIS WORKS IN ZIG:                                              │
+│                                                                      │
+│   Because Zig uses a single compilation unit, the compiler has     │
+│   tight integration with the linker. It can:                       │
+│                                                                      │
+│   1. Write code directly to the final binary (no .o files)         │
+│   2. Track which functions are at which addresses                  │
+│   3. Patch just the changed parts on rebuild                       │
+│                                                                      │
+│   Traditional compilers can't do this because each .o file is      │
+│   compiled separately - the linker doesn't know which parts        │
+│   changed.                                                          │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -1264,8 +1418,15 @@ This completes our journey through the Zig compiler! From tokenization through p
 
 ## Further Reading
 
+### Zig-Specific
+- **[Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)** by Loris Cro - Explains incremental compilation and in-place binary patching.
+- **[Hot-code Reloading on macOS/arm64 with Zig](https://www.jakubkonka.com/2022/03/16/hcs-zig.html)** by Jakub Konka - Deep dive into the Mach-O incremental linker.
+- **[FOSDEM 2021: Mach-O Linker in Zig](https://archive.fosdem.org/2021/schedule/event/zig_macho/)** - Linking in the era of Apple Silicon.
+- **[Zig GitHub Wiki Glossary](https://github.com/ziglang/zig/wiki/Glossary)** - Official terminology.
+- **Source Code**: [`src/link/Elf.zig`](https://github.com/ziglang/zig/blob/master/src/link/Elf.zig), [`src/link/MachO.zig`](https://github.com/ziglang/zig/blob/master/src/link/MachO.zig)
+
+### General Linking Resources
 - [Linkers and Loaders](https://www.iecc.com/linker/) by John R. Levine
 - [ELF Specification](https://refspecs.linuxfoundation.org/elf/elf.pdf)
 - [Mach-O File Format](https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/MachOTopics/)
 - [PE/COFF Specification](https://docs.microsoft.com/en-us/windows/win32/debug/pe-format)
-- [How the Zig Linker Works](https://andrewkelley.me) (Andrew Kelley's blog)

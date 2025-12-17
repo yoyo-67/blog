@@ -1435,6 +1435,31 @@ The tokenizer is designed for speed:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Try It Yourself
+
+You can explore how the tokenizer works by dumping the tokens for any Zig file:
+
+```bash
+# See all tokens for a file
+zig ast-check --dump-tokens your_file.zig
+```
+
+This is a great way to understand how Zig breaks down your code into its fundamental pieces.
+
+---
+
+## Further Reading
+
+For deeper exploration of Zig's tokenizer:
+
+- **[Zig Tokenizer](https://mitchellh.com/zig/tokenizer)** by Mitchell Hashimoto - An excellent deep dive into the tokenizer implementation, state machine design, and performance optimizations.
+
+- **[Zig GitHub Wiki Glossary](https://github.com/ziglang/zig/wiki/Glossary)** - Official terminology for compiler internals.
+
+- **Source Code**: [`lib/std/zig/Tokenizer.zig`](https://github.com/ziglang/zig/blob/master/lib/std/zig/Tokenizer.zig) - The actual implementation (1,769 lines of elegant Zig).
+
+---
+
 ## Conclusion
 
 Zig's tokenizer is a masterclass in hand-crafted compiler engineering. By using a state machine with labeled switch continues, it achieves excellent performance while remaining readable and maintainable.

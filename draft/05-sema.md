@@ -1133,6 +1133,20 @@ Sema produces detailed, helpful error messages:
 
 ---
 
+## Further Reading
+
+For deeper exploration of Sema and semantic analysis:
+
+- **[Zig Sema: ZIR => AIR](https://mitchellh.com/zig/sema)** by Mitchell Hashimoto - Excellent deep dive into how semantic analysis works, including the crucial `inst_map` that maps ZIR to AIR instructions.
+
+- **[Zig GitHub Wiki Glossary](https://github.com/ziglang/zig/wiki/Glossary)** - Official terminology for compiler internals.
+
+- **[How a Zig IDE Could Work](https://matklad.github.io/2023/02/10/how-a-zig-ide-could-work.html)** by Alex Kladov - Discusses Sema's role in incremental compilation and IDE integration.
+
+- **Source Code**: [`src/Sema.zig`](https://github.com/ziglang/zig/blob/master/src/Sema.zig) - The 37,000+ line implementation.
+
+---
+
 ## Conclusion
 
 Sema is the heart of the Zig compiler. It's where:

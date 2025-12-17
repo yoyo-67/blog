@@ -881,4 +881,33 @@ This is why Zig feels fast even for large projects. It's not magic - it's carefu
 
 ---
 
+## Recent Developments: The New Elf2 Linker
+
+The Zig team has been making significant strides in incremental compilation:
+
+- **Elf2 Linker**: A new ELF linker delivers **11x faster incremental builds**. Build times dropped from ~800ms to ~70ms for small changes to the Zig compiler itself.
+
+- **How to try it**: Use the `-fincremental` flag (the new linker is the default with this flag):
+```bash
+zig build --watch -fincremental --prominent-compile-errors
+```
+
+- **Current status**: The self-hosted x86_64 backend targeting ELF has good incremental support. Other backends are still catching up.
+
+---
+
+## Further Reading
+
+- **[Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)** by Loris Cro - Deep dive into why Zig built its own backends and how incremental compilation works.
+
+- **[Zig Devlog 2025](https://ziglang.org/devlog/2025/)** - Latest updates on incremental compilation progress.
+
+- **[Incremental Compilation PR #21063](https://github.com/ziglang/zig/pull/21063)** - Technical details of the implementation.
+
+- **[Elf2 Linker PR #25299](https://github.com/ziglang/zig/pull/25299)** - The new linker that enables 11x faster incremental builds.
+
+- **[Zig GitHub Wiki Glossary](https://github.com/ziglang/zig/wiki/Glossary)** - Official terminology for caching and compilation concepts.
+
+---
+
 *Next article: We'll explore the Zig build system (build.zig) - how it uses comptime to create a build system that's both powerful and type-safe.*

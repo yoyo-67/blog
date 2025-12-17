@@ -2787,6 +2787,20 @@ Node Table:
 
 ---
 
+## Further Reading
+
+For deeper exploration of Zig's parser:
+
+- **[Zig Parser](https://mitchellh.com/zig/parser)** by Mitchell Hashimoto - Detailed walkthrough of the parsing process, state management, and the Ast struct.
+
+- **[Parser Combinators in Zig](https://devlog.hexops.com/2021/zig-parser-combinators-and-why-theyre-awesome/)** by Hexops - Alternative parsing approaches in Zig.
+
+- **[Zig GitHub Wiki Glossary](https://github.com/ziglang/zig/wiki/Glossary)** - Official terminology and definitions.
+
+- **Source Code**: [`lib/std/zig/Ast.zig`](https://github.com/ziglang/zig/blob/master/lib/std/zig/Ast.zig) - The AST data structures and parser implementation.
+
+---
+
 ## Conclusion
 
 Zig's parser and AST are designed for both correctness and efficiency:

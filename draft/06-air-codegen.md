@@ -1156,6 +1156,32 @@ Let's trace the same function through all three backends:
 
 ---
 
+## Recent Developments (Zig 0.15+)
+
+The code generation landscape has evolved significantly:
+
+- **x86_64 Backend Default**: Since Zig 0.15, the self-hosted x86_64 backend is the default for Debug builds, offering 5-50% faster compilation than LLVM.
+
+- **Threaded Codegen**: The compiler now runs semantic analysis, code generation, and linking in parallel (1 Sema thread, N codegen threads, 1 linker thread).
+
+- **aarch64 Focus**: After maturing the x86 backend, the team is now focusing on bringing aarch64 to the same level.
+
+---
+
+## Further Reading
+
+For deeper exploration of code generation:
+
+- **[Zig's New Relationship with LLVM](https://kristoff.it/blog/zig-new-relationship-llvm/)** by Loris Cro - Explains why Zig has its own backends and the benefits of incremental compilation.
+
+- **[Zig Devlog 2025](https://ziglang.org/devlog/2025/)** - Latest updates on backend development and performance improvements.
+
+- **[Zig GitHub Wiki Glossary](https://github.com/ziglang/zig/wiki/Glossary)** - Definitions for AIR (~200 instruction types) and MIR.
+
+- **Source Code**: [`src/Air.zig`](https://github.com/ziglang/zig/blob/master/src/Air.zig), [`src/codegen.zig`](https://github.com/ziglang/zig/blob/master/src/codegen.zig)
+
+---
+
 ## Conclusion
 
 Code generation is where the abstract meets the concrete. After all the parsing, type checking, and optimization, this is where Zig code becomes something that can actually run.
