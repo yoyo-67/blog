@@ -1,3 +1,7 @@
+---
+title: "Zig Compiler Internals Part 3: Parser and AST"
+---
+
 # Zig Compiler Internals Part 3: Parser and AST
 
 *Building trees from tokens with recursive descent*

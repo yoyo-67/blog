@@ -1,3 +1,7 @@
+---
+title: "Part 9: The Build System (build.zig)"
+---
+
 # Part 9: The Build System (build.zig)
 
 In this article, we'll explore Zig's unique build system. Unlike traditional build tools, Zig's build system is written in Zig itself - using comptime to create a type-safe, debuggable, cross-platform build experience.

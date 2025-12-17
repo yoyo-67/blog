@@ -1,3 +1,7 @@
+---
+title: "Appendix: Zig Patterns and Methods Reference"
+---
+
 # Appendix: Zig Patterns and Methods Reference
 
 *Understanding the common patterns used throughout the Zig compiler*

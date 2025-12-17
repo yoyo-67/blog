@@ -1,3 +1,7 @@
+---
+title: "Part 11: Comptime - Compile-Time Execution Deep Dive"
+---
+
 # Part 11: Comptime - Compile-Time Execution Deep Dive
 
 In this article, we'll explore Zig's most powerful and unique feature: comptime. We've mentioned it throughout the series, but now we'll dive deep into HOW it actually works inside the compiler.

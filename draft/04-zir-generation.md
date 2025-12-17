@@ -1,3 +1,7 @@
+---
+title: "Zig Compiler Internals Part 4: ZIR Generation"
+---
+
 # Zig Compiler Internals Part 4: ZIR Generation
 
 *From trees to instructions with AstGen*

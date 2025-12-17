@@ -1,3 +1,7 @@
+---
+title: "Zig Compiler Internals Part 5: Semantic Analysis"
+---
+
 # Zig Compiler Internals Part 5: Semantic Analysis
 
 *The heart of the compiler: type checking, comptime, and more*

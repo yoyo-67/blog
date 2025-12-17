@@ -1,3 +1,7 @@
+---
+title: "Zig Compiler Internals Part 6: AIR and Code Generation"
+---
+
 # Zig Compiler Internals Part 6: AIR and Code Generation
 
 *From typed IR to machine code (or C, or LLVM)*

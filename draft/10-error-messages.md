@@ -1,3 +1,7 @@
+---
+title: "Part 10: Error Messages - The User Interface of a Compiler"
+---
+
 # Part 10: Error Messages - The User Interface of a Compiler
 
 In this final article, we'll explore how Zig produces its famously helpful error messages. Error messages are the primary way a compiler communicates with developers - they're the "user interface" of a compiler. Zig takes this seriously.

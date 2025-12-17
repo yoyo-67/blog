@@ -1,3 +1,7 @@
+---
+title: "Part 8: Caching and Incremental Compilation"
+---
+
 # Part 8: Caching and Incremental Compilation
 
 In this article, we'll explore how Zig achieves remarkably fast compilation through smart caching and incremental compilation. This is the "payoff" - it explains *why* the previous articles' design decisions were made.

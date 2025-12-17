@@ -1,3 +1,7 @@
+---
+title: "Zig Compiler Internals Part 1: The Bootstrap Process"
+---
+
 # Zig Compiler Internals Part 1: The Bootstrap Process
 
 *How Zig builds itself from nothing but a C compiler*

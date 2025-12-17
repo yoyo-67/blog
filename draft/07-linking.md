@@ -1,3 +1,7 @@
+---
+title: "Zig Compiler Internals Part 7: Linking"
+---
+
 # Zig Compiler Internals Part 7: Linking
 
 *From object files to executables - the final step*

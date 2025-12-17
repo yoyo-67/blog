@@ -1,3 +1,7 @@
+---
+title: "Part 12: The Standard Library - Don't Reinvent the Wheel"
+---
+
 # Part 12: The Standard Library - Don't Reinvent the Wheel
 
 In this article, we'll explore Zig's standard library (std). Knowing what's available helps you write better code faster - why reinvent what's already been carefully designed and tested?

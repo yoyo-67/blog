@@ -1,3 +1,7 @@
+---
+title: "Building a Mini Zig Compiler: From Source to C"
+---
+
 # Building a Mini Zig Compiler: From Source to C
 *Understanding the real Zig compiler architecture by building a subset compiler*
 
@@ -383,66 +387,109 @@ pub const UnaryOp = enum {
 
 ### Precedence Climbing Parser
 
-The parser uses the **precedence climbing** algorithm - a clean way to handle operator precedence without separate functions for each precedence level.
+The parser uses **precedence climbing** - a technique where each operator has a "binding power" that determines how tightly it grabs its operands.
 
-#### Precedence Table
+#### Binding Power
 
-| Operators | Precedence | Associativity |
-|-----------|------------|---------------|
-| `+` `-`   | 60         | Left          |
-| `*` `/`   | 70         | Left          |
+Think of binding power as grip strength. When two operators compete for the same number, the one with stronger grip wins:
 
-Higher precedence = binds tighter. So `3 + 5 * 2` parses as `3 + (5 * 2)`.
+```
+3 + 5 * 2
+    │   │
+    +   * ← both want the 5
+```
+
+`*` has binding power 20, `+` has 10. The `*` grips tighter, so it gets the 5.
+
+| Operator | Binding Power | Meaning |
+|----------|---------------|---------|
+| `+` `-`  | 10            | Loose grip |
+| `*` `/`  | 20            | Tight grip |
 
 #### The Core Algorithm
 
 ```zig
-/// Get precedence of operator (higher = tighter binding)
-fn getPrec(token_type: TokenType) i32 {
-    return switch (token_type) {
-        .plus, .minus => 60,
-        .star, .slash => 70,
-        else => -1,  // not an operator
+//===========================================================================
+// BINDING POWER
+//===========================================================================
+// How tightly does an operator hold onto its operands?
+// Higher number = tighter grip = happens first
+//
+//   3 + 4 * 2
+//       ↑   ↑
+//       +   * ← both want the 4, but * grips tighter (20 > 10)
+//
+const POWER = struct {
+    const NONE: i32 = 0;       // not an operator
+    const ADD_SUB: i32 = 10;   // + -  (loose grip)
+    const MUL_DIV: i32 = 20;   // * /  (tight grip)
+};
+
+fn bindingPower(token: TokenType) i32 {
+    return switch (token) {
+        .plus, .minus => POWER.ADD_SUB,
+        .star, .slash => POWER.MUL_DIV,
+        else => POWER.NONE,
     };
 }
 
-/// Convert token to binary operator
-fn getBinaryOp(token_type: TokenType) ?BinaryOp {
-    return switch (token_type) {
+fn isOperator(token: TokenType) bool {
+    return bindingPower(token) > POWER.NONE;
+}
+
+fn toOperator(token: TokenType) BinaryOp {
+    return switch (token) {
         .plus => .add,
         .minus => .sub,
         .star => .mul,
         .slash => .div,
-        else => null,
+        else => unreachable,
     };
 }
 
-/// Precedence climbing parser - entry point
+//===========================================================================
+// EXPRESSION PARSER
+//===========================================================================
+
+/// Entry point: parse a full expression
 fn parseExpression(self: *Parser) !*Node {
-    return self.parseExprPrecedence(0);
+    return self.parseExprAbove(POWER.NONE);
 }
 
-/// The heart of precedence climbing
-fn parseExprPrecedence(self: *Parser, min_prec: i32) !*Node {
-    // Step 1: Parse left operand (atom or prefix expression)
-    var left = try self.parsePrefixExpr();
+/// Parse expression, but only grab operators STRONGER than `threshold`.
+/// Weaker operators are left for the caller.
+fn parseExprAbove(self: *Parser, threshold: i32) !*Node {
+    // ----- Step 1: Get the left side -----
+    var left = try self.parseAtom();
 
-    // Step 2: Keep consuming operators while they're "strong enough"
-    while (true) {
-        const op_prec = getPrec(self.current().type);
+    // ----- Step 2: Extend with operators -----
+    while (isOperator(self.current().type)) {
+        const op_token = self.current();
+        const op_power = bindingPower(op_token.type);
 
-        // Operator too weak? Let the caller handle it
-        if (op_prec < min_prec) break;
+        // Is this operator stronger than our threshold?
+        const dominated_by_caller = (op_power <= threshold);
+        if (dominated_by_caller) {
+            // No - this operator is too weak for us.
+            // Leave it for whoever called us.
+            break;
+        }
 
-        const op = getBinaryOp(self.current().type) orelse break;
+        // Yes - this operator is ours. Consume it.
         _ = self.advance();
 
-        // Parse right side with higher precedence (for left-associativity)
-        const right = try self.parseExprPrecedence(op_prec + 1);
+        // ----- Step 3: Get the right side -----
+        // What belongs to the right side?
+        // Everything that binds STRONGER than this operator.
+        const right = try self.parseExprAbove(op_power);
 
-        // Combine into binary node
+        // ----- Step 4: Combine -----
         left = try self.createNode(.{
-            .binary = .{ .op = op, .left = left, .right = right },
+            .binary = .{
+                .op = toOperator(op_token.type),
+                .left = left,
+                .right = right,
+            },
         });
     }
 
@@ -450,73 +497,125 @@ fn parseExprPrecedence(self: *Parser, min_prec: i32) !*Node {
 }
 ```
 
+**The key insight:** When we see an operator, we ask two questions:
+1. Is it strong enough for us? (`op_power > threshold`)
+2. What belongs to its right side? (Everything with `power > op_power`)
+
+#### Who is "the caller"?
+
+Since `parseExprAbove` calls itself, there's a **chain of callers**:
+
+```
+parseExpression()
+    │
+    └─► parseExprAbove(threshold=0)      ← OUTER call
+            │
+            └─► parseExprAbove(threshold=10)   ← INNER call (caller = outer)
+                    │
+                    └─► parseExprAbove(threshold=20)  ← INNERMOST (caller = inner)
+```
+
+When the innermost call finishes, it **returns** to its caller (the inner call).
+When the inner call finishes, it **returns** to its caller (the outer call).
+
+**"Leave it for the caller"** means: "I won't handle this operator. I'll return what I have, and whoever called me will see this operator next."
+
+**Example:** Parsing `8 - 3 - 2`
+
+```
+OUTER: parseExprAbove(threshold=0)
+│
+├─ Get 8
+├─ See '-' (power=10). Is 10 > 0? YES → I'll take it
+├─ Call INNER to get right side...
+│
+│   INNER: parseExprAbove(threshold=10)
+│   │
+│   ├─ Get 3
+│   ├─ See '-' (power=10). Is 10 > 10? NO → not mine!
+│   └─ Return 3  ← leaves the '-' unconsumed
+│
+├─ Build: Sub(8, 3)
+├─ See '-' (power=10). Is 10 > 0? YES → I'll take this one too!
+├─ Call another INNER to get right side...
+│   └─ Returns 2
+├─ Build: Sub(Sub(8,3), 2)
+└─ Done!
+```
+
+The second `-` was "left for the caller" (OUTER) because INNER's threshold was 10, and `-` has power 10, which is NOT greater than 10.
+
 #### Walkthrough: Parsing `3 + 5 * 2`
 
-Let's trace through exactly how the algorithm respects precedence:
-
 ```
-parseExprPrecedence(min_prec=0):
+parseExprAbove(threshold=0):  "Grab operators stronger than 0 (all of them)"
 │
-├─ parsePrefixExpr() → Int(3)
+├─ parseAtom() → Int(3)
 │
-├─ Loop iteration 1:
-│   ├─ current token: +
-│   ├─ getPrec(+) = 60 >= min_prec(0) ✓ continue
-│   ├─ advance past +
-│   ├─ parseExprPrecedence(min_prec=61):  ← RECURSIVE CALL
+├─ See '+' (power=10)
+│   ├─ Is 10 > 0?  YES → this operator is ours
+│   ├─ Consume the '+'
+│   ├─ parseExprAbove(threshold=10):  "Grab operators stronger than 10"
 │   │   │
-│   │   ├─ parsePrefixExpr() → Int(5)
+│   │   ├─ parseAtom() → Int(5)
 │   │   │
-│   │   ├─ Loop iteration 1:
-│   │   │   ├─ current token: *
-│   │   │   ├─ getPrec(*) = 70 >= min_prec(61) ✓ continue
-│   │   │   ├─ advance past *
-│   │   │   ├─ parseExprPrecedence(min_prec=71):
-│   │   │   │   ├─ parsePrefixExpr() → Int(2)
-│   │   │   │   ├─ Loop: current=EOF, prec=-1 < 71 → break
+│   │   ├─ See '*' (power=20)
+│   │   │   ├─ Is 20 > 10?  YES → this operator is ours
+│   │   │   ├─ Consume the '*'
+│   │   │   ├─ parseExprAbove(threshold=20):
+│   │   │   │   ├─ parseAtom() → Int(2)
+│   │   │   │   ├─ See EOF (power=0)
+│   │   │   │   │   └─ Is 0 > 20?  NO → leave it
 │   │   │   │   └─ return Int(2)
-│   │   │   └─ left = Binary(*, Int(5), Int(2))
+│   │   │   └─ Build: Mul(5, 2)
 │   │   │
-│   │   ├─ Loop iteration 2:
-│   │   │   ├─ current token: EOF
-│   │   │   ├─ getPrec(EOF) = -1 < min_prec(61) → break
-│   │   │
-│   │   └─ return Binary(*, Int(5), Int(2))
+│   │   ├─ See EOF (power=0)
+│   │   │   └─ Is 0 > 10?  NO → leave it
+│   │   └─ return Mul(5, 2)
 │   │
-│   └─ left = Binary(+, Int(3), Binary(*, Int(5), Int(2)))
+│   └─ Build: Add(3, Mul(5, 2))
 │
-├─ Loop iteration 2:
-│   ├─ current token: EOF
-│   ├─ getPrec(EOF) = -1 < min_prec(0) → break
+├─ See EOF (power=0)
+│   └─ Is 0 > 0?  NO → leave it
 │
-└─ return Binary(+, Int(3), Binary(*, Int(5), Int(2)))
+└─ return Add(3, Mul(5, 2))
 
-Result: Add(3, Mul(5, 2)) ✓
+Result: 3 + (5 * 2) = 11 ✓
 ```
 
-The key insight: when we see `+` (precedence 60), we recurse with `min_prec=61`.
-The `*` (precedence 70) is >= 61, so it gets consumed in the recursive call.
-This naturally groups `5 * 2` together before adding to `3`.
+**Why it works**: When `+` (power=10) calls the recursive parser, it says "only grab operators stronger than 10". The `*` (power=20) qualifies, so it grabs the 5 and 2. If there was another `+` after, it would be rejected (10 is NOT > 10).
 
-#### Why `op_prec + 1`?
+#### Left-Associativity: `8 - 3 - 2`
 
-The `+ 1` creates **left-associativity**:
+The rule `op_power > threshold` (not `>=`) gives us left-to-right evaluation:
 
 ```
-Input: 3 - 2 - 1
+parseExprAbove(threshold=0):
+│
+├─ parseAtom() → Int(8)
+│
+├─ See '-' (power=10)
+│   ├─ Is 10 > 0?  YES → grab it
+│   ├─ parseExprAbove(threshold=10):
+│   │   ├─ parseAtom() → Int(3)
+│   │   ├─ See '-' (power=10)
+│   │   │   └─ Is 10 > 10?  NO → leave it for caller
+│   │   └─ return Int(3)
+│   └─ Build: Sub(8, 3)
+│
+├─ See '-' (power=10)
+│   ├─ Is 10 > 0?  YES → grab it
+│   ├─ parseExprAbove(threshold=10):
+│   │   ├─ parseAtom() → Int(2)
+│   │   └─ return Int(2)
+│   └─ Build: Sub(Sub(8,3), 2)
+│
+└─ return Sub(Sub(8,3), 2)
 
-With op_prec + 1 (left-associative):
-  After seeing first `-`, recurse with min_prec=61
-  Second `-` has prec=60 < 61, so it breaks out
-  Result: (3 - 2) - 1 ✓
-
-With just op_prec (right-associative):
-  After seeing first `-`, recurse with min_prec=60
-  Second `-` has prec=60 >= 60, so it's consumed recursively
-  Result: 3 - (2 - 1) ✗
+Result: (8 - 3) - 2 = 3 ✓
 ```
 
-For right-associative operators (like assignment `=`), you'd use `op_prec` without `+ 1`.
+The second `-` has the same power as the first, so it's NOT stronger (`10 > 10` is false). It gets rejected and handled by the outer loop instead, giving us left-to-right.
 
 #### Full Parser Structure
 
@@ -552,10 +651,10 @@ pub const Parser = struct {
     // ... parseFnDecl, parseConstDecl, parseVarDecl, parseBlock, etc.
 
     fn parseExpression(self: *Parser) !*Node {
-        return self.parseExprPrecedence(0);
+        return self.parseExprAbove(POWER.NONE);
     }
 
-    // parseExprPrecedence as shown above
+    // parseExprAbove as shown above
 };
 ```
 

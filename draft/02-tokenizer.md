@@ -1,3 +1,7 @@
+---
+title: "Zig Compiler Internals Part 2: The Tokenizer"
+---
+
 # Zig Compiler Internals Part 2: The Tokenizer
 
 *Converting source code into tokens with a hand-crafted state machine*
