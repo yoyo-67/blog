@@ -239,6 +239,164 @@ pub const Graph = struct {
 
 The Graph is shared across all Build instances (including dependencies). It holds the cache, environment, and compiler paths.
 
+### Build System Vocabulary
+
+Before diving deeper, let's define the key terms. These names come from build system traditions but have specific meanings in Zig:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ BUILD SYSTEM GLOSSARY                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ ARTIFACT                                                            │
+│ ─────────                                                           │
+│ Something the build system PRODUCES. The "art" you're creating.    │
+│                                                                      │
+│   • Executable    (a program you can run)                           │
+│   • Static lib    (.a file - code bundled for linking)              │
+│   • Shared lib    (.so/.dylib/.dll - loadable at runtime)           │
+│   • Object file   (.o - compiled but not linked)                    │
+│                                                                      │
+│ When you call b.addExecutable(), you're creating an artifact.       │
+│ The artifact isn't built yet - it's a DESCRIPTION of what to build. │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ INSTALL                                                             │
+│ ────────                                                            │
+│ Copy an artifact to a known location (zig-out/ by default).        │
+│                                                                      │
+│   b.installArtifact(exe)                                            │
+│   └── Copies the compiled exe to zig-out/bin/                       │
+│                                                                      │
+│ Why "install"? It's borrowed from Unix tradition:                   │
+│   make install  →  copy program to /usr/local/bin                   │
+│   zig build     →  copy program to zig-out/bin                      │
+│                                                                      │
+│ Without installArtifact(), the exe exists only in the cache!       │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ STEP                                                                │
+│ ─────                                                               │
+│ A unit of work in the build. Steps form a dependency graph.        │
+│                                                                      │
+│   compile step    →  "compile this Zig code"                        │
+│   install step    →  "copy this file to zig-out/"                   │
+│   run step        →  "execute this program"                         │
+│   custom step     →  "run this arbitrary function"                  │
+│                                                                      │
+│ Every artifact has an underlying step (&exe.step).                  │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ MODULE                                                              │
+│ ───────                                                             │
+│ A reusable unit of Zig code that can be imported.                  │
+│                                                                      │
+│   const mod = b.addModule("utils", .{...});                         │
+│   exe.root_module.addImport("utils", mod);                          │
+│   // Now main.zig can do: @import("utils")                          │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ DEPENDENCY                                                          │
+│ ───────────                                                         │
+│ An external package fetched from a URL or path.                    │
+│                                                                      │
+│   In build.zig.zon:                                                 │
+│   .dependencies = .{ .zap = .{ .url = "...", .hash = "..." } }     │
+│                                                                      │
+│   In build.zig:                                                     │
+│   const zap = b.dependency("zap", .{});                             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Common Build Verbs
+
+Here's what the common `b.add*` and `b.*` functions do:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ BUILD VERBS (b.add* functions)                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ CREATING ARTIFACTS:                                                 │
+│                                                                      │
+│   b.addExecutable(...)      Create a runnable program               │
+│   b.addStaticLibrary(...)   Create a .a static library              │
+│   b.addSharedLibrary(...)   Create a .so/.dylib shared library      │
+│   b.addObject(...)          Create a .o object file                 │
+│   b.addTest(...)            Create a test executable                │
+│                                                                      │
+│ CREATING STEPS:                                                     │
+│                                                                      │
+│   b.addRunArtifact(exe)     Create step that RUNS an artifact       │
+│   b.addInstallArtifact(exe) Create step that INSTALLS an artifact   │
+│   b.addSystemCommand(&.{})  Run arbitrary system command            │
+│   b.addWriteFiles()         Generate files at build time            │
+│                                                                      │
+│ INSTALLING:                                                         │
+│                                                                      │
+│   b.installArtifact(exe)    Shorthand: add install step + register │
+│   b.installFile(...)        Copy a file to zig-out/                 │
+│   b.installDirectory(...)   Copy a directory to zig-out/            │
+│                                                                      │
+│ NAMED STEPS:                                                        │
+│                                                                      │
+│   b.step("name", "desc")    Create a named step (for zig build X)  │
+│                             Returns *Step that you can add deps to │
+│                                                                      │
+│ GETTING THINGS:                                                     │
+│                                                                      │
+│   b.path("src/main.zig")    Get path relative to build root         │
+│   b.dependency("name", .{}) Get an external dependency              │
+│   b.option(...)             Get command-line option value           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### The Install Flow
+
+Here's exactly what happens when you call `b.installArtifact(exe)`:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ WHAT installArtifact() DOES                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   const exe = b.addExecutable(.{ .name = "myapp", ... });           │
+│   b.installArtifact(exe);                                           │
+│                                                                      │
+│   This creates the following graph:                                 │
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────────┐   │
+│   │                                                             │   │
+│   │   "install" step (the default)                              │   │
+│   │        │                                                    │   │
+│   │        ▼                                                    │   │
+│   │   install_artifact step                                     │   │
+│   │   "copy zig-cache/.../myapp to zig-out/bin/myapp"          │   │
+│   │        │                                                    │   │
+│   │        ▼                                                    │   │
+│   │   compile step                                              │   │
+│   │   "compile src/main.zig to zig-cache/.../myapp"            │   │
+│   │                                                             │   │
+│   └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│   When you run `zig build`:                                         │
+│   1. Run compile step → produces exe in zig-cache/                 │
+│   2. Run install_artifact step → copies to zig-out/bin/            │
+│   3. Done!                                                          │
+│                                                                      │
+│   The artifact lives in TWO places:                                 │
+│   • zig-cache/o/...     (internal, for caching)                    │
+│   • zig-out/bin/myapp   (user-facing, for running)                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ### Creating Artifacts
 
 The most common operations:
