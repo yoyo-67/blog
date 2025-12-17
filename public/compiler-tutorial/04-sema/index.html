@@ -15,21 +15,19 @@
 
   
   
-    <title>Drafts &middot; Yohai&#39;s Blog</title>
-    <meta name="title" content="Drafts &middot; Yohai&#39;s Blog">
+    <title>Section 4: Sema &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Section 4: Sema &middot; Yohai&#39;s Blog">
   
 
   
   
-    <meta name="description" content="Work in progress posts">
   
   
   
-  
-  <link rel="canonical" href="http://localhost:1313/drafts/">
+  <link rel="canonical" href="http://localhost:1313/compiler-tutorial/04-sema/">
   
     
-      <link rel="alternate" type="application/rss+xml" href="/drafts/index.xml" title="Yohai's Blog" />
+      <link rel="alternate" type="application/rss+xml" href="/compiler-tutorial/04-sema/index.xml" title="Yohai's Blog" />
   
 
   
@@ -39,17 +37,19 @@
   
 
   
-  <meta property="og:url" content="http://localhost:1313/drafts/">
+  <meta property="og:url" content="http://localhost:1313/compiler-tutorial/04-sema/">
   <meta property="og:site_name" content="Yohai&#39;s Blog">
-  <meta property="og:title" content="Drafts">
-  <meta property="og:description" content="Work in progress posts">
+  <meta property="og:title" content="Section 4: Sema">
+  <meta property="og:description" content="Section 4: Sema (Semantic Analysis) # Sema validates your program and resolves all names and types.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT SEMA DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ ZIR (untyped): AIR (typed): │ │ │ │ %0 = decl_ref(&#34;x&#34;) %0 = local_get(slot: 0, type: i32) │ │ %1 = param_ref(1) %1 = param_get(index: 1, type: i32) │ │ %2 = add(%0, %1) %2 = add_i32(%0, %1) │ │ │ │ Names are strings Names are resolved to locations │ │ Types are unknown Types are verified and explicit │ │ Errors not caught Errors caught and reported │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ What Sema Validates # Names exist: Is x actually declared? Types match: Can you add i32 &#43; i32? Returns are correct: Does return type match function signature? No duplicates: Is x declared twice in the same scope? ZIR → AIR # ZIR: Untyped IR with string names AIR: Typed IR with resolved references ZIR: %0 = decl_ref(&#34;x&#34;) // Who is &#34;x&#34;? AIR: %0 = local_get(0) // Local variable slot 0 // Or %0 = param_get(1) // Parameter index 1 Lessons in This Section # Lesson Topic What You’ll Add 1. Type System Types Define i32, i64, bool, void 2. Type of Expression Inference What type is 3 &#43; 5? 3. Symbol Table Tracking Map names to declarations 4. Resolve Names Lookup decl_ref(&#34;x&#34;) → actual location 5. Type Check Validation Verify types match 6. AIR Output Generation Produce typed instructions 7. Error Handling Errors Report meaningful messages 8. Complete Sema Integration Full semantic analyzer What You’ll Build # By the end of this section, you can transform:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Drafts">
-  <meta name="twitter:description" content="Work in progress posts">
+  <meta name="twitter:title" content="Section 4: Sema">
+  <meta name="twitter:description" content="Section 4: Sema (Semantic Analysis) # Sema validates your program and resolves all names and types.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT SEMA DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ ZIR (untyped): AIR (typed): │ │ │ │ %0 = decl_ref(&#34;x&#34;) %0 = local_get(slot: 0, type: i32) │ │ %1 = param_ref(1) %1 = param_get(index: 1, type: i32) │ │ %2 = add(%0, %1) %2 = add_i32(%0, %1) │ │ │ │ Names are strings Names are resolved to locations │ │ Types are unknown Types are verified and explicit │ │ Errors not caught Errors caught and reported │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ What Sema Validates # Names exist: Is x actually declared? Types match: Can you add i32 &#43; i32? Returns are correct: Does return type match function signature? No duplicates: Is x declared twice in the same scope? ZIR → AIR # ZIR: Untyped IR with string names AIR: Typed IR with resolved references ZIR: %0 = decl_ref(&#34;x&#34;) // Who is &#34;x&#34;? AIR: %0 = local_get(0) // Local variable slot 0 // Or %0 = param_get(1) // Parameter index 1 Lessons in This Section # Lesson Topic What You’ll Add 1. Type System Types Define i32, i64, bool, void 2. Type of Expression Inference What type is 3 &#43; 5? 3. Symbol Table Tracking Map names to declarations 4. Resolve Names Lookup decl_ref(&#34;x&#34;) → actual location 5. Type Check Validation Verify types match 6. AIR Output Generation Produce typed instructions 7. Error Handling Errors Report meaningful messages 8. Complete Sema Integration Full semantic analyzer What You’ll Build # By the end of this section, you can transform:">
 
   
   
@@ -197,27 +197,27 @@
   [{
     "@context": "https://schema.org",
     "@type": "Article",
-    "articleSection": "Drafts",
-    "name": "Drafts",
-    "headline": "Drafts",
-    "description": "Work in progress posts",
+    "articleSection": "Build Your Own Compiler",
+    "name": "Section 4: Sema",
+    "headline": "Section 4: Sema",
     
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eSection 4: Sema (Semantic Analysis)\n    \u003cdiv id=\u0022section-4-sema-semantic-analysis\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#section-4-sema-semantic-analysis\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eSema validates your program and resolves all names and types.\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌──────────────────────────────────────────────────────────────────────────────┐\n│                           WHAT SEMA DOES                                     │\n├──────────────────────────────────────────────────────────────────────────────┤\n│                                                                              │\n│   ZIR (untyped):                  AIR (typed):                              │\n│                                                                              │\n│   %0 = decl_ref(\u0026#34;x\u0026#34;)              %0 = local_get(slot: 0, type: i32)       │\n│   %1 = param_ref(1)               %1 = param_get(index: 1, type: i32)      │\n│   %2 = add(%0, %1)                %2 = add_i32(%0, %1)                      │\n│                                                                              │\n│   Names are strings              Names are resolved to locations            │\n│   Types are unknown               Types are verified and explicit           │\n│   Errors not caught               Errors caught and reported                │\n│                                                                              │\n└──────────────────────────────────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eWhat Sema Validates\n    \u003cdiv id=\u0022what-sema-validates\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#what-sema-validates\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003col\u003e\n\u003cli\u003e\u003cstrong\u003eNames exist\u003c\/strong\u003e: Is \u003ccode\u003ex\u003c\/code\u003e actually declared?\u003c\/li\u003e\n\u003cli\u003e\u003cstrong\u003eTypes match\u003c\/strong\u003e: Can you add \u003ccode\u003ei32 \u002b i32\u003c\/code\u003e?\u003c\/li\u003e\n\u003cli\u003e\u003cstrong\u003eReturns are correct\u003c\/strong\u003e: Does return type match function signature?\u003c\/li\u003e\n\u003cli\u003e\u003cstrong\u003eNo duplicates\u003c\/strong\u003e: Is \u003ccode\u003ex\u003c\/code\u003e declared twice in the same scope?\u003c\/li\u003e\n\u003c\/ol\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eZIR → AIR\n    \u003cdiv id=\u0022zir--air\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#zir--air\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003eZIR: Untyped IR with string names\nAIR: Typed IR with resolved references\n\nZIR:\n    %0 = decl_ref(\u0026#34;x\u0026#34;)       \/\/ Who is \u0026#34;x\u0026#34;?\n\nAIR:\n    %0 = local_get(0)        \/\/ Local variable slot 0\n    \/\/ Or\n    %0 = param_get(1)        \/\/ Parameter index 1\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eLessons in This Section\n    \u003cdiv id=\u0022lessons-in-this-section\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#lessons-in-this-section\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003ctable\u003e\n  \u003cthead\u003e\n      \u003ctr\u003e\n          \u003cth\u003eLesson\u003c\/th\u003e\n          \u003cth\u003eTopic\u003c\/th\u003e\n          \u003cth\u003eWhat You\u0026rsquo;ll Add\u003c\/th\u003e\n      \u003c\/tr\u003e\n  \u003c\/thead\u003e\n  \u003ctbody\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002201-type-system\/\u0022\u003e1. Type System\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eTypes\u003c\/td\u003e\n          \u003ctd\u003eDefine i32, i64, bool, void\u003c\/td\u003e\n      \u003c\/tr\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002202-type-of-expr\/\u0022\u003e2. Type of Expression\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eInference\u003c\/td\u003e\n          \u003ctd\u003eWhat type is \u003ccode\u003e3 \u002b 5\u003c\/code\u003e?\u003c\/td\u003e\n      \u003c\/tr\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002203-symbol-table\/\u0022\u003e3. Symbol Table\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eTracking\u003c\/td\u003e\n          \u003ctd\u003eMap names to declarations\u003c\/td\u003e\n      \u003c\/tr\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002204-resolve-names\/\u0022\u003e4. Resolve Names\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eLookup\u003c\/td\u003e\n          \u003ctd\u003e\u003ccode\u003edecl_ref(\u0026quot;x\u0026quot;)\u003c\/code\u003e → actual location\u003c\/td\u003e\n      \u003c\/tr\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002205-type-check\/\u0022\u003e5. Type Check\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eValidation\u003c\/td\u003e\n          \u003ctd\u003eVerify types match\u003c\/td\u003e\n      \u003c\/tr\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002206-air-output\/\u0022\u003e6. AIR Output\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eGeneration\u003c\/td\u003e\n          \u003ctd\u003eProduce typed instructions\u003c\/td\u003e\n      \u003c\/tr\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002207-error-handling\/\u0022\u003e7. Error Handling\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eErrors\u003c\/td\u003e\n          \u003ctd\u003eReport meaningful messages\u003c\/td\u003e\n      \u003c\/tr\u003e\n      \u003ctr\u003e\n          \u003ctd\u003e\u003ca\n  href=\u002208-putting-together\/\u0022\u003e8. Complete Sema\u003c\/a\u003e\u003c\/td\u003e\n          \u003ctd\u003eIntegration\u003c\/td\u003e\n          \u003ctd\u003eFull semantic analyzer\u003c\/td\u003e\n      \u003c\/tr\u003e\n  \u003c\/tbody\u003e\n\u003c\/table\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eWhat You\u0026rsquo;ll Build\n    \u003cdiv id=\u0022what-youll-build\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#what-youll-build\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eBy the end of this section, you can transform:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/drafts/",
+    "url" : "http://localhost:1313/compiler-tutorial/04-sema/",
     "author" : {
       "@type": "Person",
       "name": "Yohai"
     },
-    "copyrightYear": "2025",
-    "dateCreated": "2025-12-17T00:00:00\u002b00:00",
-    "datePublished": "2025-12-17T00:00:00\u002b00:00",
     
-    "dateModified": "2025-12-17T00:00:00\u002b00:00",
+    
+    
+    
+    
     
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "0"
+    "wordCount": "387"
   }]
   </script>
 
@@ -539,7 +539,7 @@
   
   <header>
     
-    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Drafts</h1>
+    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Section 4: Sema</h1>
     <div class="mt-1 mb-2 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
       
 
@@ -583,8 +583,8 @@
         type="text/javascript"
         src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
         integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
-        data-oid="views_drafts/_index.md"
-        data-oid-likes="likes_drafts/_index.md"></script>
+        data-oid="views_compiler-tutorial/04-sema/_index.md"
+        data-oid-likes="likes_compiler-tutorial/04-sema/_index.md"></script>
     
   </header>
 
@@ -595,6 +595,206 @@
     
     <div class="min-w-0 min-h-0 max-w-prose">
       
+<h1 class="relative group">Section 4: Sema (Semantic Analysis)
+    <div id="section-4-sema-semantic-analysis" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#section-4-sema-semantic-analysis" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p>Sema validates your program and resolves all names and types.</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                           WHAT SEMA DOES                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ZIR (untyped):                  AIR (typed):                              │
+│                                                                              │
+│   %0 = decl_ref(&#34;x&#34;)              %0 = local_get(slot: 0, type: i32)       │
+│   %1 = param_ref(1)               %1 = param_get(index: 1, type: i32)      │
+│   %2 = add(%0, %1)                %2 = add_i32(%0, %1)                      │
+│                                                                              │
+│   Names are strings              Names are resolved to locations            │
+│   Types are unknown               Types are verified and explicit           │
+│   Errors not caught               Errors caught and reported                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">What Sema Validates
+    <div id="what-sema-validates" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-sema-validates" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<ol>
+<li><strong>Names exist</strong>: Is <code>x</code> actually declared?</li>
+<li><strong>Types match</strong>: Can you add <code>i32 + i32</code>?</li>
+<li><strong>Returns are correct</strong>: Does return type match function signature?</li>
+<li><strong>No duplicates</strong>: Is <code>x</code> declared twice in the same scope?</li>
+</ol>
+<hr>
+
+<h2 class="relative group">ZIR → AIR
+    <div id="zir--air" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zir--air" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>ZIR: Untyped IR with string names
+AIR: Typed IR with resolved references
+
+ZIR:
+    %0 = decl_ref(&#34;x&#34;)       // Who is &#34;x&#34;?
+
+AIR:
+    %0 = local_get(0)        // Local variable slot 0
+    // Or
+    %0 = param_get(1)        // Parameter index 1
+</code></pre><hr>
+
+<h2 class="relative group">Lessons in This Section
+    <div id="lessons-in-this-section" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#lessons-in-this-section" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Lesson</th>
+          <th>Topic</th>
+          <th>What You&rsquo;ll Add</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><a
+  href="01-type-system/">1. Type System</a></td>
+          <td>Types</td>
+          <td>Define i32, i64, bool, void</td>
+      </tr>
+      <tr>
+          <td><a
+  href="02-type-of-expr/">2. Type of Expression</a></td>
+          <td>Inference</td>
+          <td>What type is <code>3 + 5</code>?</td>
+      </tr>
+      <tr>
+          <td><a
+  href="03-symbol-table/">3. Symbol Table</a></td>
+          <td>Tracking</td>
+          <td>Map names to declarations</td>
+      </tr>
+      <tr>
+          <td><a
+  href="04-resolve-names/">4. Resolve Names</a></td>
+          <td>Lookup</td>
+          <td><code>decl_ref(&quot;x&quot;)</code> → actual location</td>
+      </tr>
+      <tr>
+          <td><a
+  href="05-type-check/">5. Type Check</a></td>
+          <td>Validation</td>
+          <td>Verify types match</td>
+      </tr>
+      <tr>
+          <td><a
+  href="06-air-output/">6. AIR Output</a></td>
+          <td>Generation</td>
+          <td>Produce typed instructions</td>
+      </tr>
+      <tr>
+          <td><a
+  href="07-error-handling/">7. Error Handling</a></td>
+          <td>Errors</td>
+          <td>Report meaningful messages</td>
+      </tr>
+      <tr>
+          <td><a
+  href="08-putting-together/">8. Complete Sema</a></td>
+          <td>Integration</td>
+          <td>Full semantic analyzer</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+
+<h2 class="relative group">What You&rsquo;ll Build
+    <div id="what-youll-build" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-youll-build" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>By the end of this section, you can transform:</p>
+<pre tabindex="0"><code>ZIR:
+  function &#34;add&#34;:
+    params: [(&#34;a&#34;, i32), (&#34;b&#34;, i32)]
+    %0 = param_ref(0)
+    %1 = param_ref(1)
+    %2 = add(%0, %1)
+    %3 = ret(%2)
+</code></pre><p>Into:</p>
+<pre tabindex="0"><code>AIR:
+  function &#34;add&#34;:
+    params: [i32, i32]
+    return_type: i32
+    %0 = param_get(0)     // type: i32
+    %1 = param_get(1)     // type: i32
+    %2 = add_i32(%0, %1)  // type: i32
+    %3 = ret(%2)
+</code></pre><hr>
+
+<h2 class="relative group">Error Detection
+    <div id="error-detection" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#error-detection" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Sema catches errors like:</p>
+<pre tabindex="0"><code>fn foo() i32 {
+    return x;        // Error: undefined variable &#39;x&#39;
+}
+
+fn bar() i32 {
+    const x: i32 = 5;
+    const x: i32 = 6;   // Error: &#39;x&#39; already declared
+    return x;
+}
+
+fn baz(a: i32, b: bool) i32 {
+    return a + b;    // Error: cannot add i32 and bool
+}
+</code></pre><hr>
+
+<h2 class="relative group">Start Here
+    <div id="start-here" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#start-here" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Begin with <a
+  href="01-type-system/">Lesson 1: Type System</a> →</p>
+
     </div>
   </section>
 
@@ -612,7 +812,7 @@
           
             
               <h2 class="mt-12 text-2xl font-bold text-neutral-700 first:mt-8 dark:text-neutral-300">
-                2025
+                0001
               </h2>
             
             
@@ -672,11 +872,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/07-linking/"
+          href="/compiler-tutorial/04-sema/08-putting-together/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 7: Linking
+          4.8: Complete Sema
           
         </h2>
       </a>
@@ -730,7 +930,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>6772 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">32 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>977 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">5 mins</span>
     
 
     
@@ -810,11 +1010,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/06-air-codegen/"
+          href="/compiler-tutorial/04-sema/07-error-handling/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 6: AIR and Code Generation
+          4.7: Error Handling
           
         </h2>
       </a>
@@ -868,7 +1068,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5319 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">25 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>780 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -948,11 +1148,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/05-sema/"
+          href="/compiler-tutorial/04-sema/06-air-output/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 5: Semantic Analysis
+          4.6: AIR Output
           
         </h2>
       </a>
@@ -1006,7 +1206,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5748 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>716 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1086,11 +1286,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/04-zir-generation/"
+          href="/compiler-tutorial/04-sema/05-type-check/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 4: ZIR Generation
+          4.5: Type Check
           
         </h2>
       </a>
@@ -1144,7 +1344,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5965 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">29 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>770 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1224,11 +1424,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/03-parser-ast/"
+          href="/compiler-tutorial/04-sema/04-resolve-names/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 3: Parser and AST
+          4.4: Resolve Names
           
         </h2>
       </a>
@@ -1282,7 +1482,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>11756 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">56 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>716 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1362,11 +1562,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/02-tokenizer/"
+          href="/compiler-tutorial/04-sema/03-symbol-table/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 2: The Tokenizer
+          4.3: Symbol Table
           
         </h2>
       </a>
@@ -1420,7 +1620,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>7018 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">33 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>742 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1500,11 +1700,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/01-bootstrap-process/"
+          href="/compiler-tutorial/04-sema/02-type-of-expr/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 1: The Bootstrap Process
+          4.2: Type of Expression
           
         </h2>
       </a>
@@ -1558,7 +1758,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5567 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>693 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1638,11 +1838,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/09-build-system/"
+          href="/compiler-tutorial/04-sema/01-type-system/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 9: The Build System (build.zig)
+          4.1: Type System
           
         </h2>
       </a>
@@ -1696,283 +1896,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>4884 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">23 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/drafts/08-caching-incremental/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          Part 8: Caching and Incremental Compilation
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>3607 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">17 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/drafts/12-standard-library/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          Part 12: The Standard Library - Don't Reinvent the Wheel
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>8592 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">41 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>636 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -2003,31 +1927,7 @@
     
   
   
-  <ul class="flex flex-row mt-8 justify-center"><li>
-          <a
-            href="/drafts/"
-            class="
-              bg-primary-200 dark:bg-primary-400 dark:text-neutral-800
-             mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-            >1</a
-          >
-        </li><li>
-          <a
-            href="/drafts/page/2/"
-            class=" mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-            >2</a
-          >
-        </li>
-      <li>
-        <a
-          href="/drafts/page/2/"
-          class="mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-          rel="next"
-          >&rarr;</a
-        >
-      </li>
-    
-  </ul>
+  
 
         
 

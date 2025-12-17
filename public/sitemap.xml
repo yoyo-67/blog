@@ -3,6 +3,57 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/01-setup/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/01-ast-nodes/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/02-single-chars/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/02-atoms/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/03-whitespace/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/03-grouping/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/04-numbers/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/04-unary/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/05-strings/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/05-binary-simple/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/06-identifiers/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/06-precedence/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/07-keywords/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/07-precedence-impl/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/01-lexer/08-putting-together/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/drafts/appendix-zig-patterns/</loc>
     <lastmod>2025-12-17T00:00:00+00:00</lastmod>
   </url>
@@ -105,5 +156,8 @@
   <url>
     <loc>http://localhost:1313/posts/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/</loc>
   </url>
 </urlset>

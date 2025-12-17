@@ -1,0 +1,1130 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Section 5: Codegen on Yohai&#39;s Blog</title>
+    <link>http://localhost:1313/compiler-tutorial/05-codegen/</link>
+    <description>Recent content in Section 5: Codegen on Yohai&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© 2025 Yohai</copyright>
+    <atom:link href="http://localhost:1313/compiler-tutorial/05-codegen/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>5.1: Target Choice</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/01-target-choice/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/01-target-choice/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.1: Choosing a Target
+    &lt;div id=&#34;lesson-51-choosing-a-target&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-51-choosing-a-target&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;What should our compiler output?&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Understand the different code generation targets and why we choose C.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Target Options
+    &lt;div id=&#34;target-options&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#target-options&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         TARGET OPTIONS                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. NATIVE MACHINE CODE (x86-64, ARM)                                      │
+│      + Fastest execution                                                    │
+│      + No runtime dependencies                                              │
+│      - Complex instruction encoding                                         │
+│      - Platform-specific                                                    │
+│      - Requires assembler/linker knowledge                                  │
+│                                                                              │
+│   2. LLVM IR                                                                │
+│      + Industrial-strength optimization                                     │
+│      + Multiple targets from one IR                                         │
+│      - Adds LLVM dependency (~100MB)                                        │
+│      - Learning curve                                                       │
+│                                                                              │
+│   3. BYTECODE (like Java, Python)                                          │
+│      + Portable                                                             │
+│      + Can be interpreted                                                   │
+│      - Needs a virtual machine                                              │
+│      - Slower than native                                                   │
+│                                                                              │
+│   4. C CODE                                                                 │
+│      + Simple to generate                                                   │
+│      + Human-readable output                                                │
+│      + Compiles everywhere                                                  │
+│      + Uses existing C optimizer                                            │
+│      - Extra compilation step                                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Why C?
+    &lt;div id=&#34;why-c&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#why-c&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;For a learning compiler, C is ideal:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.2: Type Mapping</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/02-type-mapping/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/02-type-mapping/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.2: Mapping Types to C
+    &lt;div id=&#34;lesson-52-mapping-types-to-c&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-52-mapping-types-to-c&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Convert our types to C equivalents.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Map i32, i64, bool, void to C types.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Mapping Table
+    &lt;div id=&#34;type-mapping-table&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-mapping-table&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         TYPE MAPPING                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Our Type        C Type              Header                                │
+│   ────────        ──────              ──────                                │
+│   i32             int32_t             &amp;lt;stdint.h&amp;gt;                            │
+│   i64             int64_t             &amp;lt;stdint.h&amp;gt;                            │
+│   bool            bool                &amp;lt;stdbool.h&amp;gt;                           │
+│   void            void                (built-in)                            │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Why Fixed-Width Types?
+    &lt;div id=&#34;why-fixed-width-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#why-fixed-width-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;We use &lt;code&gt;int32_t&lt;/code&gt; instead of &lt;code&gt;int&lt;/code&gt; because:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.3: Constants</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/03-gen-constants/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/03-gen-constants/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.3: Generating Constants
+    &lt;div id=&#34;lesson-53-generating-constants&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-53-generating-constants&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Emit code for literal values.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate C code for constant instructions like &lt;code&gt;const_i32(42)&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Pattern
+    &lt;div id=&#34;the-pattern&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-pattern&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                      CONSTANT GENERATION                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AIR:                          C Code:                                     │
+│                                                                              │
+│   %0 = const_i32(42)           int32_t t0 = 42;                            │
+│   %3 = const_i64(100)          int64_t t3 = 100;                           │
+│   %5 = const_bool(true)        bool t5 = true;                             │
+│                                                                              │
+│   Pattern: [type] t[index] = [value];                                       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Temporary Variables
+    &lt;div id=&#34;temporary-variables&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#temporary-variables&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Each AIR instruction result becomes a temporary variable:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.4: Binary Operations</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/04-gen-binary/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/04-gen-binary/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.4: Generating Binary Operations
+    &lt;div id=&#34;lesson-54-generating-binary-operations&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-54-generating-binary-operations&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Emit code for arithmetic operations.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate C code for operations like &lt;code&gt;add_i32&lt;/code&gt;, &lt;code&gt;sub_i32&lt;/code&gt;, &lt;code&gt;mul_i32&lt;/code&gt;, &lt;code&gt;div_i32&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Pattern
+    &lt;div id=&#34;the-pattern&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-pattern&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                    BINARY OPERATION GENERATION                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AIR:                          C Code:                                     │
+│                                                                              │
+│   %2 = add_i32(%0, %1)         int32_t t2 = t0 + t1;                       │
+│   %4 = sub_i64(%2, %3)         int64_t t4 = t2 - t3;                       │
+│   %6 = mul_i32(%4, %5)         int32_t t6 = t4 * t5;                       │
+│   %8 = div_i32(%6, %7)         int32_t t8 = t6 / t7;                       │
+│                                                                              │
+│   Pattern: [type] t[index] = t[lhs] [op] t[rhs];                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Operator Mapping
+    &lt;div id=&#34;operator-mapping&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#operator-mapping&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function airTagToOperator(tag) → string:
+    switch tag:
+        ADD_I32, ADD_I64:  return &amp;#34;+&amp;#34;
+        SUB_I32, SUB_I64:  return &amp;#34;-&amp;#34;
+        MUL_I32, MUL_I64:  return &amp;#34;*&amp;#34;
+        DIV_I32, DIV_I64:  return &amp;#34;/&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Binary Operation
+    &lt;div id=&#34;generate-binary-operation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-binary-operation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateBinaryOp(instr, index):
+    type_str = typeToCType(instr.type)
+    op_str = airTagToOperator(instr.tag)
+    lhs = instr.data.lhs
+    rhs = instr.data.rhs
+
+    emitIndent()
+    emit(type_str)
+    emit(&amp;#34; t&amp;#34;)
+    emit(index)
+    emit(&amp;#34; = t&amp;#34;)
+    emit(lhs)
+    emit(&amp;#34; &amp;#34;)
+    emit(op_str)
+    emit(&amp;#34; t&amp;#34;)
+    emit(rhs)
+    emitLine(&amp;#34;;&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Example: Addition
+    &lt;div id=&#34;example-addition&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#example-addition&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Context:
+    %0 = const_i32(3)     → int32_t t0 = 3;
+    %1 = const_i32(5)     → int32_t t1 = 5;
+    %2 = add_i32(%0, %1)  → ???
+
+generateBinaryOp(add_i32(%0, %1), 2):
+    type_str = &amp;#34;int32_t&amp;#34;
+    op_str = &amp;#34;+&amp;#34;
+    lhs = 0
+    rhs = 1
+
+    Output: &amp;#34;    int32_t t2 = t0 + t1;&amp;#34;
+
+Full output:
+    int32_t t0 = 3;
+    int32_t t1 = 5;
+    int32_t t2 = t0 + t1;
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Unary Operations
+    &lt;div id=&#34;unary-operations&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#unary-operations&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Negation follows a similar pattern:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.5: Variables</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/05-gen-variables/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/05-gen-variables/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.5: Generating Variables
+    &lt;div id=&#34;lesson-55-generating-variables&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-55-generating-variables&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Handle parameters and local variables.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate C code for &lt;code&gt;param_get&lt;/code&gt;, &lt;code&gt;local_get&lt;/code&gt;, and &lt;code&gt;local_set&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Variable Naming
+    &lt;div id=&#34;variable-naming&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#variable-naming&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                        VARIABLE NAMING                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Parameters:   p0, p1, p2, ...  (from function signature)                  │
+│   Locals:       local_0, local_1, local_2, ...  (declared in body)          │
+│   Temporaries:  t0, t1, t2, ...  (instruction results)                      │
+│                                                                              │
+│   fn foo(a: i32, b: i32) i32 {     int32_t foo(int32_t p0, int32_t p1) {   │
+│       const x: i32 = a + b;    →       int32_t local_0;                    │
+│       return x;                        int32_t t0 = p0 + p1;               │
+│   }                                    local_0 = t0;                        │
+│                                        return local_0;                      │
+│                                    }                                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Parameter Access
+    &lt;div id=&#34;parameter-access&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#parameter-access&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;AIR: param_get(index: 0) at instruction 2
+
+C code: int32_t t2 = p0;
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateParamGet(instr, index):
+    type_str = typeToCType(instr.type)
+    param_index = instr.data.index
+
+    emitIndent()
+    emit(type_str)
+    emit(&amp;#34; t&amp;#34;)
+    emit(index)
+    emit(&amp;#34; = p&amp;#34;)
+    emit(param_index)
+    emitLine(&amp;#34;;&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Local Variable Get
+    &lt;div id=&#34;local-variable-get&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#local-variable-get&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;AIR: local_get(slot: 0) at instruction 5
+
+C code: int32_t t5 = local_0;
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateLocalGet(instr, index):
+    type_str = typeToCType(instr.type)
+    slot = instr.data.slot
+
+    emitIndent()
+    emit(type_str)
+    emit(&amp;#34; t&amp;#34;)
+    emit(index)
+    emit(&amp;#34; = local_&amp;#34;)
+    emit(slot)
+    emitLine(&amp;#34;;&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Local Variable Set
+    &lt;div id=&#34;local-variable-set&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#local-variable-set&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;AIR: local_set(slot: 0, value: 3) at instruction 4
+
+C code: local_0 = t3;
+&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateLocalSet(instr, index):
+    slot = instr.data.slot
+    value = instr.data.value
+
+    emitIndent()
+    emit(&amp;#34;local_&amp;#34;)
+    emit(slot)
+    emit(&amp;#34; = t&amp;#34;)
+    emit(value)
+    emitLine(&amp;#34;;&amp;#34;)
+
+    // Note: local_set doesn&amp;#39;t produce a value, so no tN = ...
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Declaring Local Variables
+    &lt;div id=&#34;declaring-local-variables&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#declaring-local-variables&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;At the start of the function, declare all locals:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.6: Functions</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/06-gen-functions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/06-gen-functions/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.6: Generating Functions
+    &lt;div id=&#34;lesson-56-generating-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-56-generating-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Emit complete function definitions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate C function signatures and bodies.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Function Structure
+    &lt;div id=&#34;function-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#function-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                      FUNCTION STRUCTURE                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   C function layout:                                                        │
+│                                                                              │
+│   return_type name(param_type p0, param_type p1, ...) {                    │
+│       // Local variable declarations                                        │
+│       type local_0;                                                         │
+│       type local_1;                                                         │
+│                                                                              │
+│       // Instruction code                                                   │
+│       type t0 = ...;                                                        │
+│       type t1 = ...;                                                        │
+│       ...                                                                   │
+│   }                                                                         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Function Signature
+    &lt;div id=&#34;generate-function-signature&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-function-signature&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateFunctionSignature(fn_air):
+    // Return type
+    emit(typeToCType(fn_air.return_type))
+    emit(&amp;#34; &amp;#34;)
+
+    // Function name
+    emit(fn_air.name)
+    emit(&amp;#34;(&amp;#34;)
+
+    // Parameters
+    for i, param_type in enumerate(fn_air.param_types):
+        if i &amp;gt; 0:
+            emit(&amp;#34;, &amp;#34;)
+        emit(typeToCType(param_type))
+        emit(&amp;#34; p&amp;#34;)
+        emit(i)
+
+    emit(&amp;#34;)&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Examples
+    &lt;div id=&#34;examples&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#examples&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() i32
+→ int32_t main()
+
+fn add(a: i32, b: i32) i32
+→ int32_t add(int32_t p0, int32_t p1)
+
+fn doSomething() void
+→ void doSomething()
+
+fn process(x: i64, y: i32, z: bool) i64
+→ int64_t process(int64_t p0, int32_t p1, bool p2)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Full Function
+    &lt;div id=&#34;generate-full-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-full-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateFunction(fn_air):
+    // Signature
+    generateFunctionSignature(fn_air)
+    emitLine(&amp;#34; {&amp;#34;)
+
+    // Increase indentation
+    indent = indent + 1
+
+    // Local variable declarations
+    emitLocalDeclarations(fn_air)
+
+    // Empty line for readability
+    if fn_air.local_count &amp;gt; 0:
+        emitLine(&amp;#34;&amp;#34;)
+
+    // Instructions
+    for i, instr in enumerate(fn_air.instructions):
+        generateInstruction(instr, i)
+
+    // Decrease indentation
+    indent = indent - 1
+
+    emitLine(&amp;#34;}&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Example
+    &lt;div id=&#34;full-example&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-example&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn add(a: i32, b: i32) i32 {
+    return a + b;
+}
+
+AIR:
+    name: &amp;#34;add&amp;#34;
+    param_types: [i32, i32]
+    return_type: i32
+    local_count: 0
+    instructions:
+        %0 = param_get(0)
+        %1 = param_get(1)
+        %2 = add_i32(%0, %1)
+        %3 = ret(%2)
+
+Generated C:
+    int32_t add(int32_t p0, int32_t p1) {
+        int32_t t0 = p0;
+        int32_t t1 = p1;
+        int32_t t2 = t0 + t1;
+        return t2;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;With Local Variables
+    &lt;div id=&#34;with-local-variables&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#with-local-variables&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn calc(n: i32) i32 {
+    const doubled: i32 = n * 2;
+    return doubled;
+}
+
+Generated C:
+    int32_t calc(int32_t p0) {
+        int32_t local_0;
+
+        int32_t t0 = p0;
+        int32_t t1 = 2;
+        int32_t t2 = t0 * t1;
+        local_0 = t2;
+        int32_t t4 = local_0;
+        return t4;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Void Functions
+    &lt;div id=&#34;void-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#void-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn doNothing() void {
+    return;
+}
+
+Generated C:
+    void doNothing() {
+        return;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Verify Your Implementation
+    &lt;div id=&#34;verify-your-implementation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#verify-your-implementation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Test 1: No parameters
+    &lt;div id=&#34;test-1-no-parameters&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-no-parameters&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn_air:
+    name: &amp;#34;foo&amp;#34;
+    param_types: []
+    return_type: i32
+
+Signature: &amp;#34;int32_t foo()&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 2: One parameter
+    &lt;div id=&#34;test-2-one-parameter&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-one-parameter&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn_air:
+    name: &amp;#34;inc&amp;#34;
+    param_types: [i32]
+    return_type: i32
+
+Signature: &amp;#34;int32_t inc(int32_t p0)&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 3: Multiple parameters
+    &lt;div id=&#34;test-3-multiple-parameters&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-multiple-parameters&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn_air:
+    name: &amp;#34;add3&amp;#34;
+    param_types: [i32, i32, i32]
+    return_type: i32
+
+Signature: &amp;#34;int32_t add3(int32_t p0, int32_t p1, int32_t p2)&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Void return
+    &lt;div id=&#34;test-4-void-return&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-void-return&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn_air:
+    name: &amp;#34;noop&amp;#34;
+    param_types: []
+    return_type: void
+
+Signature: &amp;#34;void noop()&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Full function with locals
+    &lt;div id=&#34;test-5-full-function-with-locals&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-full-function-with-locals&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn_air:
+    name: &amp;#34;test&amp;#34;
+    param_types: [i32]
+    return_type: i32
+    local_count: 1
+
+Output:
+    int32_t test(int32_t p0) {
+        int32_t local_0;
+        ...
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What&amp;rsquo;s Next
+    &lt;div id=&#34;whats-next&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#whats-next&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s handle return statements.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.7: Return</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/07-gen-return/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/07-gen-return/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.7: Generating Return Statements
+    &lt;div id=&#34;lesson-57-generating-return-statements&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-57-generating-return-statements&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Emit return statements correctly.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate C code for &lt;code&gt;ret&lt;/code&gt; and &lt;code&gt;ret_void&lt;/code&gt; instructions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Return Patterns
+    &lt;div id=&#34;return-patterns&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#return-patterns&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                        RETURN PATTERNS                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   With value:                                                               │
+│     AIR:  ret(%2)                                                           │
+│     C:    return t2;                                                        │
+│                                                                              │
+│   Without value (void):                                                     │
+│     AIR:  ret_void()                                                        │
+│     C:    return;                                                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Return
+    &lt;div id=&#34;generate-return&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-return&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateReturn(instr, index):
+    switch instr.tag:
+        RET:
+            value = instr.data.value
+            emitIndent()
+            emit(&amp;#34;return t&amp;#34;)
+            emit(value)
+            emitLine(&amp;#34;;&amp;#34;)
+
+        RET_VOID:
+            emitIndent()
+            emitLine(&amp;#34;return;&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Note About Index
+    &lt;div id=&#34;note-about-index&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#note-about-index&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Return instructions don&amp;rsquo;t produce a value, so we don&amp;rsquo;t create a &lt;code&gt;tN&lt;/code&gt; variable for them.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.8: Calls</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/08-gen-calls/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/08-gen-calls/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.8: Generating Function Calls
+    &lt;div id=&#34;lesson-58-generating-function-calls&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-58-generating-function-calls&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Emit code for calling functions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate C code for function call instructions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Note: Our Mini Language
+    &lt;div id=&#34;note-our-mini-language&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#note-our-mini-language&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Our mini compiler doesn&amp;rsquo;t include function calls in its core feature set. This lesson shows how you&amp;rsquo;d add them as an extension.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5.9: Program</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen/09-gen-program/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen/09-gen-program/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5.9: Generating Complete Programs
+    &lt;div id=&#34;lesson-59-generating-complete-programs&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-59-generating-complete-programs&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Put together headers, declarations, and functions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate a complete, compilable C program.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Program Structure
+    &lt;div id=&#34;program-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#program-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                      C PROGRAM STRUCTURE                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   // 1. Headers                                                              │
+│   #include &amp;lt;stdint.h&amp;gt;                                                        │
+│   #include &amp;lt;stdbool.h&amp;gt;                                                       │
+│                                                                              │
+│   // 2. Forward declarations (optional)                                      │
+│   int32_t add(int32_t p0, int32_t p1);                                      │
+│                                                                              │
+│   // 3. Function definitions                                                 │
+│   int32_t add(int32_t p0, int32_t p1) {                                     │
+│       ...                                                                   │
+│   }                                                                         │
+│                                                                              │
+│   int32_t main() {                                                          │
+│       ...                                                                   │
+│   }                                                                         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Program
+    &lt;div id=&#34;generate-program&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-program&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateProgram(program_air) → string:
+    output = StringBuilder()
+
+    // 1. Headers
+    emitLine(&amp;#34;#include &amp;lt;stdint.h&amp;gt;&amp;#34;)
+    emitLine(&amp;#34;#include &amp;lt;stdbool.h&amp;gt;&amp;#34;)
+    emitLine(&amp;#34;&amp;#34;)
+
+    // 2. Forward declarations (optional, for mutual recursion)
+    for fn in program_air.functions:
+        generateFunctionSignature(fn)
+        emitLine(&amp;#34;;&amp;#34;)
+    emitLine(&amp;#34;&amp;#34;)
+
+    // 3. Function definitions
+    for fn in program_air.functions:
+        generateFunction(fn)
+        emitLine(&amp;#34;&amp;#34;)
+
+    return output.toString()
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Example
+    &lt;div id=&#34;full-example&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-example&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn add(a: i32, b: i32) i32 {
+    return a + b;
+}
+
+fn main() i32 {
+    return 0;
+}
+
+Generated C:
+    #include &amp;lt;stdint.h&amp;gt;
+    #include &amp;lt;stdbool.h&amp;gt;
+
+    int32_t add(int32_t p0, int32_t p1);
+    int32_t main();
+
+    int32_t add(int32_t p0, int32_t p1) {
+        int32_t t0 = p0;
+        int32_t t1 = p1;
+        int32_t t2 = t0 + t1;
+        return t2;
+    }
+
+    int32_t main() {
+        int32_t t0 = 0;
+        return t0;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Compilation
+    &lt;div id=&#34;compilation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#compilation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Save output to a file and compile:&lt;/p&gt;</description>
+      
+    </item>
+    
+  </channel>
+</rss>

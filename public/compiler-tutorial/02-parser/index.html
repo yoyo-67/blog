@@ -15,21 +15,19 @@
 
   
   
-    <title>Drafts &middot; Yohai&#39;s Blog</title>
-    <meta name="title" content="Drafts &middot; Yohai&#39;s Blog">
+    <title>Section 2: The Parser &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Section 2: The Parser &middot; Yohai&#39;s Blog">
   
 
   
   
-    <meta name="description" content="Work in progress posts">
   
   
   
-  
-  <link rel="canonical" href="http://localhost:1313/drafts/">
+  <link rel="canonical" href="http://localhost:1313/compiler-tutorial/02-parser/">
   
     
-      <link rel="alternate" type="application/rss+xml" href="/drafts/index.xml" title="Yohai's Blog" />
+      <link rel="alternate" type="application/rss+xml" href="/compiler-tutorial/02-parser/index.xml" title="Yohai's Blog" />
   
 
   
@@ -39,17 +37,19 @@
   
 
   
-  <meta property="og:url" content="http://localhost:1313/drafts/">
+  <meta property="og:url" content="http://localhost:1313/compiler-tutorial/02-parser/">
   <meta property="og:site_name" content="Yohai&#39;s Blog">
-  <meta property="og:title" content="Drafts">
-  <meta property="og:description" content="Work in progress posts">
+  <meta property="og:title" content="Section 2: The Parser">
+  <meta property="og:description" content="Section 2: The Parser # The parser transforms a flat stream of tokens into a tree structure that represents the program’s meaning.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT THE PARSER DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Input: [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI] │ │ │ │ Output: │ │ ConstDecl │ │ / \ │ │ name:&#34;x&#34; Add │ │ / \ │ │ Num:3 Num:5 │ │ │ │ The tree shows STRUCTURE: │ │ ✓ &#34;x&#34; is being assigned │ │ ✓ The value is an addition │ │ ✓ Addition has two operands (3 and 5) │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why Trees? # Tokens are flat. But code has structure:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Drafts">
-  <meta name="twitter:description" content="Work in progress posts">
+  <meta name="twitter:title" content="Section 2: The Parser">
+  <meta name="twitter:description" content="Section 2: The Parser # The parser transforms a flat stream of tokens into a tree structure that represents the program’s meaning.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT THE PARSER DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Input: [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI] │ │ │ │ Output: │ │ ConstDecl │ │ / \ │ │ name:&#34;x&#34; Add │ │ / \ │ │ Num:3 Num:5 │ │ │ │ The tree shows STRUCTURE: │ │ ✓ &#34;x&#34; is being assigned │ │ ✓ The value is an addition │ │ ✓ Addition has two operands (3 and 5) │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why Trees? # Tokens are flat. But code has structure:">
 
   
   
@@ -197,27 +197,27 @@
   [{
     "@context": "https://schema.org",
     "@type": "Article",
-    "articleSection": "Drafts",
-    "name": "Drafts",
-    "headline": "Drafts",
-    "description": "Work in progress posts",
+    "articleSection": "Build Your Own Compiler",
+    "name": "Section 2: The Parser",
+    "headline": "Section 2: The Parser",
     
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eSection 2: The Parser\n    \u003cdiv id=\u0022section-2-the-parser\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#section-2-the-parser\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eThe parser transforms a flat stream of tokens into a tree structure that represents the program\u0026rsquo;s meaning.\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌──────────────────────────────────────────────────────────────────────────────┐\n│                           WHAT THE PARSER DOES                                │\n├──────────────────────────────────────────────────────────────────────────────┤\n│                                                                              │\n│   Input:  [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI]     │\n│                                                                              │\n│   Output:                                                                    │\n│                        ConstDecl                                             │\n│                       \/        \\                                             │\n│                   name:\u0026#34;x\u0026#34;     Add                                           │\n│                               \/   \\                                          │\n│                           Num:3   Num:5                                      │\n│                                                                              │\n│   The tree shows STRUCTURE:                                                  │\n│   ✓ \u0026#34;x\u0026#34; is being assigned                                                   │\n│   ✓ The value is an addition                                                │\n│   ✓ Addition has two operands (3 and 5)                                     │\n│                                                                              │\n└──────────────────────────────────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eWhy Trees?\n    \u003cdiv id=\u0022why-trees\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#why-trees\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eTokens are flat. But code has structure:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/drafts/",
+    "url" : "http://localhost:1313/compiler-tutorial/02-parser/",
     "author" : {
       "@type": "Person",
       "name": "Yohai"
     },
-    "copyrightYear": "2025",
-    "dateCreated": "2025-12-17T00:00:00\u002b00:00",
-    "datePublished": "2025-12-17T00:00:00\u002b00:00",
     
-    "dateModified": "2025-12-17T00:00:00\u002b00:00",
+    
+    
+    
+    
     
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "0"
+    "wordCount": "384"
   }]
   </script>
 
@@ -539,7 +539,7 @@
   
   <header>
     
-    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Drafts</h1>
+    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Section 2: The Parser</h1>
     <div class="mt-1 mb-2 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
       
 
@@ -583,8 +583,8 @@
         type="text/javascript"
         src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
         integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
-        data-oid="views_drafts/_index.md"
-        data-oid-likes="likes_drafts/_index.md"></script>
+        data-oid="views_compiler-tutorial/02-parser/_index.md"
+        data-oid-likes="likes_compiler-tutorial/02-parser/_index.md"></script>
     
   </header>
 
@@ -595,6 +595,208 @@
     
     <div class="min-w-0 min-h-0 max-w-prose">
       
+<h1 class="relative group">Section 2: The Parser
+    <div id="section-2-the-parser" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#section-2-the-parser" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p>The parser transforms a flat stream of tokens into a tree structure that represents the program&rsquo;s meaning.</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                           WHAT THE PARSER DOES                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Input:  [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI]     │
+│                                                                              │
+│   Output:                                                                    │
+│                        ConstDecl                                             │
+│                       /        \                                             │
+│                   name:&#34;x&#34;     Add                                           │
+│                               /   \                                          │
+│                           Num:3   Num:5                                      │
+│                                                                              │
+│   The tree shows STRUCTURE:                                                  │
+│   ✓ &#34;x&#34; is being assigned                                                   │
+│   ✓ The value is an addition                                                │
+│   ✓ Addition has two operands (3 and 5)                                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Why Trees?
+    <div id="why-trees" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-trees" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Tokens are flat. But code has structure:</p>
+<pre tabindex="0"><code>3 + 5 * 2
+
+Tokens: [3] [+] [5] [*] [2]   ← Flat, no structure
+
+Tree:        +                 ← Shows * happens first!
+            / \
+           3   *
+              / \
+             5   2
+</code></pre><p>The tree captures operator precedence: multiply first, then add.</p>
+<hr>
+
+<h2 class="relative group">Lessons in This Section
+    <div id="lessons-in-this-section" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#lessons-in-this-section" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Lesson</th>
+          <th>Topic</th>
+          <th>What You&rsquo;ll Add</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><a
+  href="01-ast-nodes/">1. AST Nodes</a></td>
+          <td>Node types</td>
+          <td>Define what AST nodes look like</td>
+      </tr>
+      <tr>
+          <td><a
+  href="02-atoms/">2. Atoms</a></td>
+          <td>Simple expressions</td>
+          <td>Numbers, identifiers</td>
+      </tr>
+      <tr>
+          <td><a
+  href="03-grouping/">3. Grouping</a></td>
+          <td>Parentheses</td>
+          <td><code>(expression)</code></td>
+      </tr>
+      <tr>
+          <td><a
+  href="04-unary/">4. Unary</a></td>
+          <td>Unary operators</td>
+          <td><code>-x</code></td>
+      </tr>
+      <tr>
+          <td><a
+  href="05-binary-simple/">5. Binary Simple</a></td>
+          <td>Binary operators</td>
+          <td><code>a + b</code> (no precedence)</td>
+      </tr>
+      <tr>
+          <td><a
+  href="06-precedence/">6. Precedence</a></td>
+          <td>Binding power</td>
+          <td>Why <code>*</code> beats <code>+</code></td>
+      </tr>
+      <tr>
+          <td><a
+  href="07-precedence-impl/">7. Precedence Impl</a></td>
+          <td>Climbing algorithm</td>
+          <td>The actual implementation</td>
+      </tr>
+      <tr>
+          <td><a
+  href="08-statements/">8. Statements</a></td>
+          <td>Statements</td>
+          <td><code>return</code>, <code>const</code>, <code>var</code></td>
+      </tr>
+      <tr>
+          <td><a
+  href="09-blocks/">9. Blocks</a></td>
+          <td>Code blocks</td>
+          <td><code>{ stmt; stmt; }</code></td>
+      </tr>
+      <tr>
+          <td><a
+  href="10-functions/">10. Functions</a></td>
+          <td>Function declarations</td>
+          <td><code>fn name(...) { ... }</code></td>
+      </tr>
+      <tr>
+          <td><a
+  href="11-putting-together/">11. Complete Parser</a></td>
+          <td>Integration</td>
+          <td>Full parser with tests</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+
+<h2 class="relative group">What You&rsquo;ll Build
+    <div id="what-youll-build" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-youll-build" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>By the end of this section, you can parse:</p>
+<pre tabindex="0"><code>fn add(a: i32, b: i32) i32 {
+    const result: i32 = a + b;
+    return result;
+}
+</code></pre><p>Into an AST like:</p>
+<pre tabindex="0"><code>Root
+└── FnDecl(&#34;add&#34;)
+    ├── params: [(&#34;a&#34;, i32), (&#34;b&#34;, i32)]
+    ├── return_type: i32
+    └── body: Block
+        ├── ConstDecl(&#34;result&#34;, i32)
+        │   └── value: Binary(+)
+        │       ├── left: Identifier(&#34;a&#34;)
+        │       └── right: Identifier(&#34;b&#34;)
+        └── Return
+            └── value: Identifier(&#34;result&#34;)
+</code></pre><hr>
+
+<h2 class="relative group">Parsing Technique: Recursive Descent
+    <div id="parsing-technique-recursive-descent" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#parsing-technique-recursive-descent" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>We&rsquo;ll use <strong>recursive descent parsing</strong> - the most intuitive approach:</p>
+<pre tabindex="0"><code>To parse a function:
+    1. Expect &#34;fn&#34; keyword
+    2. Parse the name (identifier)
+    3. Parse the parameters (call parseParams)
+    4. Parse the return type
+    5. Parse the body (call parseBlock)
+
+Each &#34;call parseX&#34; recursively parses that construct.
+</code></pre><p>This mirrors how you&rsquo;d describe the grammar in English.</p>
+<hr>
+
+<h2 class="relative group">Start Here
+    <div id="start-here" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#start-here" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Begin with <a
+  href="01-ast-nodes/">Lesson 1: AST Nodes</a> →</p>
+
     </div>
   </section>
 
@@ -612,7 +814,7 @@
           
             
               <h2 class="mt-12 text-2xl font-bold text-neutral-700 first:mt-8 dark:text-neutral-300">
-                2025
+                0001
               </h2>
             
             
@@ -672,11 +874,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/07-linking/"
+          href="/compiler-tutorial/02-parser/11-putting-together/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 7: Linking
+          2.11: Complete Parser
           
         </h2>
       </a>
@@ -730,7 +932,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>6772 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">32 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1060 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">5 mins</span>
     
 
     
@@ -810,11 +1012,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/06-air-codegen/"
+          href="/compiler-tutorial/02-parser/10-functions/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 6: AIR and Code Generation
+          2.10: Functions
           
         </h2>
       </a>
@@ -868,7 +1070,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5319 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">25 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>687 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -948,11 +1150,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/05-sema/"
+          href="/compiler-tutorial/02-parser/09-blocks/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 5: Semantic Analysis
+          2.9: Blocks
           
         </h2>
       </a>
@@ -1006,7 +1208,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5748 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>583 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -1086,11 +1288,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/04-zir-generation/"
+          href="/compiler-tutorial/02-parser/08-statements/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 4: ZIR Generation
+          2.8: Statements
           
         </h2>
       </a>
@@ -1144,7 +1346,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5965 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">29 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>631 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -1224,11 +1426,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/03-parser-ast/"
+          href="/compiler-tutorial/02-parser/07-precedence-impl/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 3: Parser and AST
+          2.7: Precedence Implementation
           
         </h2>
       </a>
@@ -1282,7 +1484,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>11756 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">56 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>835 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1362,11 +1564,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/02-tokenizer/"
+          href="/compiler-tutorial/02-parser/06-precedence/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 2: The Tokenizer
+          2.6: Precedence
           
         </h2>
       </a>
@@ -1420,7 +1622,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>7018 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">33 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>697 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1500,11 +1702,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/01-bootstrap-process/"
+          href="/compiler-tutorial/02-parser/05-binary-simple/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Zig Compiler Internals Part 1: The Bootstrap Process
+          2.5: Binary Operators (Simple)
           
         </h2>
       </a>
@@ -1558,7 +1760,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5567 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>589 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -1638,11 +1840,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/09-build-system/"
+          href="/compiler-tutorial/02-parser/04-unary/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 9: The Build System (build.zig)
+          2.4: Unary Operators
           
         </h2>
       </a>
@@ -1696,7 +1898,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>4884 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">23 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>544 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -1776,11 +1978,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/08-caching-incremental/"
+          href="/compiler-tutorial/02-parser/03-grouping/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 8: Caching and Incremental Compilation
+          2.3: Grouping
           
         </h2>
       </a>
@@ -1834,7 +2036,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>3607 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">17 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>476 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -1914,11 +2116,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/12-standard-library/"
+          href="/compiler-tutorial/02-parser/02-atoms/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 12: The Standard Library - Don't Reinvent the Wheel
+          2.2: Atoms
           
         </h2>
       </a>
@@ -1972,7 +2174,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>8592 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">41 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>447 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -2005,7 +2207,7 @@
   
   <ul class="flex flex-row mt-8 justify-center"><li>
           <a
-            href="/drafts/"
+            href="/compiler-tutorial/02-parser/"
             class="
               bg-primary-200 dark:bg-primary-400 dark:text-neutral-800
              mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
@@ -2013,14 +2215,14 @@
           >
         </li><li>
           <a
-            href="/drafts/page/2/"
+            href="/compiler-tutorial/02-parser/page/2/"
             class=" mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
             >2</a
           >
         </li>
       <li>
         <a
-          href="/drafts/page/2/"
+          href="/compiler-tutorial/02-parser/page/2/"
           class="mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
           rel="next"
           >&rarr;</a

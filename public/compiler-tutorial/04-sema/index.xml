@@ -1,0 +1,1691 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Section 4: Sema on Yohai&#39;s Blog</title>
+    <link>http://localhost:1313/compiler-tutorial/04-sema/</link>
+    <description>Recent content in Section 4: Sema on Yohai&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© 2025 Yohai</copyright>
+    <atom:link href="http://localhost:1313/compiler-tutorial/04-sema/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>4.1: Type System</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/01-type-system/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/01-type-system/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.1: Defining Types
+    &lt;div id=&#34;lesson-41-defining-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-41-defining-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Before type checking, we need to define what types exist.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Define the type system for our mini language.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Our Types
+    &lt;div id=&#34;our-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#our-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                           TYPE SYSTEM                                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Primitive Types:                                                          │
+│                                                                              │
+│   i32   - 32-bit signed integer                                             │
+│   i64   - 64-bit signed integer                                             │
+│   bool  - boolean (true/false)                                              │
+│   void  - no value (for functions that don&amp;#39;t return)                        │
+│                                                                              │
+│   That&amp;#39;s it for our mini compiler!                                          │
+│                                                                              │
+│   Real languages have: floats, strings, arrays, structs, pointers, etc.     │
+│   We&amp;#39;ll keep it simple.                                                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Representation
+    &lt;div id=&#34;type-representation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-representation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;enum Type {
+    I32,
+    I64,
+    BOOL,
+    VOID,
+    ERROR,    // For type errors - allows continued analysis
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The ERROR type is special - it represents &amp;ldquo;we don&amp;rsquo;t know&amp;rdquo; when errors occur. This prevents cascading error messages.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>4.2: Type of Expression</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/02-type-of-expr/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/02-type-of-expr/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.2: Inferring Expression Types
+    &lt;div id=&#34;lesson-42-inferring-expression-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-42-inferring-expression-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Determine what type each expression produces.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Given any expression, determine its type.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Inference Rules
+    &lt;div id=&#34;type-inference-rules&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-inference-rules&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                     EXPRESSION TYPE RULES                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Literals:                                                                  │
+│     42           → i32                                                       │
+│     true/false   → bool                                                      │
+│                                                                              │
+│   Variables:                                                                │
+│     x            → (type of x from declaration)                             │
+│                                                                              │
+│   Unary:                                                                    │
+│     -expr        → (type of expr, must be numeric)                          │
+│                                                                              │
+│   Binary:                                                                   │
+│     a + b        → (type of a, must equal type of b)                        │
+│     a - b        → (type of a, must equal type of b)                        │
+│     a * b        → (type of a, must equal type of b)                        │
+│     a / b        → (type of a, must equal type of b)                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Context
+    &lt;div id=&#34;type-context&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-context&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;To type-check, we need to know variable types. For now, assume we have:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>4.3: Symbol Table</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/03-symbol-table/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/03-symbol-table/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.3: Symbol Table
+    &lt;div id=&#34;lesson-43-symbol-table&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-43-symbol-table&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Track all declared names and their properties.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Build a symbol table that maps names to their declarations.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What Is a Symbol Table?
+    &lt;div id=&#34;what-is-a-symbol-table&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-is-a-symbol-table&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         SYMBOL TABLE                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   A map from names to information about them:                               │
+│                                                                              │
+│   &amp;#34;x&amp;#34; → { type: I32, kind: LOCAL, slot: 0 }                                │
+│   &amp;#34;y&amp;#34; → { type: I64, kind: LOCAL, slot: 1 }                                │
+│   &amp;#34;a&amp;#34; → { type: I32, kind: PARAM, index: 0 }                               │
+│   &amp;#34;b&amp;#34; → { type: I32, kind: PARAM, index: 1 }                               │
+│                                                                              │
+│   Given a name, we can find:                                                │
+│   - Its type (for type checking)                                            │
+│   - Its kind (parameter vs local variable)                                  │
+│   - Its location (slot number or parameter index)                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Symbol Entry
+    &lt;div id=&#34;symbol-entry&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#symbol-entry&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;enum SymbolKind {
+    PARAM,      // Function parameter
+    LOCAL,      // Local variable (const or var)
+}
+
+Symbol {
+    name: string,
+    type: Type,
+    kind: SymbolKind,
+    index: integer,     // Param index or local slot
+    is_const: boolean,  // Can it be reassigned?
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Symbol Table
+    &lt;div id=&#34;symbol-table&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#symbol-table&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;SymbolTable {
+    symbols: Map&amp;lt;string, Symbol&amp;gt;
+    next_local_slot: integer
+
+    // Methods
+    declareParam(name, type, index)
+    declareLocal(name, type, is_const) → slot
+    lookup(name) → Symbol or null
+    isDeclared(name) → boolean
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Declare Parameter
+    &lt;div id=&#34;declare-parameter&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#declare-parameter&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function declareParam(name, type, index):
+    if isDeclared(name):
+        error(&amp;#34;&amp;#39;&amp;#34; + name + &amp;#34;&amp;#39; is already declared&amp;#34;)
+        return
+
+    symbols[name] = Symbol {
+        name: name,
+        type: type,
+        kind: PARAM,
+        index: index,
+        is_const: true   // Parameters can&amp;#39;t be reassigned
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Declare Local
+    &lt;div id=&#34;declare-local&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#declare-local&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function declareLocal(name, type, is_const) → integer:
+    if isDeclared(name):
+        error(&amp;#34;&amp;#39;&amp;#34; + name + &amp;#34;&amp;#39; is already declared&amp;#34;)
+        return -1
+
+    slot = next_local_slot
+    next_local_slot = next_local_slot + 1
+
+    symbols[name] = Symbol {
+        name: name,
+        type: type,
+        kind: LOCAL,
+        index: slot,
+        is_const: is_const
+    }
+
+    return slot
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Lookup
+    &lt;div id=&#34;lookup&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lookup&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function lookup(name) → Symbol or null:
+    if name in symbols:
+        return symbols[name]
+    return null
+
+function isDeclared(name) → boolean:
+    return name in symbols
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Initialize for Function
+    &lt;div id=&#34;initialize-for-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#initialize-for-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;When analyzing a function, populate parameters first:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>4.4: Resolve Names</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/04-resolve-names/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/04-resolve-names/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.4: Resolving Name References
+    &lt;div id=&#34;lesson-44-resolving-name-references&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-44-resolving-name-references&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Transform string names into concrete locations.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Convert &lt;code&gt;decl_ref(&amp;quot;x&amp;quot;)&lt;/code&gt; into &lt;code&gt;local_get(slot)&lt;/code&gt; or &lt;code&gt;param_get(index)&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Problem
+    &lt;div id=&#34;the-problem&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-problem&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                        NAME RESOLUTION                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ZIR uses string names:                                                    │
+│     %2 = decl_ref(&amp;#34;x&amp;#34;)    // Which &amp;#34;x&amp;#34;? Where is it?                       │
+│                                                                              │
+│   AIR uses concrete locations:                                              │
+│     %2 = local_get(0)     // Local variable slot 0                         │
+│     OR                                                                      │
+│     %2 = param_get(1)     // Parameter index 1                             │
+│                                                                              │
+│   Resolution: lookup name → find symbol → use its location                  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Resolution Process
+    &lt;div id=&#34;resolution-process&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#resolution-process&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function resolveReference(name, symbol_table) → AIRInstruction:
+    symbol = symbol_table.lookup(name)
+
+    if symbol == null:
+        error(&amp;#34;Undefined variable: &amp;#34; + name)
+        return ErrorInstr {}
+
+    switch symbol.kind:
+        PARAM:
+            return ParamGet {
+                index: symbol.index,
+                type: symbol.type
+            }
+        LOCAL:
+            return LocalGet {
+                slot: symbol.index,
+                type: symbol.type
+            }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Instruction Analysis
+    &lt;div id=&#34;full-instruction-analysis&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-instruction-analysis&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function analyzeInstruction(zir_instr, symbol_table, type_of) → AIRInstruction:
+    switch zir_instr.tag:
+
+        CONSTANT:
+            return Constant {
+                value: zir_instr.data.value,
+                type: I32
+            }
+
+        PARAM_REF:
+            index = zir_instr.data.param_index
+            // Look up parameter type from function signature
+            type = param_types[index]
+            return ParamGet {
+                index: index,
+                type: type
+            }
+
+        DECL_REF:
+            name = zir_instr.data.name
+            return resolveReference(name, symbol_table)
+
+        DECL:
+            name = zir_instr.data.name
+            value_ref = zir_instr.data.value
+            value_type = type_of[value_ref]
+
+            slot = symbol_table.declareLocal(name, value_type, true)
+
+            return LocalSet {
+                slot: slot,
+                value: value_ref,
+                type: value_type
+            }
+
+        ADD, SUB, MUL, DIV:
+            lhs = zir_instr.data.lhs
+            rhs = zir_instr.data.rhs
+            result_type = type_of[...]  // From type inference
+
+            return BinaryOp {
+                op: zir_instr.tag,
+                lhs: lhs,
+                rhs: rhs,
+                type: result_type
+            }
+
+        // ... other cases
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Example Walkthrough
+    &lt;div id=&#34;example-walkthrough&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#example-walkthrough&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn calc(n: i32) i32 {
+    const doubled: i32 = n * 2;
+    return doubled;
+}
+
+ZIR:
+    %0 = param_ref(0)
+    %1 = constant(2)
+    %2 = mul(%0, %1)
+    %3 = decl(&amp;#34;doubled&amp;#34;, %2)
+    %4 = decl_ref(&amp;#34;doubled&amp;#34;)
+    %5 = ret(%4)
+
+Symbol table starts with:
+    { &amp;#34;n&amp;#34;: { kind: PARAM, index: 0, type: I32 } }
+
+Analysis:
+
+%0 = param_ref(0):
+    → ParamGet { index: 0, type: I32 }
+
+%1 = constant(2):
+    → Constant { value: 2, type: I32 }
+
+%2 = mul(%0, %1):
+    → MulI32 { lhs: 0, rhs: 1, type: I32 }
+
+%3 = decl(&amp;#34;doubled&amp;#34;, %2):
+    Declare local: symbols[&amp;#34;doubled&amp;#34;] = { kind: LOCAL, slot: 0, type: I32 }
+    → LocalSet { slot: 0, value: 2, type: I32 }
+
+%4 = decl_ref(&amp;#34;doubled&amp;#34;):
+    Lookup &amp;#34;doubled&amp;#34; → { kind: LOCAL, slot: 0, type: I32 }
+    → LocalGet { slot: 0, type: I32 }
+
+%5 = ret(%4):
+    → Ret { value: 4, type: I32 }
+
+Final symbol table:
+    {
+        &amp;#34;n&amp;#34;: { kind: PARAM, index: 0, type: I32 },
+        &amp;#34;doubled&amp;#34;: { kind: LOCAL, slot: 0, type: I32 }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Handling Errors
+    &lt;div id=&#34;handling-errors&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#handling-errors&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function analyzeInstruction(zir_instr, ...):
+    switch zir_instr.tag:
+        DECL_REF:
+            symbol = symbol_table.lookup(zir_instr.data.name)
+            if symbol == null:
+                error(&amp;#34;Undefined variable &amp;#39;&amp;#34; + zir_instr.data.name + &amp;#34;&amp;#39;&amp;#34;)
+                // Return error instruction to allow continued analysis
+                return ErrorInstr { type: ERROR }
+            // ... normal case
+
+        DECL:
+            if symbol_table.isDeclared(zir_instr.data.name):
+                error(&amp;#34;Variable &amp;#39;&amp;#34; + zir_instr.data.name + &amp;#34;&amp;#39; already declared&amp;#34;)
+                return ErrorInstr { type: ERROR }
+            // ... normal case
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Order Matters
+    &lt;div id=&#34;order-matters&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#order-matters&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Variables must be declared before use:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>4.5: Type Check</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/05-type-check/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/05-type-check/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.5: Type Checking
+    &lt;div id=&#34;lesson-45-type-checking&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-45-type-checking&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Verify that types are used correctly throughout the program.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Ensure all operations have compatible types and catch type errors.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Checking Points
+    &lt;div id=&#34;type-checking-points&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-checking-points&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                      WHERE TO TYPE CHECK                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. BINARY OPERATIONS                                                      │
+│      a + b   → Both operands must have same numeric type                   │
+│                                                                              │
+│   2. UNARY OPERATIONS                                                       │
+│      -x      → Operand must be numeric                                      │
+│                                                                              │
+│   3. VARIABLE DECLARATIONS                                                  │
+│      const x: i32 = expr   → expr must have type i32                       │
+│                                                                              │
+│   4. RETURN STATEMENTS                                                      │
+│      return expr   → expr type must match function return type             │
+│                                                                              │
+│   5. FUNCTION CALLS (if we had them)                                       │
+│      foo(a, b)   → argument types must match parameter types               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Check: Binary Operations
+    &lt;div id=&#34;type-check-binary-operations&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-check-binary-operations&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function checkBinaryOp(op, lhs_type, rhs_type) → Type:
+    // Propagate errors
+    if lhs_type == ERROR or rhs_type == ERROR:
+        return ERROR
+
+    // Types must match
+    if lhs_type != rhs_type:
+        error(&amp;#34;Type mismatch in &amp;#34; + opName(op) + &amp;#34;: &amp;#34; +
+              typeName(lhs_type) + &amp;#34; vs &amp;#34; + typeName(rhs_type))
+        return ERROR
+
+    // Must be numeric
+    if not isNumeric(lhs_type):
+        error(&amp;#34;Cannot perform &amp;#34; + opName(op) + &amp;#34; on &amp;#34; + typeName(lhs_type))
+        return ERROR
+
+    return lhs_type
+
+function isNumeric(type) → boolean:
+    return type == I32 or type == I64
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Check: Unary Operations
+    &lt;div id=&#34;type-check-unary-operations&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-check-unary-operations&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function checkUnaryOp(op, operand_type) → Type:
+    if operand_type == ERROR:
+        return ERROR
+
+    switch op:
+        NEGATE:
+            if not isNumeric(operand_type):
+                error(&amp;#34;Cannot negate &amp;#34; + typeName(operand_type))
+                return ERROR
+            return operand_type
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Check: Variable Declaration
+    &lt;div id=&#34;type-check-variable-declaration&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-check-variable-declaration&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;When the AST has an explicit type annotation:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>4.6: AIR Output</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/06-air-output/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/06-air-output/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.6: Generating AIR
+    &lt;div id=&#34;lesson-46-generating-air&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-46-generating-air&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Produce typed intermediate representation for code generation.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Transform analyzed ZIR into AIR (Analyzed IR) with resolved names and types.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;AIR vs ZIR
+    &lt;div id=&#34;air-vs-zir&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#air-vs-zir&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         ZIR vs AIR                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ZIR (input):                    AIR (output):                             │
+│                                                                              │
+│   decl_ref(&amp;#34;x&amp;#34;)                   local_get(slot: 0, type: i32)            │
+│   param_ref(0)                    param_get(index: 0, type: i32)           │
+│   add(%0, %1)                     add_i32(%0, %1)                           │
+│   decl(&amp;#34;x&amp;#34;, %0)                   local_set(slot: 0, value: %0)            │
+│                                                                              │
+│   String names → Resolved slots                                             │
+│   Unknown types → Explicit types                                            │
+│   Generic ops → Type-specific ops                                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;AIR Instruction Types
+    &lt;div id=&#34;air-instruction-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#air-instruction-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;enum AIRTag {
+    // Constants
+    CONST_I32,
+    CONST_I64,
+    CONST_BOOL,
+
+    // Arithmetic (type-specific)
+    ADD_I32, ADD_I64,
+    SUB_I32, SUB_I64,
+    MUL_I32, MUL_I64,
+    DIV_I32, DIV_I64,
+    NEG_I32, NEG_I64,
+
+    // Variables
+    PARAM_GET,
+    LOCAL_GET,
+    LOCAL_SET,
+
+    // Control
+    RET,
+    RET_VOID,
+}
+
+AIRInstruction {
+    tag: AIRTag,
+    type: Type,        // Result type
+    data: AIRData,     // Tag-specific data
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generating AIR
+    &lt;div id=&#34;generating-air&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generating-air&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateAIR(zir_instr, type_of, symbol_table) → AIRInstruction:
+    switch zir_instr.tag:
+
+        CONSTANT:
+            value = zir_instr.data.value
+            return AIRInstruction {
+                tag: CONST_I32,
+                type: I32,
+                data: { value: value }
+            }
+
+        PARAM_REF:
+            index = zir_instr.data.param_index
+            param_type = param_types[index]
+            return AIRInstruction {
+                tag: PARAM_GET,
+                type: param_type,
+                data: { index: index }
+            }
+
+        DECL_REF:
+            symbol = symbol_table.lookup(zir_instr.data.name)
+            if symbol.kind == PARAM:
+                return AIRInstruction {
+                    tag: PARAM_GET,
+                    type: symbol.type,
+                    data: { index: symbol.index }
+                }
+            else:  // LOCAL
+                return AIRInstruction {
+                    tag: LOCAL_GET,
+                    type: symbol.type,
+                    data: { slot: symbol.index }
+                }
+
+        ADD, SUB, MUL, DIV:
+            result_type = type_of[current_index]
+            tag = selectBinaryTag(zir_instr.tag, result_type)
+            return AIRInstruction {
+                tag: tag,
+                type: result_type,
+                data: {
+                    lhs: zir_instr.data.lhs,
+                    rhs: zir_instr.data.rhs
+                }
+            }
+
+        DECL:
+            symbol = symbol_table.lookup(zir_instr.data.name)
+            return AIRInstruction {
+                tag: LOCAL_SET,
+                type: VOID,
+                data: {
+                    slot: symbol.index,
+                    value: zir_instr.data.value
+                }
+            }
+
+        NEGATE:
+            result_type = type_of[current_index]
+            tag = (result_type == I32) ? NEG_I32 : NEG_I64
+            return AIRInstruction {
+                tag: tag,
+                type: result_type,
+                data: { operand: zir_instr.data.operand }
+            }
+
+        RET:
+            return AIRInstruction {
+                tag: RET,
+                type: type_of[zir_instr.data.value],
+                data: { value: zir_instr.data.value }
+            }
+
+        RET_VOID:
+            return AIRInstruction {
+                tag: RET_VOID,
+                type: VOID,
+                data: {}
+            }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Select Type-Specific Tag
+    &lt;div id=&#34;select-type-specific-tag&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#select-type-specific-tag&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function selectBinaryTag(zir_tag, type) → AIRTag:
+    switch zir_tag:
+        ADD:
+            return (type == I32) ? ADD_I32 : ADD_I64
+        SUB:
+            return (type == I32) ? SUB_I32 : SUB_I64
+        MUL:
+            return (type == I32) ? MUL_I32 : MUL_I64
+        DIV:
+            return (type == I32) ? DIV_I32 : DIV_I64
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Function AIR
+    &lt;div id=&#34;function-air&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#function-air&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;FunctionAIR {
+    name: string,
+    param_types: Type[],
+    return_type: Type,
+    local_count: integer,      // Number of local variable slots
+    instructions: AIRInstruction[]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Example
+    &lt;div id=&#34;full-example&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-example&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn add(a: i32, b: i32) i32 {
+    const sum: i32 = a + b;
+    return sum;
+}
+
+ZIR:
+    %0 = param_ref(0)
+    %1 = param_ref(1)
+    %2 = add(%0, %1)
+    %3 = decl(&amp;#34;sum&amp;#34;, %2)
+    %4 = decl_ref(&amp;#34;sum&amp;#34;)
+    %5 = ret(%4)
+
+After Sema:
+    Symbol table: { &amp;#34;a&amp;#34;: param 0, &amp;#34;b&amp;#34;: param 1, &amp;#34;sum&amp;#34;: local 0 }
+    Types: [I32, I32, I32, VOID, I32, I32]
+
+AIR:
+    %0 = param_get(index: 0)     // type: i32
+    %1 = param_get(index: 1)     // type: i32
+    %2 = add_i32(%0, %1)         // type: i32
+    %3 = local_set(slot: 0, %2)  // type: void
+    %4 = local_get(slot: 0)      // type: i32
+    %5 = ret(%4)                 // type: i32
+
+FunctionAIR {
+    name: &amp;#34;add&amp;#34;,
+    param_types: [I32, I32],
+    return_type: I32,
+    local_count: 1,
+    instructions: [...]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Simplified Example
+    &lt;div id=&#34;simplified-example&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#simplified-example&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn square(x: i32) i32 {
+    return x * x;
+}
+
+ZIR:
+    %0 = param_ref(0)
+    %1 = param_ref(0)
+    %2 = mul(%0, %1)
+    %3 = ret(%2)
+
+AIR:
+    %0 = param_get(0)     // i32
+    %1 = param_get(0)     // i32
+    %2 = mul_i32(%0, %1)  // i32
+    %3 = ret(%2)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Verify Your Implementation
+    &lt;div id=&#34;verify-your-implementation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#verify-your-implementation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Test 1: Constants
+    &lt;div id=&#34;test-1-constants&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-constants&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ZIR:  constant(42)
+AIR:  const_i32(42), type: I32
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 2: Parameter access
+    &lt;div id=&#34;test-2-parameter-access&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-parameter-access&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Function params: [i32, i64]
+ZIR:  param_ref(0)
+AIR:  param_get(0), type: I32
+
+ZIR:  param_ref(1)
+AIR:  param_get(1), type: I64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 3: Local variable
+    &lt;div id=&#34;test-3-local-variable&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-local-variable&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ZIR:
+    %0 = constant(5)
+    %1 = decl(&amp;#34;x&amp;#34;, %0)
+    %2 = decl_ref(&amp;#34;x&amp;#34;)
+
+AIR:
+    %0 = const_i32(5), type: I32
+    %1 = local_set(slot: 0, %0), type: VOID
+    %2 = local_get(slot: 0), type: I32
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Type-specific arithmetic
+    &lt;div id=&#34;test-4-type-specific-arithmetic&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-type-specific-arithmetic&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ZIR:  add(i32_expr, i32_expr)
+AIR:  add_i32(...), type: I32
+
+ZIR:  add(i64_expr, i64_expr)
+AIR:  add_i64(...), type: I64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Full function
+    &lt;div id=&#34;test-5-full-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-full-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source: fn inc(n: i32) i32 { return n + 1; }
+
+AIR:
+    param_types: [I32]
+    return_type: I32
+    local_count: 0
+    instructions:
+        %0 = param_get(0), type: I32
+        %1 = const_i32(1), type: I32
+        %2 = add_i32(%0, %1), type: I32
+        %3 = ret(%2)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What&amp;rsquo;s Next
+    &lt;div id=&#34;whats-next&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#whats-next&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s handle error messages properly.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>4.7: Error Handling</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/07-error-handling/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/07-error-handling/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.7: Error Handling
+    &lt;div id=&#34;lesson-47-error-handling&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-47-error-handling&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Report meaningful error messages and recover gracefully.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Provide helpful error messages and analyze as much as possible despite errors.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Types of Errors
+    &lt;div id=&#34;types-of-errors&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#types-of-errors&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         SEMANTIC ERRORS                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. UNDEFINED VARIABLE                                                     │
+│      return x;     // x was never declared                                  │
+│                                                                              │
+│   2. DUPLICATE DECLARATION                                                  │
+│      const x = 1;                                                           │
+│      const x = 2;  // x already exists                                      │
+│                                                                              │
+│   3. TYPE MISMATCH                                                          │
+│      const x: i32 = true;  // bool assigned to i32                          │
+│                                                                              │
+│   4. INCOMPATIBLE TYPES                                                     │
+│      return a + b;  // a is i32, b is i64                                   │
+│                                                                              │
+│   5. RETURN TYPE MISMATCH                                                   │
+│      fn foo() i32 { return; }  // void vs i32                               │
+│                                                                              │
+│   6. UNKNOWN TYPE                                                           │
+│      const x: unknown = 5;  // &amp;#34;unknown&amp;#34; isn&amp;#39;t a type                       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Error Message Structure
+    &lt;div id=&#34;error-message-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#error-message-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Good error messages include:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>4.8: Complete Sema</title>
+      <link>http://localhost:1313/compiler-tutorial/04-sema/08-putting-together/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/04-sema/08-putting-together/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 4.8: Putting It All Together
+    &lt;div id=&#34;lesson-48-putting-it-all-together&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-48-putting-it-all-together&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Let&amp;rsquo;s assemble the complete semantic analyzer.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Create an &lt;code&gt;analyze(zir)&lt;/code&gt; function that validates and transforms ZIR into AIR.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete Sema Structure
+    &lt;div id=&#34;complete-sema-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-sema-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         COMPLETE SEMA                                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Sema {                                                                     │
+│       errors: ErrorCollector                                                │
+│       symbol_table: SymbolTable                                             │
+│       param_types: Type[]                                                   │
+│       return_type: Type                                                     │
+│       type_of: Type[]          // Type of each instruction                 │
+│                                                                              │
+│       // Analysis                                                            │
+│       analyzeFunction(fn_zir) → FunctionAIR                                 │
+│       analyzeInstruction(instr) → AIRInstruction                            │
+│                                                                              │
+│       // Type checking                                                       │
+│       inferType(instr) → Type                                               │
+│       checkBinaryOp(op, lhs, rhs) → Type                                   │
+│       checkReturn(type)                                                      │
+│                                                                              │
+│       // Name resolution                                                     │
+│       resolveReference(name) → Symbol                                       │
+│   }                                                                          │
+│                                                                              │
+│   function analyze(program_zir) → ProgramAIR:                               │
+│       functions = []                                                         │
+│       for fn in program_zir.functions:                                      │
+│           functions.append(analyzeFunction(fn))                             │
+│       return ProgramAIR { functions }                                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete Code Summary
+    &lt;div id=&#34;complete-code-summary&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-code-summary&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Data Structures
+    &lt;div id=&#34;data-structures&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#data-structures&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;enum Type { I32, I64, BOOL, VOID, ERROR }
+
+Symbol {
+    name: string,
+    type: Type,
+    kind: SymbolKind,  // PARAM or LOCAL
+    index: integer
+}
+
+SymbolTable {
+    symbols: Map&amp;lt;string, Symbol&amp;gt;,
+    next_local_slot: integer
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Analyze Function
+    &lt;div id=&#34;analyze-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#analyze-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function analyzeFunction(fn_zir) → FunctionAIR:
+    // Initialize
+    symbol_table = SymbolTable()
+    errors = ErrorCollector()
+
+    // Resolve parameter types and add to symbol table
+    param_types = []
+    for i, param in enumerate(fn_zir.params):
+        type = resolveType(param.type)
+        param_types.append(type)
+        symbol_table.declareParam(param.name, type, i)
+
+    return_type = resolveType(fn_zir.return_type)
+
+    // First pass: infer types
+    type_of = []
+    for instr in fn_zir.instructions:
+        type_of.append(inferType(instr, type_of, symbol_table))
+
+    // Second pass: generate AIR
+    air_instructions = []
+    for i, instr in enumerate(fn_zir.instructions):
+        air = generateAIR(instr, type_of, symbol_table)
+        air_instructions.append(air)
+
+    return FunctionAIR {
+        name: fn_zir.name,
+        param_types: param_types,
+        return_type: return_type,
+        local_count: symbol_table.next_local_slot,
+        instructions: air_instructions
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Type Inference
+    &lt;div id=&#34;type-inference&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-inference&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function inferType(instr, type_of, symbol_table) → Type:
+    switch instr.tag:
+        CONSTANT:
+            return I32
+
+        PARAM_REF:
+            return param_types[instr.data.param_index]
+
+        DECL_REF:
+            symbol = symbol_table.lookup(instr.data.name)
+            if symbol == null:
+                errors.report(&amp;#34;Undefined variable: &amp;#34; + instr.data.name)
+                return ERROR
+            return symbol.type
+
+        DECL:
+            value_type = type_of[instr.data.value]
+            symbol_table.declareLocal(instr.data.name, value_type, true)
+            return VOID
+
+        ADD, SUB, MUL, DIV:
+            lhs = type_of[instr.data.lhs]
+            rhs = type_of[instr.data.rhs]
+            return checkBinaryOp(instr.tag, lhs, rhs)
+
+        NEGATE:
+            operand = type_of[instr.data.operand]
+            return checkUnary(operand)
+
+        RET:
+            value_type = type_of[instr.data.value]
+            checkReturn(value_type, return_type)
+            return value_type
+
+        RET_VOID:
+            checkReturn(VOID, return_type)
+            return VOID
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Type Checking
+    &lt;div id=&#34;type-checking&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-checking&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function checkBinaryOp(op, lhs, rhs) → Type:
+    if lhs == ERROR or rhs == ERROR:
+        return ERROR
+
+    if lhs != rhs:
+        errors.report(&amp;#34;Type mismatch: &amp;#34; + typeName(lhs) + &amp;#34; vs &amp;#34; + typeName(rhs))
+        return ERROR
+
+    if lhs != I32 and lhs != I64:
+        errors.report(&amp;#34;Cannot perform arithmetic on &amp;#34; + typeName(lhs))
+        return ERROR
+
+    return lhs
+
+function checkReturn(actual, expected):
+    if actual == ERROR:
+        return
+    if actual != expected:
+        errors.report(&amp;#34;Return type mismatch: expected &amp;#34; +
+                      typeName(expected) + &amp;#34;, got &amp;#34; + typeName(actual))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;AIR Generation
+    &lt;div id=&#34;air-generation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#air-generation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateAIR(instr, type_of, symbol_table) → AIRInstruction:
+    switch instr.tag:
+        CONSTANT:
+            return ConstI32 { value: instr.data.value }
+
+        PARAM_REF:
+            return ParamGet {
+                index: instr.data.param_index,
+                type: param_types[instr.data.param_index]
+            }
+
+        DECL_REF:
+            symbol = symbol_table.lookup(instr.data.name)
+            if symbol.kind == PARAM:
+                return ParamGet { index: symbol.index, type: symbol.type }
+            else:
+                return LocalGet { slot: symbol.index, type: symbol.type }
+
+        DECL:
+            symbol = symbol_table.lookup(instr.data.name)
+            return LocalSet {
+                slot: symbol.index,
+                value: instr.data.value
+            }
+
+        ADD, SUB, MUL, DIV:
+            result_type = type_of[current_index]
+            tag = selectBinaryTag(instr.tag, result_type)
+            return BinaryOp { tag, lhs: instr.data.lhs, rhs: instr.data.rhs }
+
+        NEGATE:
+            result_type = type_of[current_index]
+            tag = (result_type == I32) ? NEG_I32 : NEG_I64
+            return UnaryOp { tag, operand: instr.data.operand }
+
+        RET:
+            return Ret { value: instr.data.value }
+
+        RET_VOID:
+            return RetVoid {}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Test Suite
+    &lt;div id=&#34;full-test-suite&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-test-suite&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Test 1: Simple function
+    &lt;div id=&#34;test-1-simple-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-simple-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn main() i32 {
+    return 42;
+}
+
+AIR:
+    function &amp;#34;main&amp;#34;:
+      param_types: []
+      return_type: i32
+      local_count: 0
+      instructions:
+        %0 = const_i32(42)
+        %1 = ret(%0)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 2: With parameters
+    &lt;div id=&#34;test-2-with-parameters&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-with-parameters&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn add(a: i32, b: i32) i32 {
+    return a + b;
+}
+
+AIR:
+    function &amp;#34;add&amp;#34;:
+      param_types: [i32, i32]
+      return_type: i32
+      local_count: 0
+      instructions:
+        %0 = param_get(0)
+        %1 = param_get(1)
+        %2 = add_i32(%0, %1)
+        %3 = ret(%2)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 3: With locals
+    &lt;div id=&#34;test-3-with-locals&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-with-locals&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn calc() i32 {
+    const x: i32 = 5;
+    const y: i32 = 3;
+    return x + y;
+}
+
+AIR:
+    function &amp;#34;calc&amp;#34;:
+      param_types: []
+      return_type: i32
+      local_count: 2
+      instructions:
+        %0 = const_i32(5)
+        %1 = local_set(0, %0)
+        %2 = const_i32(3)
+        %3 = local_set(1, %2)
+        %4 = local_get(0)
+        %5 = local_get(1)
+        %6 = add_i32(%4, %5)
+        %7 = ret(%6)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Type error
+    &lt;div id=&#34;test-4-type-error&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-type-error&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn foo(a: i32, b: i64) i32 {
+    return a + b;
+}
+
+Result: Error &amp;#34;Type mismatch: i32 vs i64&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Undefined variable
+    &lt;div id=&#34;test-5-undefined-variable&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-undefined-variable&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn foo() i32 {
+    return x;
+}
+
+Result: Error &amp;#34;Undefined variable: x&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 6: Complex function
+    &lt;div id=&#34;test-6-complex-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-6-complex-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn compute(n: i32) i32 {
+    const doubled: i32 = n * 2;
+    const result: i32 = doubled + 1;
+    return result;
+}
+
+AIR:
+    function &amp;#34;compute&amp;#34;:
+      param_types: [i32]
+      return_type: i32
+      local_count: 2
+      instructions:
+        %0 = param_get(0)
+        %1 = const_i32(2)
+        %2 = mul_i32(%0, %1)
+        %3 = local_set(0, %2)
+        %4 = local_get(0)
+        %5 = const_i32(1)
+        %6 = add_i32(%4, %5)
+        %7 = local_set(1, %6)
+        %8 = local_get(1)
+        %9 = ret(%8)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Integration: Full Pipeline
+    &lt;div id=&#34;integration-full-pipeline&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#integration-full-pipeline&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function compile(source):
+    tokens = tokenize(source)       // Lexer
+    ast = parse(tokens)             // Parser
+    zir = generateZIR(ast)          // ZIR Generator
+    air = analyze(zir)              // Sema
+    return air
+
+// Test
+source = &amp;#34;fn main() i32 { return 42; }&amp;#34;
+air = compile(source)
+assert air.functions[0].instructions[0].tag == CONST_I32
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Summary
+    &lt;div id=&#34;summary&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#summary&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         SEMA SUMMARY                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. TYPE SYSTEM      Define types: i32, i64, bool, void                   │
+│   2. TYPE INFERENCE   Determine expression types                            │
+│   3. SYMBOL TABLE     Track declared names                                  │
+│   4. NAME RESOLUTION  Convert strings to locations                         │
+│   5. TYPE CHECKING    Verify types match                                    │
+│   6. AIR OUTPUT       Generate typed instructions                          │
+│   7. ERROR HANDLING   Report meaningful messages                            │
+│   8. INTEGRATION      Put it all together                                   │
+│                                                                              │
+│   Lines of code: ~150-200 depending on language                             │
+│                                                                              │
+│   Input:  ZIR (untyped, string names)                                       │
+│   Output: AIR (typed, resolved locations)                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What&amp;rsquo;s Next
+    &lt;div id=&#34;whats-next&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#whats-next&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;We have typed IR! Time to generate actual code.&lt;/p&gt;</description>
+      
+    </item>
+    
+  </channel>
+</rss>

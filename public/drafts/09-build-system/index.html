@@ -217,7 +217,7 @@ Part 1: Why Do We Need a Build System? # The Problem # Compiling a single file i
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "4115"
+    "wordCount": "4884"
   }]
   </script>
 
@@ -621,7 +621,7 @@ Part 1: Why Do We Need a Build System? # The Problem # Compiling a single file i
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>4115 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">20 mins</span>
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>4884 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">23 mins</span>
     
 
     
@@ -720,6 +720,9 @@ Part 1: Why Do We Need a Build System? # The Problem # Compiling a single file i
       <ul>
         <li><a href="#the-build-object">The Build Object</a></li>
         <li><a href="#the-graph-shared-state">The Graph: Shared State</a></li>
+        <li><a href="#build-system-vocabulary">Build System Vocabulary</a></li>
+        <li><a href="#common-build-verbs">Common Build Verbs</a></li>
+        <li><a href="#the-install-flow">The Install Flow</a></li>
         <li><a href="#creating-artifacts">Creating Artifacts</a></li>
       </ul>
     </li>
@@ -805,6 +808,9 @@ Part 1: Why Do We Need a Build System? # The Problem # Compiling a single file i
       <ul>
         <li><a href="#the-build-object">The Build Object</a></li>
         <li><a href="#the-graph-shared-state">The Graph: Shared State</a></li>
+        <li><a href="#build-system-vocabulary">Build System Vocabulary</a></li>
+        <li><a href="#common-build-verbs">Common Build Verbs</a></li>
+        <li><a href="#the-install-flow">The Install Flow</a></li>
         <li><a href="#creating-artifacts">Creating Artifacts</a></li>
       </ul>
     </li>
@@ -1247,6 +1253,176 @@ Part 1: Why Do We Need a Build System? # The Problem # Compiling a single file i
 </div>
 </div><p>The Graph is shared across all Build instances (including dependencies). It holds the cache, environment, and compiler paths.</p>
 
+<h3 class="relative group">Build System Vocabulary
+    <div id="build-system-vocabulary" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#build-system-vocabulary" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Before diving deeper, let&rsquo;s define the key terms. These names come from build system traditions but have specific meanings in Zig:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ BUILD SYSTEM GLOSSARY                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ ARTIFACT                                                            │
+│ ─────────                                                           │
+│ Something the build system PRODUCES. The &#34;art&#34; you&#39;re creating.    │
+│                                                                      │
+│   • Executable    (a program you can run)                           │
+│   • Static lib    (.a file - code bundled for linking)              │
+│   • Shared lib    (.so/.dylib/.dll - loadable at runtime)           │
+│   • Object file   (.o - compiled but not linked)                    │
+│                                                                      │
+│ When you call b.addExecutable(), you&#39;re creating an artifact.       │
+│ The artifact isn&#39;t built yet - it&#39;s a DESCRIPTION of what to build. │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ INSTALL                                                             │
+│ ────────                                                            │
+│ Copy an artifact to a known location (zig-out/ by default).        │
+│                                                                      │
+│   b.installArtifact(exe)                                            │
+│   └── Copies the compiled exe to zig-out/bin/                       │
+│                                                                      │
+│ Why &#34;install&#34;? It&#39;s borrowed from Unix tradition:                   │
+│   make install  →  copy program to /usr/local/bin                   │
+│   zig build     →  copy program to zig-out/bin                      │
+│                                                                      │
+│ Without installArtifact(), the exe exists only in the cache!       │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ STEP                                                                │
+│ ─────                                                               │
+│ A unit of work in the build. Steps form a dependency graph.        │
+│                                                                      │
+│   compile step    →  &#34;compile this Zig code&#34;                        │
+│   install step    →  &#34;copy this file to zig-out/&#34;                   │
+│   run step        →  &#34;execute this program&#34;                         │
+│   custom step     →  &#34;run this arbitrary function&#34;                  │
+│                                                                      │
+│ Every artifact has an underlying step (&amp;exe.step).                  │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ MODULE                                                              │
+│ ───────                                                             │
+│ A reusable unit of Zig code that can be imported.                  │
+│                                                                      │
+│   const mod = b.addModule(&#34;utils&#34;, .{...});                         │
+│   exe.root_module.addImport(&#34;utils&#34;, mod);                          │
+│   // Now main.zig can do: @import(&#34;utils&#34;)                          │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ DEPENDENCY                                                          │
+│ ───────────                                                         │
+│ An external package fetched from a URL or path.                    │
+│                                                                      │
+│   In build.zig.zon:                                                 │
+│   .dependencies = .{ .zap = .{ .url = &#34;...&#34;, .hash = &#34;...&#34; } }     │
+│                                                                      │
+│   In build.zig:                                                     │
+│   const zap = b.dependency(&#34;zap&#34;, .{});                             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Common Build Verbs
+    <div id="common-build-verbs" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#common-build-verbs" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Here&rsquo;s what the common <code>b.add*</code> and <code>b.*</code> functions do:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ BUILD VERBS (b.add* functions)                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ CREATING ARTIFACTS:                                                 │
+│                                                                      │
+│   b.addExecutable(...)      Create a runnable program               │
+│   b.addStaticLibrary(...)   Create a .a static library              │
+│   b.addSharedLibrary(...)   Create a .so/.dylib shared library      │
+│   b.addObject(...)          Create a .o object file                 │
+│   b.addTest(...)            Create a test executable                │
+│                                                                      │
+│ CREATING STEPS:                                                     │
+│                                                                      │
+│   b.addRunArtifact(exe)     Create step that RUNS an artifact       │
+│   b.addInstallArtifact(exe) Create step that INSTALLS an artifact   │
+│   b.addSystemCommand(&amp;.{})  Run arbitrary system command            │
+│   b.addWriteFiles()         Generate files at build time            │
+│                                                                      │
+│ INSTALLING:                                                         │
+│                                                                      │
+│   b.installArtifact(exe)    Shorthand: add install step + register │
+│   b.installFile(...)        Copy a file to zig-out/                 │
+│   b.installDirectory(...)   Copy a directory to zig-out/            │
+│                                                                      │
+│ NAMED STEPS:                                                        │
+│                                                                      │
+│   b.step(&#34;name&#34;, &#34;desc&#34;)    Create a named step (for zig build X)  │
+│                             Returns *Step that you can add deps to │
+│                                                                      │
+│ GETTING THINGS:                                                     │
+│                                                                      │
+│   b.path(&#34;src/main.zig&#34;)    Get path relative to build root         │
+│   b.dependency(&#34;name&#34;, .{}) Get an external dependency              │
+│   b.option(...)             Get command-line option value           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Install Flow
+    <div id="the-install-flow" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-install-flow" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Here&rsquo;s exactly what happens when you call <code>b.installArtifact(exe)</code>:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ WHAT installArtifact() DOES                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   const exe = b.addExecutable(.{ .name = &#34;myapp&#34;, ... });           │
+│   b.installArtifact(exe);                                           │
+│                                                                      │
+│   This creates the following graph:                                 │
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────────┐   │
+│   │                                                             │   │
+│   │   &#34;install&#34; step (the default)                              │   │
+│   │        │                                                    │   │
+│   │        ▼                                                    │   │
+│   │   install_artifact step                                     │   │
+│   │   &#34;copy zig-cache/.../myapp to zig-out/bin/myapp&#34;          │   │
+│   │        │                                                    │   │
+│   │        ▼                                                    │   │
+│   │   compile step                                              │   │
+│   │   &#34;compile src/main.zig to zig-cache/.../myapp&#34;            │   │
+│   │                                                             │   │
+│   └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│   When you run `zig build`:                                         │
+│   1. Run compile step → produces exe in zig-cache/                 │
+│   2. Run install_artifact step → copies to zig-out/bin/            │
+│   3. Done!                                                          │
+│                                                                      │
+│   The artifact lives in TWO places:                                 │
+│   • zig-cache/o/...     (internal, for caching)                    │
+│   • zig-out/bin/myapp   (user-facing, for running)                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
 <h3 class="relative group">Creating Artifacts
     <div id="creating-artifacts" class="anchor"></div>
     

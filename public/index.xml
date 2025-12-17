@@ -10,6 +10,947 @@
     <lastBuildDate>Wed, 17 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>1.1: Token Setup</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/01-setup/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/01-setup/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.1: Token Setup
+    &lt;div id=&#34;lesson-11-token-setup&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-11-token-setup&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Before we can tokenize anything, we need to define what a &lt;strong&gt;token&lt;/strong&gt; is.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Define the data structures for tokens that will be used throughout the lexer.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What is a Token?
+    &lt;div id=&#34;what-is-a-token&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-is-a-token&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;A token is a small piece of source code with a &lt;strong&gt;type&lt;/strong&gt; and a &lt;strong&gt;value&lt;/strong&gt;:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>1.2: Single Character Tokens</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/02-single-chars/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/02-single-chars/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.2: Single Character Tokens
+    &lt;div id=&#34;lesson-12-single-character-tokens&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-12-single-character-tokens&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Let&amp;rsquo;s tokenize the simplest case: single-character tokens like &lt;code&gt;+&lt;/code&gt;, &lt;code&gt;-&lt;/code&gt;, &lt;code&gt;(&lt;/code&gt;, &lt;code&gt;)&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Implement a &lt;code&gt;nextToken()&lt;/code&gt; function that recognizes single-character operators and delimiters.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Algorithm
+    &lt;div id=&#34;the-algorithm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-algorithm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         SINGLE CHARACTER LEXING                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   function nextToken():                                                      │
+│       if pos &amp;gt;= length(source):                                              │
+│           return Token(EOF)                                                  │
+│                                                                              │
+│       char = source[pos]                                                     │
+│                                                                              │
+│       switch char:                                                           │
+│           &amp;#39;+&amp;#39; → advance(), return Token(PLUS)                               │
+│           &amp;#39;-&amp;#39; → advance(), return Token(MINUS)                              │
+│           &amp;#39;*&amp;#39; → advance(), return Token(STAR)                               │
+│           &amp;#39;/&amp;#39; → advance(), return Token(SLASH)                              │
+│           &amp;#39;=&amp;#39; → advance(), return Token(EQUAL)                              │
+│           &amp;#39;(&amp;#39; → advance(), return Token(LPAREN)                             │
+│           &amp;#39;)&amp;#39; → advance(), return Token(RPAREN)                             │
+│           &amp;#39;{&amp;#39; → advance(), return Token(LBRACE)                             │
+│           &amp;#39;}&amp;#39; → advance(), return Token(RBRACE)                             │
+│           &amp;#39;,&amp;#39; → advance(), return Token(COMMA)                              │
+│           &amp;#39;:&amp;#39; → advance(), return Token(COLON)                              │
+│           &amp;#39;;&amp;#39; → advance(), return Token(SEMICOLON)                          │
+│           else → advance(), return Token(INVALID)                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Helper Functions
+    &lt;div id=&#34;helper-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#helper-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;You&amp;rsquo;ll need these helper functions:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>1.3: Whitespace</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/03-whitespace/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/03-whitespace/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.3: Handling Whitespace
+    &lt;div id=&#34;lesson-13-handling-whitespace&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-13-handling-whitespace&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Spaces, tabs, and newlines separate tokens but aren&amp;rsquo;t tokens themselves. Let&amp;rsquo;s skip them.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Modify &lt;code&gt;nextToken()&lt;/code&gt; to skip whitespace before returning a token.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What is Whitespace?
+    &lt;div id=&#34;what-is-whitespace&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-is-whitespace&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                            WHITESPACE CHARACTERS                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   &amp;#39; &amp;#39;   Space (ASCII 32)                                                    │
+│   &amp;#39;\t&amp;#39;  Tab (ASCII 9)                                                       │
+│   &amp;#39;\n&amp;#39;  Newline (ASCII 10)         ← Increment line counter!                │
+│   &amp;#39;\r&amp;#39;  Carriage return (ASCII 13)                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Algorithm
+    &lt;div id=&#34;the-algorithm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-algorithm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function skipWhitespace():
+    while true:
+        char = peek()
+        switch char:
+            &amp;#39; &amp;#39;, &amp;#39;\t&amp;#39;, &amp;#39;\r&amp;#39;:
+                advance()
+            &amp;#39;\n&amp;#39;:
+                advance()
+                line = line + 1
+                column = 1
+            else:
+                return  // Not whitespace, stop
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Updated nextToken()
+    &lt;div id=&#34;updated-nexttoken&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#updated-nexttoken&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function nextToken():
+    skipWhitespace()          // ← ADD THIS LINE
+
+    if pos &amp;gt;= length(source):
+        return Token(EOF)
+
+    // ... rest of the switch statement
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Tracking Line Numbers
+    &lt;div id=&#34;tracking-line-numbers&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#tracking-line-numbers&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;When we see a newline, we must update our position:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>1.4: Numbers</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/04-numbers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/04-numbers/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.4: Integer Literals
+    &lt;div id=&#34;lesson-14-integer-literals&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-14-integer-literals&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Let&amp;rsquo;s recognize numbers like &lt;code&gt;42&lt;/code&gt;, &lt;code&gt;0&lt;/code&gt;, and &lt;code&gt;12345&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Recognize sequences of digits as NUMBER tokens.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Key Insight
+    &lt;div id=&#34;the-key-insight&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-key-insight&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;A number starts with a digit and continues while we see more digits:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>1.5: Strings</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/05-strings/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/05-strings/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.5: String Literals (Optional)
+    &lt;div id=&#34;lesson-15-string-literals-optional&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-15-string-literals-optional&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;String literals like &lt;code&gt;&amp;quot;hello world&amp;quot;&lt;/code&gt; are enclosed in quotes.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Recognize text between double quotes as STRING tokens.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Pattern
+    &lt;div id=&#34;the-pattern&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-pattern&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                           STRING RECOGNITION                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   &amp;#34;hello world&amp;#34;                                                              │
+│   ^            ^                                                             │
+│   │            └── Ending quote                                             │
+│   └── Starting quote                                                         │
+│                                                                              │
+│   Everything between quotes is the string content.                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Algorithm
+    &lt;div id=&#34;the-algorithm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-algorithm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function scanString():
+    advance()  // consume opening &amp;#34;
+    start = pos
+
+    while peek() != &amp;#39;&amp;#34;&amp;#39; AND peek() != &amp;#39;\0&amp;#39;:
+        if peek() == &amp;#39;\n&amp;#39;:
+            line = line + 1
+            column = 1
+        advance()
+
+    if peek() == &amp;#39;\0&amp;#39;:
+        return Token(INVALID)  // Unterminated string
+
+    content = source[start..pos]
+    advance()  // consume closing &amp;#34;
+
+    return Token {
+        type: STRING,
+        lexeme: content,
+        line: line,
+        column: start_column,
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Updated nextToken()
+    &lt;div id=&#34;updated-nexttoken&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#updated-nexttoken&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function nextToken():
+    skipWhitespace()
+
+    if pos &amp;gt;= length(source):
+        return Token(EOF)
+
+    char = peek()
+
+    if isDigit(char):
+        return scanNumber()
+
+    if char == &amp;#39;&amp;#34;&amp;#39;:                      // ← ADD THIS
+        return scanString()              // ← ADD THIS
+
+    switch char:
+        // ...
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Verify Your Implementation
+    &lt;div id=&#34;verify-your-implementation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#verify-your-implementation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Test 1: Simple string
+    &lt;div id=&#34;test-1-simple-string&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-simple-string&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;hello&amp;#34;
+        (including the quotes)
+Tokens: [STRING(&amp;#34;hello&amp;#34;)]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 2: String with spaces
+    &lt;div id=&#34;test-2-string-with-spaces&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-string-with-spaces&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;hello world&amp;#34;
+Tokens: [STRING(&amp;#34;hello world&amp;#34;)]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 3: Empty string
+    &lt;div id=&#34;test-3-empty-string&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-empty-string&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;&amp;#34;
+Tokens: [STRING(&amp;#34;&amp;#34;)]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: String in expression
+    &lt;div id=&#34;test-4-string-in-expression&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-string-in-expression&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  x = &amp;#34;value&amp;#34;
+Tokens: [IDENTIFIER, EQUAL, STRING(&amp;#34;value&amp;#34;)]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Unterminated string
+    &lt;div id=&#34;test-5-unterminated-string&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-unterminated-string&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;hello
+Tokens: [INVALID]
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Escape Sequences (Optional Extension)
+    &lt;div id=&#34;escape-sequences-optional-extension&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#escape-sequences-optional-extension&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;For a more complete implementation, handle escape sequences:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>1.6: Identifiers</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/06-identifiers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/06-identifiers/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.6: Identifiers
+    &lt;div id=&#34;lesson-16-identifiers&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-16-identifiers&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Identifiers are names for variables, functions, and types: &lt;code&gt;foo&lt;/code&gt;, &lt;code&gt;bar123&lt;/code&gt;, &lt;code&gt;_temp&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Recognize sequences of letters, digits, and underscores (starting with a letter or underscore) as IDENTIFIER tokens.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Rules
+    &lt;div id=&#34;the-rules&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-rules&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                          IDENTIFIER RULES                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   VALID identifiers:                                                        │
+│     foo        (letters only)                                               │
+│     bar123     (letters followed by digits)                                 │
+│     _temp      (starts with underscore)                                     │
+│     camelCase  (mixed case)                                                 │
+│     ALL_CAPS   (underscores in middle)                                      │
+│                                                                              │
+│   INVALID identifiers:                                                      │
+│     123abc     (starts with digit → it&amp;#39;s a number!)                        │
+│     foo-bar    (hyphen not allowed)                                         │
+│     hello!     (punctuation not allowed)                                    │
+│                                                                              │
+│   Rule: Start with [a-zA-Z_], continue with [a-zA-Z0-9_]                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Helper Functions
+    &lt;div id=&#34;helper-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#helper-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function isAlpha(char):
+    return (char &amp;gt;= &amp;#39;a&amp;#39; AND char &amp;lt;= &amp;#39;z&amp;#39;)
+        OR (char &amp;gt;= &amp;#39;A&amp;#39; AND char &amp;lt;= &amp;#39;Z&amp;#39;)
+        OR (char == &amp;#39;_&amp;#39;)
+
+function isAlphaNumeric(char):
+    return isAlpha(char) OR isDigit(char)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Algorithm
+    &lt;div id=&#34;the-algorithm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-algorithm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function scanIdentifier():
+    start = pos
+
+    // First character is already checked (isAlpha)
+    while isAlphaNumeric(peek()):
+        advance()
+
+    lexeme = source[start..pos]
+
+    return Token {
+        type: IDENTIFIER,
+        lexeme: lexeme,
+        line: line,
+        column: start_column,
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Updated nextToken()
+    &lt;div id=&#34;updated-nexttoken&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#updated-nexttoken&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function nextToken():
+    skipWhitespace()
+
+    if pos &amp;gt;= length(source):
+        return Token(EOF)
+
+    char = peek()
+
+    if isDigit(char):
+        return scanNumber()
+
+    if char == &amp;#39;&amp;#34;&amp;#39;:
+        return scanString()
+
+    if isAlpha(char):                    // ← ADD THIS
+        return scanIdentifier()          // ← ADD THIS
+
+    switch char:
+        // ...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Order matters!&lt;/strong&gt; Check &lt;code&gt;isDigit&lt;/code&gt; before &lt;code&gt;isAlpha&lt;/code&gt; because digits come first in the switch logic. But since digits can&amp;rsquo;t start identifiers, either order works here.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>1.7: Keywords</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/07-keywords/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/07-keywords/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.7: Keywords
+    &lt;div id=&#34;lesson-17-keywords&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-17-keywords&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Keywords are reserved words with special meaning: &lt;code&gt;fn&lt;/code&gt;, &lt;code&gt;const&lt;/code&gt;, &lt;code&gt;return&lt;/code&gt;, &lt;code&gt;i32&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;After scanning an identifier, check if it&amp;rsquo;s actually a keyword.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Approach
+    &lt;div id=&#34;the-approach&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-approach&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                          KEYWORD RECOGNITION                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Instead of:                                                                │
+│     &amp;#34;fn&amp;#34; → IDENTIFIER(&amp;#34;fn&amp;#34;)     ✗ Wrong!                                    │
+│                                                                              │
+│   We want:                                                                   │
+│     &amp;#34;fn&amp;#34; → KEYWORD_FN           ✓ Correct!                                  │
+│                                                                              │
+│   Strategy:                                                                  │
+│   1. Scan the identifier as usual                                           │
+│   2. Look up the lexeme in a keyword table                                  │
+│   3. If found, return keyword token; else return identifier                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Keyword Table
+    &lt;div id=&#34;keyword-table&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#keyword-table&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Create a lookup table mapping strings to token types:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>1.8: Complete Lexer</title>
+      <link>http://localhost:1313/compiler-tutorial/01-lexer/08-putting-together/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/01-lexer/08-putting-together/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 1.8: Putting It All Together
+    &lt;div id=&#34;lesson-18-putting-it-all-together&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-18-putting-it-all-together&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Let&amp;rsquo;s assemble all the pieces into a complete, working lexer.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Create a &lt;code&gt;tokenize(source)&lt;/code&gt; function that returns all tokens from source code.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete Lexer Structure
+    &lt;div id=&#34;complete-lexer-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-lexer-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         COMPLETE LEXER                                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Lexer {                                                                    │
+│       source: string                                                         │
+│       pos: integer                                                           │
+│       line: integer                                                          │
+│       column: integer                                                        │
+│                                                                              │
+│       // Helper functions                                                    │
+│       peek() → char                                                          │
+│       advance() → char                                                       │
+│       isAtEnd() → bool                                                       │
+│                                                                              │
+│       // Whitespace                                                          │
+│       skipWhitespace()                                                       │
+│                                                                              │
+│       // Token scanners                                                      │
+│       scanNumber() → Token                                                   │
+│       scanString() → Token                                                   │
+│       scanIdentifier() → Token                                               │
+│                                                                              │
+│       // Main entry point                                                    │
+│       nextToken() → Token                                                    │
+│   }                                                                          │
+│                                                                              │
+│   function tokenize(source) → Token[]:                                      │
+│       lexer = Lexer.init(source)                                            │
+│       tokens = []                                                            │
+│       while true:                                                            │
+│           token = lexer.nextToken()                                          │
+│           tokens.append(token)                                               │
+│           if token.type == EOF:                                              │
+│               break                                                          │
+│       return tokens                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete nextToken()
+    &lt;div id=&#34;complete-nexttoken&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-nexttoken&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function nextToken():
+    skipWhitespace()
+
+    if isAtEnd():
+        return makeToken(EOF, 0)
+
+    start_column = column
+    char = peek()
+
+    // Multi-character tokens
+    if isDigit(char):
+        return scanNumber()
+
+    if char == &amp;#39;&amp;#34;&amp;#39;:
+        return scanString()
+
+    if isAlpha(char):
+        return scanIdentifier()
+
+    // Single-character tokens
+    switch char:
+        &amp;#39;+&amp;#39; → return makeToken(PLUS, 1)
+        &amp;#39;-&amp;#39; → return makeToken(MINUS, 1)
+        &amp;#39;*&amp;#39; → return makeToken(STAR, 1)
+        &amp;#39;/&amp;#39; → return makeToken(SLASH, 1)
+        &amp;#39;=&amp;#39; → return makeToken(EQUAL, 1)
+        &amp;#39;(&amp;#39; → return makeToken(LPAREN, 1)
+        &amp;#39;)&amp;#39; → return makeToken(RPAREN, 1)
+        &amp;#39;{&amp;#39; → return makeToken(LBRACE, 1)
+        &amp;#39;}&amp;#39; → return makeToken(RBRACE, 1)
+        &amp;#39;,&amp;#39; → return makeToken(COMMA, 1)
+        &amp;#39;:&amp;#39; → return makeToken(COLON, 1)
+        &amp;#39;;&amp;#39; → return makeToken(SEMICOLON, 1)
+        else → return makeToken(INVALID, 1)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Test Suite
+    &lt;div id=&#34;full-test-suite&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-test-suite&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Test 1: Empty input
+    &lt;div id=&#34;test-1-empty-input&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-empty-input&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;&amp;#34;
+Tokens: [EOF]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 2: Just whitespace
+    &lt;div id=&#34;test-2-just-whitespace&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-just-whitespace&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;   \t\n  &amp;#34;
+Tokens: [EOF]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 3: Single token of each type
+    &lt;div id=&#34;test-3-single-token-of-each-type&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-single-token-of-each-type&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;42&amp;#34;
+Tokens: [NUMBER(&amp;#34;42&amp;#34;), EOF]
+
+Input:  &amp;#34;foo&amp;#34;
+Tokens: [IDENTIFIER(&amp;#34;foo&amp;#34;), EOF]
+
+Input:  &amp;#34;fn&amp;#34;
+Tokens: [KEYWORD_FN, EOF]
+
+Input:  &amp;#34;+&amp;#34;
+Tokens: [PLUS, EOF]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Simple expression
+    &lt;div id=&#34;test-4-simple-expression&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-simple-expression&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;1 + 2&amp;#34;
+Tokens: [NUMBER(&amp;#34;1&amp;#34;), PLUS, NUMBER(&amp;#34;2&amp;#34;), EOF]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Variable declaration
+    &lt;div id=&#34;test-5-variable-declaration&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-variable-declaration&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;const x = 42;&amp;#34;
+Tokens: [KEYWORD_CONST, IDENTIFIER(&amp;#34;x&amp;#34;), EQUAL, NUMBER(&amp;#34;42&amp;#34;), SEMICOLON, EOF]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 6: Function signature
+    &lt;div id=&#34;test-6-function-signature&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-6-function-signature&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;fn add(a: i32, b: i32) i32&amp;#34;
+Tokens: [KEYWORD_FN, IDENTIFIER(&amp;#34;add&amp;#34;), LPAREN, IDENTIFIER(&amp;#34;a&amp;#34;), COLON,
+         TYPE_I32, COMMA, IDENTIFIER(&amp;#34;b&amp;#34;), COLON, TYPE_I32, RPAREN,
+         TYPE_I32, EOF]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 7: Complete function
+    &lt;div id=&#34;test-7-complete-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-7-complete-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn add(a: i32, b: i32) i32 {
+    return a + b;
+}
+
+Tokens: [KEYWORD_FN, IDENTIFIER(&amp;#34;add&amp;#34;), LPAREN, IDENTIFIER(&amp;#34;a&amp;#34;), COLON,
+         TYPE_I32, COMMA, IDENTIFIER(&amp;#34;b&amp;#34;), COLON, TYPE_I32, RPAREN,
+         TYPE_I32, LBRACE, KEYWORD_RETURN, IDENTIFIER(&amp;#34;a&amp;#34;), PLUS,
+         IDENTIFIER(&amp;#34;b&amp;#34;), SEMICOLON, RBRACE, EOF]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 8: Line numbers
+    &lt;div id=&#34;test-8-line-numbers&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-8-line-numbers&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;a\nb\nc&amp;#34;
+Tokens:
+  IDENTIFIER(&amp;#34;a&amp;#34;) at line 1
+  IDENTIFIER(&amp;#34;b&amp;#34;) at line 2
+  IDENTIFIER(&amp;#34;c&amp;#34;) at line 3
+  EOF at line 3
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Error Handling
+    &lt;div id=&#34;error-handling&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#error-handling&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;For invalid characters, you have options:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
       <title>Appendix: Zig Patterns and Methods Reference</title>
       <link>http://localhost:1313/drafts/appendix-zig-patterns/</link>
       <pubDate>Wed, 17 Dec 2025 00:00:00 +0000</pubDate>

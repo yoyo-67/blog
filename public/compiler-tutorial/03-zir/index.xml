@@ -1,0 +1,1366 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Section 3: ZIR on Yohai&#39;s Blog</title>
+    <link>http://localhost:1313/compiler-tutorial/03-zir/</link>
+    <description>Recent content in Section 3: ZIR on Yohai&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© 2025 Yohai</copyright>
+    <atom:link href="http://localhost:1313/compiler-tutorial/03-zir/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>3.1: IR Instructions</title>
+      <link>http://localhost:1313/compiler-tutorial/03-zir/01-ir-instructions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/03-zir/01-ir-instructions/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 3.1: IR Instruction Types
+    &lt;div id=&#34;lesson-31-ir-instruction-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-31-ir-instruction-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Before generating IR, we define what instructions look like.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Define the data structures for ZIR instructions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What Is an Instruction?
+    &lt;div id=&#34;what-is-an-instruction&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-is-an-instruction&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                          IR INSTRUCTION                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   %2 = add(%0, %1)                                                          │
+│    ↑    ↑    ↑   ↑                                                          │
+│    │    │    │   └── Second operand (reference to %1)                       │
+│    │    │    └── First operand (reference to %0)                            │
+│    │    └── Operation (add)                                                 │
+│    └── Result index (this is instruction #2)                                │
+│                                                                              │
+│   Every instruction:                                                        │
+│   - Has an index (%N)                                                       │
+│   - Has an operation tag                                                    │
+│   - May have operands (references to other instructions)                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Instruction Set
+    &lt;div id=&#34;instruction-set&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#instruction-set&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;For our mini compiler:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>3.2: Flatten Expressions</title>
+      <link>http://localhost:1313/compiler-tutorial/03-zir/02-flatten-expr/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/03-zir/02-flatten-expr/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 3.2: Flattening Simple Expressions
+    &lt;div id=&#34;lesson-32-flattening-simple-expressions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-32-flattening-simple-expressions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Convert tree expressions into linear instructions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate ZIR for simple expressions like &lt;code&gt;3 + 5&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Transformation
+    &lt;div id=&#34;the-transformation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-transformation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         FLATTENING                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AST (tree):                     ZIR (linear):                             │
+│                                                                              │
+│        +                          %0 = constant(3)                          │
+│       / \                         %1 = constant(5)                          │
+│      3   5                        %2 = add(%0, %1)                          │
+│                                                                              │
+│   &amp;#34;Flattening&amp;#34; = turning nested structure into sequential instructions      │
+│                                                                              │
+│   Key insight: Process children BEFORE parent                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;ZIR Generator State
+    &lt;div id=&#34;zir-generator-state&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#zir-generator-state&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ZIRGenerator {
+    instructions: Instruction[]
+
+    // Add instruction and return its index
+    emit(instruction) → InstrRef:
+        index = length(instructions)
+        instructions.append(instruction)
+        return index
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Expression
+    &lt;div id=&#34;generate-expression&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-expression&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateExpr(expr) → InstrRef:
+    switch expr.type:
+        NumberExpr:
+            return emit(Constant { value: expr.value })
+
+        IdentifierExpr:
+            return emit(DeclRef { name: expr.name })
+
+        UnaryExpr:
+            operand = generateExpr(expr.operand)   // Generate child first
+            return emit(Negate { operand: operand })
+
+        BinaryExpr:
+            lhs = generateExpr(expr.left)          // Generate left first
+            rhs = generateExpr(expr.right)         // Then right
+            return emit(binaryOp(expr.operator, lhs, rhs))
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Binary Operation Helper
+    &lt;div id=&#34;binary-operation-helper&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#binary-operation-helper&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function binaryOp(operator, lhs, rhs) → Instruction:
+    switch operator.type:
+        PLUS:  return Add { lhs, rhs }
+        MINUS: return Sub { lhs, rhs }
+        STAR:  return Mul { lhs, rhs }
+        SLASH: return Div { lhs, rhs }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Step-by-Step: &lt;code&gt;3 + 5&lt;/code&gt;
+    &lt;div id=&#34;step-by-step-3--5&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#step-by-step-3--5&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;AST:
+    BinaryExpr {
+        left: NumberExpr { value: 3 },
+        operator: PLUS,
+        right: NumberExpr { value: 5 }
+    }
+
+generateExpr(BinaryExpr):
+    lhs = generateExpr(NumberExpr { value: 3 }):
+        emit(Constant { value: 3 }) → returns 0
+    lhs = 0
+
+    rhs = generateExpr(NumberExpr { value: 5 }):
+        emit(Constant { value: 5 }) → returns 1
+    rhs = 1
+
+    emit(Add { lhs: 0, rhs: 1 }) → returns 2
+
+Result:
+    [0] Constant { value: 3 }
+    [1] Constant { value: 5 }
+    [2] Add { lhs: 0, rhs: 1 }
+
+Text:
+    %0 = constant(3)
+    %1 = constant(5)
+    %2 = add(%0, %1)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Key: Recursion Order
+    &lt;div id=&#34;the-key-recursion-order&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-key-recursion-order&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Children are processed BEFORE parents:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>3.3: Nested Expressions</title>
+      <link>http://localhost:1313/compiler-tutorial/03-zir/03-flatten-nested/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/03-zir/03-flatten-nested/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 3.3: Flattening Nested Expressions
+    &lt;div id=&#34;lesson-33-flattening-nested-expressions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-33-flattening-nested-expressions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Handle expressions like &lt;code&gt;a + b * c&lt;/code&gt; with correct evaluation order.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate correct ZIR for complex nested expressions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Challenge
+    &lt;div id=&#34;the-challenge&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-challenge&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                    NESTED EXPRESSION                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Expression: 1 + 2 * 3                                                     │
+│                                                                              │
+│   AST (parser already handled precedence):                                  │
+│                                                                              │
+│        +                                                                     │
+│       / \                                                                    │
+│      1   *                                                                   │
+│         / \                                                                  │
+│        2   3                                                                 │
+│                                                                              │
+│   Must compute 2 * 3 BEFORE the addition!                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Same Algorithm Works!
+    &lt;div id=&#34;same-algorithm-works&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#same-algorithm-works&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;The recursive algorithm from Lesson 3.2 handles this automatically:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>3.4: Name References</title>
+      <link>http://localhost:1313/compiler-tutorial/03-zir/04-name-references/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/03-zir/04-name-references/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 3.4: Variable Declarations and References
+    &lt;div id=&#34;lesson-34-variable-declarations-and-references&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-34-variable-declarations-and-references&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Handle &lt;code&gt;const x = ...&lt;/code&gt; and using &lt;code&gt;x&lt;/code&gt; later.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate ZIR for variable declarations and references to declared variables.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Two Instructions
+    &lt;div id=&#34;two-instructions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#two-instructions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                     DECLARATION AND REFERENCE                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   DECL: Create a named binding                                              │
+│                                                                              │
+│     const x: i32 = 42;                                                      │
+│     → %0 = constant(42)                                                     │
+│     → %1 = decl(&amp;#34;x&amp;#34;, %0)                                                    │
+│                                                                              │
+│   DECL_REF: Use a named binding                                             │
+│                                                                              │
+│     return x;                                                               │
+│     → %2 = decl_ref(&amp;#34;x&amp;#34;)                                                    │
+│     → %3 = ret(%2)                                                          │
+│                                                                              │
+│   Names are STRINGS in ZIR. Actual resolution happens in Sema.             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Variable Declaration
+    &lt;div id=&#34;generate-variable-declaration&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-variable-declaration&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateVarDecl(stmt):
+    // Generate the initial value first
+    value_ref = generateExpr(stmt.value)
+
+    // Then emit the declaration
+    emit(Decl {
+        name: stmt.name,
+        value: value_ref
+    })
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Identifier Reference
+    &lt;div id=&#34;generate-identifier-reference&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-identifier-reference&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Already in generateExpr:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>3.5: Parameter References</title>
+      <link>http://localhost:1313/compiler-tutorial/03-zir/05-param-references/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/03-zir/05-param-references/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 3.5: Function Parameter References
+    &lt;div id=&#34;lesson-35-function-parameter-references&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-35-function-parameter-references&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Handle references to function parameters like &lt;code&gt;a&lt;/code&gt; and &lt;code&gt;b&lt;/code&gt; in &lt;code&gt;fn add(a: i32, b: i32)&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate &lt;code&gt;param_ref&lt;/code&gt; instructions when referencing function parameters.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Parameters vs Local Variables
+    &lt;div id=&#34;parameters-vs-local-variables&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#parameters-vs-local-variables&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                    PARAMETERS VS LOCALS                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   fn add(a: i32, b: i32) i32 {                                              │
+│       const sum: i32 = a + b;                                               │
+│       return sum;                                                           │
+│   }                                                                         │
+│                                                                              │
+│   Parameters: a, b                                                          │
+│     - Come from function signature                                          │
+│     - Referenced by INDEX (param_ref(0), param_ref(1))                     │
+│     - Available at function start                                           │
+│                                                                              │
+│   Locals: sum                                                               │
+│     - Declared inside function body                                         │
+│     - Referenced by NAME (decl_ref(&amp;#34;sum&amp;#34;))                                 │
+│     - Created during execution                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Why Index vs Name?
+    &lt;div id=&#34;why-index-vs-name&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#why-index-vs-name&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Parameters are special:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>3.6: Function IR</title>
+      <link>http://localhost:1313/compiler-tutorial/03-zir/06-function-ir/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/03-zir/06-function-ir/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 3.6: Complete Function ZIR
+    &lt;div id=&#34;lesson-36-complete-function-zir&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-36-complete-function-zir&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Generate ZIR for entire functions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Transform FnDecl AST nodes into complete FunctionZIR structures.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Function ZIR Structure
+    &lt;div id=&#34;function-zir-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#function-zir-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;FunctionZIR {
+    name: string,
+    params: Parameter[],
+    return_type: TypeExpr,
+    instructions: Instruction[]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Generate Function
+    &lt;div id=&#34;generate-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generate-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateFunction(fn_decl) → FunctionZIR:
+    // Create generator with parameter context
+    generator = ZIRGenerator {
+        instructions: [],
+        param_names: buildParamMap(fn_decl.params)
+    }
+
+    // Generate all statements in the body
+    for stmt in fn_decl.body.statements:
+        generator.generateStatement(stmt)
+
+    return FunctionZIR {
+        name: fn_decl.name,
+        params: fn_decl.params,
+        return_type: fn_decl.return_type,
+        instructions: generator.instructions
+    }
+
+function buildParamMap(params) → Map&amp;lt;string, integer&amp;gt;:
+    map = {}
+    for i, param in enumerate(params):
+        map[param.name] = i
+    return map
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete generateStatement
+    &lt;div id=&#34;complete-generatestatement&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-generatestatement&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateStatement(stmt):
+    switch stmt.type:
+        VarDecl:
+            value = generateExpr(stmt.value)
+            emit(Decl { name: stmt.name, value: value })
+
+        ReturnStmt:
+            if stmt.value != null:
+                value = generateExpr(stmt.value)
+                emit(Ret { value: value })
+            else:
+                emit(RetVoid {})
+
+        Block:
+            for s in stmt.statements:
+                generateStatement(s)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Example
+    &lt;div id=&#34;full-example&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-example&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn add(a: i32, b: i32) i32 {
+    const result: i32 = a + b;
+    return result;
+}
+
+AST:
+    FnDecl {
+        name: &amp;#34;add&amp;#34;,
+        params: [Parameter(&amp;#34;a&amp;#34;, i32), Parameter(&amp;#34;b&amp;#34;, i32)],
+        return_type: i32,
+        body: Block {
+            statements: [
+                VarDecl {
+                    name: &amp;#34;result&amp;#34;,
+                    type: i32,
+                    value: BinaryExpr(Identifier(&amp;#34;a&amp;#34;), +, Identifier(&amp;#34;b&amp;#34;))
+                },
+                ReturnStmt {
+                    value: IdentifierExpr(&amp;#34;result&amp;#34;)
+                }
+            ]
+        }
+    }
+
+Generation:
+
+1. Build param_names: { &amp;#34;a&amp;#34;: 0, &amp;#34;b&amp;#34;: 1 }
+
+2. Generate statements:
+
+   Statement 1: const result: i32 = a + b;
+       value = generateExpr(BinaryExpr):
+           lhs = generateExpr(&amp;#34;a&amp;#34;):
+               &amp;#34;a&amp;#34; in param_names → emit(ParamRef { index: 0 }) → 0
+           rhs = generateExpr(&amp;#34;b&amp;#34;):
+               &amp;#34;b&amp;#34; in param_names → emit(ParamRef { index: 1 }) → 1
+           emit(Add { lhs: 0, rhs: 1 }) → 2
+       emit(Decl { name: &amp;#34;result&amp;#34;, value: 2 }) → 3
+
+   Statement 2: return result;
+       value = generateExpr(&amp;#34;result&amp;#34;):
+           &amp;#34;result&amp;#34; not in param_names → emit(DeclRef { name: &amp;#34;result&amp;#34; }) → 4
+       emit(Ret { value: 4 }) → 5
+
+Final FunctionZIR:
+    function &amp;#34;add&amp;#34;:
+      params: [(&amp;#34;a&amp;#34;, i32), (&amp;#34;b&amp;#34;, i32)]
+      return_type: i32
+      body:
+        %0 = param_ref(0)
+        %1 = param_ref(1)
+        %2 = add(%0, %1)
+        %3 = decl(&amp;#34;result&amp;#34;, %2)
+        %4 = decl_ref(&amp;#34;result&amp;#34;)
+        %5 = ret(%4)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Multiple Functions
+    &lt;div id=&#34;multiple-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#multiple-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateProgram(root) → ProgramZIR:
+    functions = []
+    for decl in root.declarations:
+        if decl.type == FnDecl:
+            fn_zir = generateFunction(decl)
+            functions.append(fn_zir)
+    return ProgramZIR { functions: functions }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Example: Two Functions
+    &lt;div id=&#34;example-two-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#example-two-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn square(x: i32) i32 {
+    return x * x;
+}
+
+fn main() i32 {
+    return 0;
+}
+
+ZIR:
+
+function &amp;#34;square&amp;#34;:
+  params: [(&amp;#34;x&amp;#34;, i32)]
+  return_type: i32
+  body:
+    %0 = param_ref(0)
+    %1 = param_ref(0)
+    %2 = mul(%0, %1)
+    %3 = ret(%2)
+
+function &amp;#34;main&amp;#34;:
+  params: []
+  return_type: i32
+  body:
+    %0 = constant(0)
+    %1 = ret(%0)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Void Functions
+    &lt;div id=&#34;void-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#void-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Source:
+fn doNothing() void {
+    return;
+}
+
+ZIR:
+function &amp;#34;doNothing&amp;#34;:
+  params: []
+  return_type: void
+  body:
+    %0 = ret_void()
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Verify Your Implementation
+    &lt;div id=&#34;verify-your-implementation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#verify-your-implementation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Test 1: Simple function
+    &lt;div id=&#34;test-1-simple-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-simple-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  fn f() i32 { return 42; }
+ZIR:
+    function &amp;#34;f&amp;#34;:
+      params: []
+      return_type: i32
+      body:
+        %0 = constant(42)
+        %1 = ret(%0)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 2: With parameters
+    &lt;div id=&#34;test-2-with-parameters&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-with-parameters&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  fn add(a: i32, b: i32) i32 { return a + b; }
+ZIR:
+    function &amp;#34;add&amp;#34;:
+      params: [(&amp;#34;a&amp;#34;, i32), (&amp;#34;b&amp;#34;, i32)]
+      return_type: i32
+      body:
+        %0 = param_ref(0)
+        %1 = param_ref(1)
+        %2 = add(%0, %1)
+        %3 = ret(%2)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 3: With local variable
+    &lt;div id=&#34;test-3-with-local-variable&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-with-local-variable&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn calc(n: i32) i32 {
+    const doubled: i32 = n * 2;
+    return doubled;
+}
+
+ZIR:
+    function &amp;#34;calc&amp;#34;:
+      params: [(&amp;#34;n&amp;#34;, i32)]
+      return_type: i32
+      body:
+        %0 = param_ref(0)
+        %1 = constant(2)
+        %2 = mul(%0, %1)
+        %3 = decl(&amp;#34;doubled&amp;#34;, %2)
+        %4 = decl_ref(&amp;#34;doubled&amp;#34;)
+        %5 = ret(%4)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Multiple statements
+    &lt;div id=&#34;test-4-multiple-statements&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-multiple-statements&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn compute(x: i32, y: i32) i32 {
+    const sum: i32 = x + y;
+    const doubled: i32 = sum * 2;
+    return doubled;
+}
+
+ZIR:
+    function &amp;#34;compute&amp;#34;:
+      params: [(&amp;#34;x&amp;#34;, i32), (&amp;#34;y&amp;#34;, i32)]
+      return_type: i32
+      body:
+        %0 = param_ref(0)
+        %1 = param_ref(1)
+        %2 = add(%0, %1)
+        %3 = decl(&amp;#34;sum&amp;#34;, %2)
+        %4 = decl_ref(&amp;#34;sum&amp;#34;)
+        %5 = constant(2)
+        %6 = mul(%4, %5)
+        %7 = decl(&amp;#34;doubled&amp;#34;, %6)
+        %8 = decl_ref(&amp;#34;doubled&amp;#34;)
+        %9 = ret(%8)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Void function
+    &lt;div id=&#34;test-5-void-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-void-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  fn noop() void { return; }
+ZIR:
+    function &amp;#34;noop&amp;#34;:
+      params: []
+      return_type: void
+      body:
+        %0 = ret_void()
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What&amp;rsquo;s Next
+    &lt;div id=&#34;whats-next&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#whats-next&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s put together the complete ZIR generator.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>3.7: Complete ZIR</title>
+      <link>http://localhost:1313/compiler-tutorial/03-zir/07-putting-together/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/03-zir/07-putting-together/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 3.7: Putting It All Together
+    &lt;div id=&#34;lesson-37-putting-it-all-together&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-37-putting-it-all-together&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Let&amp;rsquo;s assemble the complete ZIR generator.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Create a &lt;code&gt;generateZIR(ast)&lt;/code&gt; function that transforms an AST into ZIR.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete ZIR Generator Structure
+    &lt;div id=&#34;complete-zir-generator-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-zir-generator-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                       COMPLETE ZIR GENERATOR                                 │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ZIRGenerator {                                                             │
+│       instructions: Instruction[]                                            │
+│       param_names: Map&amp;lt;string, integer&amp;gt;                                      │
+│                                                                              │
+│       // Core                                                                │
+│       emit(instruction) → InstrRef                                          │
+│                                                                              │
+│       // Expressions                                                         │
+│       generateExpr(expr) → InstrRef                                         │
+│                                                                              │
+│       // Statements                                                          │
+│       generateStatement(stmt)                                                │
+│       generateVarDecl(stmt)                                                  │
+│       generateReturn(stmt)                                                   │
+│       generateBlock(block)                                                   │
+│                                                                              │
+│       // Functions                                                           │
+│       generateFunction(fn_decl) → FunctionZIR                               │
+│   }                                                                          │
+│                                                                              │
+│   function generateZIR(ast) → ProgramZIR:                                   │
+│       functions = []                                                         │
+│       for decl in ast.declarations:                                         │
+│           functions.append(generateFunction(decl))                          │
+│       return ProgramZIR { functions }                                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete Code Summary
+    &lt;div id=&#34;complete-code-summary&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-code-summary&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Data Structures
+    &lt;div id=&#34;data-structures&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#data-structures&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;InstrRef = integer
+
+enum InstrTag {
+    CONSTANT, ADD, SUB, MUL, DIV, NEGATE,
+    DECL, DECL_REF, PARAM_REF, RET, RET_VOID
+}
+
+Instruction { tag: InstrTag, data: ... }
+
+FunctionZIR {
+    name: string,
+    params: Parameter[],
+    return_type: TypeExpr,
+    instructions: Instruction[]
+}
+
+ProgramZIR {
+    functions: FunctionZIR[]
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Generator State
+    &lt;div id=&#34;generator-state&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#generator-state&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ZIRGenerator {
+    instructions: Instruction[]
+    param_names: Map&amp;lt;string, integer&amp;gt;
+}
+
+function emit(instruction) → InstrRef:
+    index = length(instructions)
+    instructions.append(instruction)
+    return index
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Expression Generation
+    &lt;div id=&#34;expression-generation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#expression-generation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateExpr(expr) → InstrRef:
+    switch expr.type:
+        NumberExpr:
+            return emit(Constant { value: expr.value })
+
+        IdentifierExpr:
+            if expr.name in param_names:
+                return emit(ParamRef { index: param_names[expr.name] })
+            return emit(DeclRef { name: expr.name })
+
+        UnaryExpr:
+            operand = generateExpr(expr.operand)
+            return emit(Negate { operand: operand })
+
+        BinaryExpr:
+            lhs = generateExpr(expr.left)
+            rhs = generateExpr(expr.right)
+            return emit(binaryOp(expr.operator, lhs, rhs))
+
+function binaryOp(operator, lhs, rhs) → Instruction:
+    switch operator.type:
+        PLUS:  return Add { lhs, rhs }
+        MINUS: return Sub { lhs, rhs }
+        STAR:  return Mul { lhs, rhs }
+        SLASH: return Div { lhs, rhs }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Statement Generation
+    &lt;div id=&#34;statement-generation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#statement-generation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateStatement(stmt):
+    switch stmt.type:
+        VarDecl:
+            value = generateExpr(stmt.value)
+            emit(Decl { name: stmt.name, value: value })
+
+        ReturnStmt:
+            if stmt.value != null:
+                value = generateExpr(stmt.value)
+                emit(Ret { value: value })
+            else:
+                emit(RetVoid {})
+
+        Block:
+            for s in stmt.statements:
+                generateStatement(s)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Function Generation
+    &lt;div id=&#34;function-generation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#function-generation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateFunction(fn_decl) → FunctionZIR:
+    param_names = {}
+    for i, param in enumerate(fn_decl.params):
+        param_names[param.name] = i
+
+    generator = ZIRGenerator {
+        instructions: [],
+        param_names: param_names
+    }
+
+    for stmt in fn_decl.body.statements:
+        generator.generateStatement(stmt)
+
+    return FunctionZIR {
+        name: fn_decl.name,
+        params: fn_decl.params,
+        return_type: fn_decl.return_type,
+        instructions: generator.instructions
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Entry Point
+    &lt;div id=&#34;entry-point&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#entry-point&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateZIR(ast) → ProgramZIR:
+    functions = []
+    for decl in ast.declarations:
+        functions.append(generateFunction(decl))
+    return ProgramZIR { functions: functions }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Full Test Suite
+    &lt;div id=&#34;full-test-suite&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-test-suite&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Test 1: Minimal function
+    &lt;div id=&#34;test-1-minimal-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-minimal-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn main() i32 {
+    return 0;
+}
+
+ZIR:
+function &amp;#34;main&amp;#34;:
+  params: []
+  return_type: i32
+  body:
+    %0 = constant(0)
+    %1 = ret(%0)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 2: Arithmetic
+    &lt;div id=&#34;test-2-arithmetic&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-arithmetic&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn calc() i32 {
+    return 1 + 2 * 3;
+}
+
+ZIR:
+function &amp;#34;calc&amp;#34;:
+  params: []
+  return_type: i32
+  body:
+    %0 = constant(1)
+    %1 = constant(2)
+    %2 = constant(3)
+    %3 = mul(%1, %2)
+    %4 = add(%0, %3)
+    %5 = ret(%4)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 3: Parameters
+    &lt;div id=&#34;test-3-parameters&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-parameters&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn add(a: i32, b: i32) i32 {
+    return a + b;
+}
+
+ZIR:
+function &amp;#34;add&amp;#34;:
+  params: [(&amp;#34;a&amp;#34;, i32), (&amp;#34;b&amp;#34;, i32)]
+  return_type: i32
+  body:
+    %0 = param_ref(0)
+    %1 = param_ref(1)
+    %2 = add(%0, %1)
+    %3 = ret(%2)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Local variables
+    &lt;div id=&#34;test-4-local-variables&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-local-variables&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn compute() i32 {
+    const x: i32 = 5;
+    const y: i32 = 3;
+    return x + y;
+}
+
+ZIR:
+function &amp;#34;compute&amp;#34;:
+  params: []
+  return_type: i32
+  body:
+    %0 = constant(5)
+    %1 = decl(&amp;#34;x&amp;#34;, %0)
+    %2 = constant(3)
+    %3 = decl(&amp;#34;y&amp;#34;, %2)
+    %4 = decl_ref(&amp;#34;x&amp;#34;)
+    %5 = decl_ref(&amp;#34;y&amp;#34;)
+    %6 = add(%4, %5)
+    %7 = ret(%6)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Full program
+    &lt;div id=&#34;test-5-full-program&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-full-program&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn square(x: i32) i32 {
+    return x * x;
+}
+
+fn main() i32 {
+    return 0;
+}
+
+ZIR:
+function &amp;#34;square&amp;#34;:
+  params: [(&amp;#34;x&amp;#34;, i32)]
+  return_type: i32
+  body:
+    %0 = param_ref(0)
+    %1 = param_ref(0)
+    %2 = mul(%0, %1)
+    %3 = ret(%2)
+
+function &amp;#34;main&amp;#34;:
+  params: []
+  return_type: i32
+  body:
+    %0 = constant(0)
+    %1 = ret(%0)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 6: Complex function
+    &lt;div id=&#34;test-6-complex-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-6-complex-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
+fn calc(a: i32, b: i32) i32 {
+    const sum: i32 = a + b;
+    const doubled: i32 = sum * 2;
+    return doubled;
+}
+
+ZIR:
+function &amp;#34;calc&amp;#34;:
+  params: [(&amp;#34;a&amp;#34;, i32), (&amp;#34;b&amp;#34;, i32)]
+  return_type: i32
+  body:
+    %0 = param_ref(0)
+    %1 = param_ref(1)
+    %2 = add(%0, %1)
+    %3 = decl(&amp;#34;sum&amp;#34;, %2)
+    %4 = decl_ref(&amp;#34;sum&amp;#34;)
+    %5 = constant(2)
+    %6 = mul(%4, %5)
+    %7 = decl(&amp;#34;doubled&amp;#34;, %6)
+    %8 = decl_ref(&amp;#34;doubled&amp;#34;)
+    %9 = ret(%8)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Integration: Full Pipeline
+    &lt;div id=&#34;integration-full-pipeline&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#integration-full-pipeline&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function compile(source):
+    tokens = tokenize(source)     // Lexer
+    ast = parse(tokens)           // Parser
+    zir = generateZIR(ast)        // ZIR Generator
+    return zir
+
+// Test
+source = &amp;#34;fn main() i32 { return 42; }&amp;#34;
+zir = compile(source)
+assert zir.functions[0].name == &amp;#34;main&amp;#34;
+assert zir.functions[0].instructions[0].tag == CONSTANT
+assert zir.functions[0].instructions[0].data.constant_value == 42
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Summary
+    &lt;div id=&#34;summary&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#summary&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         ZIR SUMMARY                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. IR INSTRUCTIONS   Define instruction types                             │
+│   2. FLATTEN EXPR      Simple expressions → linear form                     │
+│   3. NESTED EXPR       Complex expressions with precedence                  │
+│   4. NAME REFS         Variable declarations and references                 │
+│   5. PARAM REFS        Function parameter references                        │
+│   6. FUNCTION IR       Complete function structures                         │
+│   7. INTEGRATION       Put it all together                                  │
+│                                                                              │
+│   Lines of code: ~80-120 depending on language                              │
+│                                                                              │
+│   ZIR is UNTYPED:                                                           │
+│   - Names are strings, not resolved                                         │
+│   - Types are recorded but not checked                                      │
+│   - That&amp;#39;s Sema&amp;#39;s job!                                                      │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What&amp;rsquo;s Next
+    &lt;div id=&#34;whats-next&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#whats-next&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;We have linear IR, but names are still strings and types aren&amp;rsquo;t checked. Time for semantic analysis!&lt;/p&gt;</description>
+      
+    </item>
+    
+  </channel>
+</rss>
