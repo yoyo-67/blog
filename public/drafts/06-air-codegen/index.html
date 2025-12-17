@@ -217,7 +217,7 @@ Introduction # After Sema produces typed AIR (Analyzed Intermediate Representati
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "5183"
+    "wordCount": "5319"
   }]
   </script>
 
@@ -621,7 +621,7 @@ Introduction # After Sema produces typed AIR (Analyzed Intermediate Representati
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5183 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">25 mins</span>
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5319 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">25 mins</span>
     
 
     
@@ -772,6 +772,8 @@ Introduction # After Sema produces typed AIR (Analyzed Intermediate Representati
         <li><a href="#summary-what-we-learned">Summary: What We Learned</a></li>
       </ul>
     </li>
+    <li><a href="#recent-developments-zig-015">Recent Developments (Zig 0.15+)</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -855,6 +857,8 @@ Introduction # After Sema produces typed AIR (Analyzed Intermediate Representati
         <li><a href="#summary-what-we-learned">Summary: What We Learned</a></li>
       </ul>
     </li>
+    <li><a href="#recent-developments-zig-015">Recent Developments (Zig 0.15+)</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -2233,6 +2237,70 @@ Introduction # After Sema produces typed AIR (Analyzed Intermediate Representati
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre><hr>
+
+<h2 class="relative group">Recent Developments (Zig 0.15+)
+    <div id="recent-developments-zig-015" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#recent-developments-zig-015" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The code generation landscape has evolved significantly:</p>
+<ul>
+<li>
+<p><strong>x86_64 Backend Default</strong>: Since Zig 0.15, the self-hosted x86_64 backend is the default for Debug builds, offering 5-50% faster compilation than LLVM.</p>
+</li>
+<li>
+<p><strong>Threaded Codegen</strong>: The compiler now runs semantic analysis, code generation, and linking in parallel (1 Sema thread, N codegen threads, 1 linker thread).</p>
+</li>
+<li>
+<p><strong>aarch64 Focus</strong>: After maturing the x86 backend, the team is now focusing on bringing aarch64 to the same level.</p>
+</li>
+</ul>
+<hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>For deeper exploration of code generation:</p>
+<ul>
+<li>
+<p><strong><a
+  href="https://kristoff.it/blog/zig-new-relationship-llvm/"
+    target="_blank"
+  >Zig&rsquo;s New Relationship with LLVM</a></strong> by Loris Cro - Explains why Zig has its own backends and the benefits of incremental compilation.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://ziglang.org/devlog/2025/"
+    target="_blank"
+  >Zig Devlog 2025</a></strong> - Latest updates on backend development and performance improvements.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://github.com/ziglang/zig/wiki/Glossary"
+    target="_blank"
+  >Zig GitHub Wiki Glossary</a></strong> - Definitions for AIR (~200 instruction types) and MIR.</p>
+</li>
+<li>
+<p><strong>Source Code</strong>: <a
+  href="https://github.com/ziglang/zig/blob/master/src/Air.zig"
+    target="_blank"
+  ><code>src/Air.zig</code></a>, <a
+  href="https://github.com/ziglang/zig/blob/master/src/codegen.zig"
+    target="_blank"
+  ><code>src/codegen.zig</code></a></p>
+</li>
+</ul>
+<hr>
 
 <h2 class="relative group">Conclusion
     <div id="conclusion" class="anchor"></div>

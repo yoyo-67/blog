@@ -217,7 +217,7 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "5694"
+    "wordCount": "6772"
   }]
   </script>
 
@@ -621,7 +621,7 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5694 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>6772 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">32 mins</span>
     
 
     
@@ -711,6 +711,15 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
         <li><a href="#what-the-linker-does-summary">What the Linker Does (Summary)</a></li>
       </ul>
     </li>
+    <li><a href="#zigs-different-approach-single-compilation-unit">Zig&rsquo;s Different Approach: Single Compilation Unit</a>
+      <ul>
+        <li><a href="#traditional-cc-vs-zig">Traditional C/C++ vs Zig</a></li>
+        <li><a href="#what-does-this-mean">What Does This Mean?</a></li>
+        <li><a href="#benefits-of-single-compilation-unit">Benefits of Single Compilation Unit</a></li>
+        <li><a href="#when-does-linking-actually-apply">When Does Linking Actually Apply?</a></li>
+        <li><a href="#the-rest-of-this-article">The Rest of This Article</a></li>
+      </ul>
+    </li>
     <li><a href="#part-2-whats-inside-an-object-file">Part 2: What&rsquo;s Inside an Object File?</a>
       <ul>
         <li><a href="#object-file-structure">Object File Structure</a></li>
@@ -751,7 +760,8 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
       <ul>
         <li><a href="#traditional-approach-vs-zig-approach">Traditional Approach vs Zig Approach</a></li>
         <li><a href="#zigs-four-linkers">Zig&rsquo;s Four Linkers</a></li>
-        <li><a href="#incremental-linking">Incremental Linking</a></li>
+        <li><a href="#incremental-compilation-in-place-binary-patching">Incremental Compilation: In-Place Binary Patching</a></li>
+        <li><a href="#got-the-secret-to-moving-functions">GOT: The Secret to Moving Functions</a></li>
       </ul>
     </li>
     <li><a href="#part-8-the-linking-process-step-by-step">Part 8: The Linking Process Step by Step</a>
@@ -772,7 +782,12 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
       </ul>
     </li>
     <li><a href="#conclusion">Conclusion</a></li>
-    <li><a href="#further-reading">Further Reading</a></li>
+    <li><a href="#further-reading">Further Reading</a>
+      <ul>
+        <li><a href="#zig-specific">Zig-Specific</a></li>
+        <li><a href="#general-linking-resources">General Linking Resources</a></li>
+      </ul>
+    </li>
   </ul>
 </nav>
   </div>
@@ -794,6 +809,15 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
         <li><a href="#what-the-linker-does-summary">What the Linker Does (Summary)</a></li>
       </ul>
     </li>
+    <li><a href="#zigs-different-approach-single-compilation-unit">Zig&rsquo;s Different Approach: Single Compilation Unit</a>
+      <ul>
+        <li><a href="#traditional-cc-vs-zig">Traditional C/C++ vs Zig</a></li>
+        <li><a href="#what-does-this-mean">What Does This Mean?</a></li>
+        <li><a href="#benefits-of-single-compilation-unit">Benefits of Single Compilation Unit</a></li>
+        <li><a href="#when-does-linking-actually-apply">When Does Linking Actually Apply?</a></li>
+        <li><a href="#the-rest-of-this-article">The Rest of This Article</a></li>
+      </ul>
+    </li>
     <li><a href="#part-2-whats-inside-an-object-file">Part 2: What&rsquo;s Inside an Object File?</a>
       <ul>
         <li><a href="#object-file-structure">Object File Structure</a></li>
@@ -834,7 +858,8 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
       <ul>
         <li><a href="#traditional-approach-vs-zig-approach">Traditional Approach vs Zig Approach</a></li>
         <li><a href="#zigs-four-linkers">Zig&rsquo;s Four Linkers</a></li>
-        <li><a href="#incremental-linking">Incremental Linking</a></li>
+        <li><a href="#incremental-compilation-in-place-binary-patching">Incremental Compilation: In-Place Binary Patching</a></li>
+        <li><a href="#got-the-secret-to-moving-functions">GOT: The Secret to Moving Functions</a></li>
       </ul>
     </li>
     <li><a href="#part-8-the-linking-process-step-by-step">Part 8: The Linking Process Step by Step</a>
@@ -855,7 +880,12 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
       </ul>
     </li>
     <li><a href="#conclusion">Conclusion</a></li>
-    <li><a href="#further-reading">Further Reading</a></li>
+    <li><a href="#further-reading">Further Reading</a>
+      <ul>
+        <li><a href="#zig-specific">Zig-Specific</a></li>
+        <li><a href="#general-linking-resources">General Linking Resources</a></li>
+      </ul>
+    </li>
   </ul>
 </nav>
   </div>
@@ -1038,6 +1068,185 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre><hr>
+
+<h2 class="relative group">Zig&rsquo;s Different Approach: Single Compilation Unit
+    <div id="zigs-different-approach-single-compilation-unit" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zigs-different-approach-single-compilation-unit" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Before diving into object files and symbols, let&rsquo;s address something important: <strong>the traditional linking model above doesn&rsquo;t quite apply to pure Zig code</strong>.</p>
+
+<h3 class="relative group">Traditional C/C++ vs Zig
+    <div id="traditional-cc-vs-zig" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#traditional-cc-vs-zig" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ TRADITIONAL C/C++ COMPILATION                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   main.c → compile → main.o ─┐                                      │
+│   utils.c → compile → utils.o ├─→ linker → executable               │
+│   math.c → compile → math.o ──┘                                     │
+│                                                                      │
+│   Each source file is a SEPARATE COMPILATION UNIT                   │
+│   • Compiled independently                                          │
+│   • Produces separate .o files                                      │
+│   • Linker combines them at the end                                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ZIG&#39;S APPROACH: SINGLE COMPILATION UNIT                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   main.zig ──┐                                                       │
+│   utils.zig ──┼─→ ALL compiled as ONE UNIT → executable             │
+│   math.zig ───┘                                                      │
+│                                                                      │
+│   ALL Zig code is ONE compilation unit!                             │
+│   • @import() brings code into the SAME unit                        │
+│   • No intermediate .o files for Zig code                           │
+│   • Whole-program optimization by default                           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">What Does This Mean?
+    <div id="what-does-this-mean" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-does-this-mean" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Andrew Kelley (Zig&rsquo;s creator) explains it this way:</p>
+<blockquote>
+<p>&ldquo;Zig skips the middle man, and creates a single compilation unit with
+everything in it, then runs the optimizations.&rdquo;</p>
+</blockquote>
+<p>When you write:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">utils</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@import</span><span class="p">(</span><span class="s">&#34;utils.zig&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">const</span><span class="w"> </span><span class="n">math</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@import</span><span class="p">(</span><span class="s">&#34;math.zig&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">utils</span><span class="p">.</span><span class="nf">helper</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">math</span><span class="p">.</span><span class="nf">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>This is <strong>NOT</strong> like C&rsquo;s <code>#include</code> or traditional separate compilation. All three files become part of ONE semantic unit. The compiler sees everything at once.</p>
+
+<h3 class="relative group">Benefits of Single Compilation Unit
+    <div id="benefits-of-single-compilation-unit" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#benefits-of-single-compilation-unit" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ WHY SINGLE COMPILATION UNIT?                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. AGGRESSIVE CROSS-MODULE INLINING                                 │
+│    • Compiler can inline utils.helper() into main()                 │
+│    • No &#34;translation unit barrier&#34; to prevent optimization          │
+│                                                                      │
+│ 2. DEAD CODE ELIMINATION ACROSS ENTIRE CODEBASE                     │
+│    • If no one calls math.subtract(), it&#39;s not included             │
+│    • Works across file boundaries automatically                     │
+│                                                                      │
+│ 3. NO SYMBOL RESOLUTION OVERHEAD                                    │
+│    • No undefined symbols to resolve between Zig modules            │
+│    • No relocation entries needed for Zig-to-Zig calls              │
+│                                                                      │
+│ 4. BETTER THAN LTO                                                  │
+│    • Traditional compilers use Link-Time Optimization (LTO)         │
+│    • LTO re-analyzes object files at link time (slow, imperfect)    │
+│    • Zig just compiles everything together from the start           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">When Does Linking Actually Apply?
+    <div id="when-does-linking-actually-apply" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-does-linking-actually-apply" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>If Zig uses single compilation unit, when do we need linking?</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ WHEN LINKING IS NEEDED IN ZIG                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Linking kicks in when you interact with NON-ZIG code:               │
+│                                                                      │
+│ 1. LINKING C LIBRARIES                                              │
+│    const c = @cImport(@cInclude(&#34;stdio.h&#34;));                        │
+│    c.printf(&#34;Hello from C\n&#34;);                                      │
+│    → Need to link against libc                                      │
+│                                                                      │
+│ 2. LINKING SYSTEM LIBRARIES                                         │
+│    exe.linkSystemLibrary(&#34;SDL2&#34;);                                   │
+│    → Need to find and link libSDL2.so                              │
+│                                                                      │
+│ 3. LINKING PRE-COMPILED OBJECT FILES                               │
+│    exe.addObjectFile(&#34;legacy_code.o&#34;);                              │
+│    → External .o files need symbol resolution                      │
+│                                                                      │
+│ 4. PRODUCING SHARED LIBRARIES                                       │
+│    const lib = b.addSharedLibrary(...);                             │
+│    → Need GOT/PLT for position-independent code                    │
+│                                                                      │
+│                                                                      │
+│ For PURE ZIG code, the &#34;linker&#34; mostly just:                        │
+│   • Arranges code in memory                                        │
+│   • Writes the executable format headers (ELF, Mach-O, PE)         │
+│   • NO symbol resolution between Zig modules!                      │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Rest of This Article
+    <div id="the-rest-of-this-article" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-rest-of-this-article" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>The concepts below (object files, symbols, relocations) still matter because:</p>
+<ol>
+<li><strong>C interop</strong> - You&rsquo;ll likely link C libraries</li>
+<li><strong>Understanding linker errors</strong> - Especially with extern functions</li>
+<li><strong>System understanding</strong> - How executables work in general</li>
+<li><strong>Producing libraries</strong> - If you export Zig code for others to use</li>
+</ol>
+<p>But keep in mind: for pure Zig-to-Zig code, most of this complexity disappears because everything is ONE compilation unit.</p>
+<hr>
 
 <h2 class="relative group">Part 2: What&rsquo;s Inside an Object File?
     <div id="part-2-whats-inside-an-object-file" class="anchor"></div>
@@ -1872,12 +2081,16 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
 │               ├──→ zig (compiler + linker) → executable            │
 │   other.zig ──┘                                                     │
 │                                                                      │
+│   KEY INSIGHT: For pure Zig code, there are NO intermediate        │
+│   object files! The compiler writes DIRECTLY to the executable.    │
+│                                                                      │
 │   Benefits:                                                         │
 │   • Cross-compile to ANY target from ANY host                     │
 │   • No external tools needed                                       │
-│   • Incremental linking for fast rebuilds                         │
+│   • Incremental compilation with in-place binary patching         │
 │   • Reproducible builds                                            │
 │   • Full control over output                                       │
+│   • No object file overhead for pure Zig projects                 │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre>
@@ -1916,16 +2129,16 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre>
-<h3 class="relative group">Incremental Linking
-    <div id="incremental-linking" class="anchor"></div>
+<h3 class="relative group">Incremental Compilation: In-Place Binary Patching
+    <div id="incremental-compilation-in-place-binary-patching" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#incremental-linking" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#incremental-compilation-in-place-binary-patching" aria-label="Anchor">#</a>
     </span>
     
 </h3>
-<p>One of Zig&rsquo;s killer features:</p>
+<p>One of Zig&rsquo;s killer features - enabled by the single compilation unit approach:</p>
 <pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
 │ INCREMENTAL LINKING                                                  │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -1967,8 +2180,69 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
 │                                                                      │
 │   This is why `zig build` is so fast during development.           │
 │                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ WHY THIS WORKS IN ZIG:                                              │
+│                                                                      │
+│   Because Zig uses a single compilation unit, the compiler has     │
+│   tight integration with the linker. It can:                       │
+│                                                                      │
+│   1. Write code directly to the final binary (no .o files)         │
+│   2. Track which functions are at which addresses                  │
+│   3. Patch just the changed parts on rebuild                       │
+│                                                                      │
+│   Traditional compilers can&#39;t do this because each .o file is      │
+│   compiled separately - the linker doesn&#39;t know which parts        │
+│   changed.                                                          │
+│                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
-</code></pre><hr>
+</code></pre>
+<h3 class="relative group">GOT: The Secret to Moving Functions
+    <div id="got-the-secret-to-moving-functions" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#got-the-secret-to-moving-functions" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>How can a function move to a new address without updating all callers? The answer is the <strong>Global Offset Table</strong>:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ GOT ENABLES IN-PLACE PATCHING                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ WITHOUT GOT:                                                        │
+│                                                                      │
+│   func_a:                        func_b is at 0x2000               │
+│     call 0x2000  ──────────────▶ ┌─────────────┐                   │
+│                                  │   func_b    │                   │
+│   func_c:                        └─────────────┘                   │
+│     call 0x2000  ──────────────▶                                   │
+│                                                                      │
+│   If func_b moves to 0x3000, we must update EVERY caller!          │
+│   That&#39;s slow and defeats incremental compilation.                 │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ WITH GOT:                                                           │
+│                                                                      │
+│   func_a:                        GOT:                               │
+│     call [GOT+8]  ─────────────▶ [8]: 0x2000 ──▶ func_b            │
+│                                                                      │
+│   func_c:                                                           │
+│     call [GOT+8]  ─────────────▶ (same entry)                      │
+│                                                                      │
+│   If func_b moves to 0x3000:                                        │
+│     • Update GOT[8] = 0x3000    ← Just ONE write!                  │
+│     • func_a and func_c unchanged                                  │
+│     • All callers automatically use new address                    │
+│                                                                      │
+│ This is why Zig uses GOT for ALL internal function calls in       │
+│ incremental mode - it enables moving functions freely.             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><p>This design, as Loris Cro notes, gets Zig &ldquo;90% of the way to hot code swapping&rdquo; - the ability to update running programs without restarting them.</p>
+<hr>
 
 <h2 class="relative group">Part 8: The Linking Process Step by Step
     <div id="part-8-the-linking-process-step-by-step" class="anchor"></div>
@@ -2359,6 +2633,51 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
     </span>
     
 </h2>
+
+<h3 class="relative group">Zig-Specific
+    <div id="zig-specific" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zig-specific" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<ul>
+<li><strong><a
+  href="https://kristoff.it/blog/zig-new-relationship-llvm/"
+    target="_blank"
+  >Zig&rsquo;s New Relationship with LLVM</a></strong> by Loris Cro - Explains incremental compilation and in-place binary patching.</li>
+<li><strong><a
+  href="https://www.jakubkonka.com/2022/03/16/hcs-zig.html"
+    target="_blank"
+  >Hot-code Reloading on macOS/arm64 with Zig</a></strong> by Jakub Konka - Deep dive into the Mach-O incremental linker.</li>
+<li><strong><a
+  href="https://archive.fosdem.org/2021/schedule/event/zig_macho/"
+    target="_blank"
+  >FOSDEM 2021: Mach-O Linker in Zig</a></strong> - Linking in the era of Apple Silicon.</li>
+<li><strong><a
+  href="https://github.com/ziglang/zig/wiki/Glossary"
+    target="_blank"
+  >Zig GitHub Wiki Glossary</a></strong> - Official terminology.</li>
+<li><strong>Source Code</strong>: <a
+  href="https://github.com/ziglang/zig/blob/master/src/link/Elf.zig"
+    target="_blank"
+  ><code>src/link/Elf.zig</code></a>, <a
+  href="https://github.com/ziglang/zig/blob/master/src/link/MachO.zig"
+    target="_blank"
+  ><code>src/link/MachO.zig</code></a></li>
+</ul>
+
+<h3 class="relative group">General Linking Resources
+    <div id="general-linking-resources" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#general-linking-resources" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
 <ul>
 <li><a
   href="https://www.iecc.com/linker/"
@@ -2376,10 +2695,6 @@ Introduction # You’ve written your code, it’s been parsed, type-checked, and
   href="https://docs.microsoft.com/en-us/windows/win32/debug/pe-format"
     target="_blank"
   >PE/COFF Specification</a></li>
-<li><a
-  href="https://andrewkelley.me"
-    target="_blank"
-  >How the Zig Linker Works</a> (Andrew Kelley&rsquo;s blog)</li>
 </ul>
 
           

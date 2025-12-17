@@ -3,6 +3,70 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
   <url>
+    <loc>http://localhost:1313/drafts/appendix-zig-patterns/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/13-mini-compiler/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/10-error-messages/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/11-comptime/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/12-standard-library/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/08-caching-incremental/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/09-build-system/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/01-bootstrap-process/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/02-tokenizer/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/03-parser-ast/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/04-zir-generation/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/05-sema/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/06-air-codegen/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/07-linking/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url>
+  <url>
     <loc>http://localhost:1313/posts/jsx-zig-00-what-we-are-building/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
   </url>
@@ -41,54 +105,5 @@
   <url>
     <loc>http://localhost:1313/posts/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
-  </url>
-  <url>
-    <loc>http://localhost:1313/</loc>
-    <lastmod>2025-12-11T00:00:00+00:00</lastmod>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/01-bootstrap-process/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/02-tokenizer/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/03-parser-ast/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/04-zir-generation/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/05-sema/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/06-air-codegen/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/07-linking/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/08-caching-incremental/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/09-build-system/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/10-error-messages/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/11-comptime/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/12-standard-library/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/13-mini-compiler/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/appendix-zig-patterns/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/</loc>
   </url>
 </urlset>

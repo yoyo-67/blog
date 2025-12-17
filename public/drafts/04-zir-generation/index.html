@@ -217,7 +217,7 @@ Introduction # After parsing produces the AST, the next step is to convert it in
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "5588"
+    "wordCount": "5965"
   }]
   </script>
 
@@ -621,7 +621,7 @@ Introduction # After parsing produces the AST, the next step is to convert it in
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5588 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5965 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">29 mins</span>
     
 
     
@@ -765,9 +765,13 @@ Introduction # After parsing produces the AST, the next step is to convert it in
     <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
       <ul>
         <li><a href="#where-zir-fits">Where ZIR Fits</a></li>
+        <li><a href="#the-scope-system">The Scope System</a></li>
+        <li><a href="#string-interning">String Interning</a></li>
         <li><a href="#summary-what-zir-achieves">Summary: What ZIR Achieves</a></li>
       </ul>
     </li>
+    <li><a href="#try-it-yourself">Try It Yourself</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -844,9 +848,13 @@ Introduction # After parsing produces the AST, the next step is to convert it in
     <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
       <ul>
         <li><a href="#where-zir-fits">Where ZIR Fits</a></li>
+        <li><a href="#the-scope-system">The Scope System</a></li>
+        <li><a href="#string-interning">String Interning</a></li>
         <li><a href="#summary-what-zir-achieves">Summary: What ZIR Achieves</a></li>
       </ul>
     </li>
+    <li><a href="#try-it-yourself">Try It Yourself</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -2177,6 +2185,74 @@ Introduction # After parsing produces the AST, the next step is to convert it in
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre>
+<h3 class="relative group">The Scope System
+    <div id="the-scope-system" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-scope-system" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>AstGen uses a sophisticated scope system to track identifiers. There are seven scope types:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ ASTGEN SCOPE TYPES                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. Scope.Top           File-level scope (the root)                 │
+│                                                                      │
+│ 2. GenZir              Block-level state tracking                  │
+│                        Tracks current block&#39;s instructions          │
+│                                                                      │
+│ 3. Scope.Namespace     Unordered declaration sets                  │
+│                        For structs, enums, etc.                     │
+│                                                                      │
+│ 4. Scope.LocalVal      Individual identifier bindings              │
+│    Scope.LocalPtr      (value vs pointer semantics)                │
+│                                                                      │
+│ 5. Scope.Defer         Defer/errdefer tracking                     │
+│                        Knows what to run on scope exit             │
+│                                                                      │
+│ When you reference a variable, AstGen walks UP through scopes      │
+│ until it finds the definition - this is how shadowing works.       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">String Interning
+    <div id="string-interning" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#string-interning" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>All strings in ZIR are interned into a single <code>string_bytes</code> array and referenced by offset:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ STRING INTERNING                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Instead of:                                                          │
+│   instruction1 { name: &#34;add&#34; }      ← 3 bytes                       │
+│   instruction2 { name: &#34;add&#34; }      ← 3 more bytes (duplicate!)     │
+│   instruction3 { name: &#34;multiply&#34; } ← 8 bytes                       │
+│                                                                      │
+│ ZIR stores:                                                          │
+│   string_bytes: &#34;add\0multiply\0&#34;   ← All strings together          │
+│                  ↑    ↑                                              │
+│                  0    4                                              │
+│                                                                      │
+│   instruction1 { name_offset: 0 }   ← Just an integer               │
+│   instruction2 { name_offset: 0 }   ← Same offset = same string     │
+│   instruction3 { name_offset: 4 }   ← Points to &#34;multiply&#34;          │
+│                                                                      │
+│ Benefits:                                                            │
+│   • Deduplication is automatic                                      │
+│   • Comparison is just integer equality                             │
+│   • After ZIR is built, the AST and source can be freed            │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
 <h3 class="relative group">Summary: What ZIR Achieves
     <div id="summary-what-zir-achieves" class="anchor"></div>
     
@@ -2212,6 +2288,64 @@ Introduction # After parsing produces the AST, the next step is to convert it in
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre><hr>
+
+<h2 class="relative group">Try It Yourself
+    <div id="try-it-yourself" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#try-it-yourself" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Dump the ZIR for any Zig file to see how your code is represented:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Dump ZIR for a file</span>
+</span></span><span class="line"><span class="cl">zig ast-check -t your_file.zig
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This is invaluable for understanding how Zig transforms your high-level code into intermediate representation.</p>
+<hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>For deeper exploration of ZIR and AstGen:</p>
+<ul>
+<li>
+<p><strong><a
+  href="https://mitchellh.com/zig/astgen"
+    target="_blank"
+  >Zig AstGen: AST =&gt; ZIR</a></strong> by Mitchell Hashimoto - Comprehensive walkthrough of how AST nodes become ZIR instructions.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://github.com/ziglang/zig/wiki/Glossary"
+    target="_blank"
+  >Zig GitHub Wiki Glossary</a></strong> - Official definitions including ZIR&rsquo;s ~400 instruction types.</p>
+</li>
+<li>
+<p><strong>Source Code</strong>: <a
+  href="https://github.com/ziglang/zig/blob/master/src/AstGen.zig"
+    target="_blank"
+  ><code>src/AstGen.zig</code></a> and <a
+  href="https://github.com/ziglang/zig/blob/master/lib/std/zig/Zir.zig"
+    target="_blank"
+  ><code>lib/std/zig/Zir.zig</code></a> - The implementations.</p>
+</li>
+</ul>
+<hr>
 
 <h2 class="relative group">Conclusion
     <div id="conclusion" class="anchor"></div>

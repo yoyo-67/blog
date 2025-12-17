@@ -217,7 +217,7 @@ Introduction # Before the Zig compiler can understand your code, it must first b
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "6726"
+    "wordCount": "7018"
   }]
   </script>
 
@@ -621,7 +621,7 @@ Introduction # Before the Zig compiler can understand your code, it must first b
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>6726 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">32 mins</span>
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>7018 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">33 mins</span>
     
 
     
@@ -707,6 +707,7 @@ Introduction # Before the Zig compiler can understand your code, it must first b
     <li><a href="#the-big-picture">The Big Picture</a></li>
     <li><a href="#the-tokenizer-at-a-glance">The Tokenizer at a Glance</a></li>
     <li><a href="#token-structure">Token Structure</a></li>
+    <li><a href="#design-principles-why-no-allocations">Design Principles: Why No Allocations?</a></li>
     <li><a href="#understanding-the-state-machine">Understanding the State Machine</a>
       <ul>
         <li><a href="#state-machine-overview">State Machine Overview</a></li>
@@ -778,6 +779,8 @@ Introduction # Before the Zig compiler can understand your code, it must first b
       </ul>
     </li>
     <li><a href="#performance-considerations">Performance Considerations</a></li>
+    <li><a href="#try-it-yourself">Try It Yourself</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -796,6 +799,7 @@ Introduction # Before the Zig compiler can understand your code, it must first b
     <li><a href="#the-big-picture">The Big Picture</a></li>
     <li><a href="#the-tokenizer-at-a-glance">The Tokenizer at a Glance</a></li>
     <li><a href="#token-structure">Token Structure</a></li>
+    <li><a href="#design-principles-why-no-allocations">Design Principles: Why No Allocations?</a></li>
     <li><a href="#understanding-the-state-machine">Understanding the State Machine</a>
       <ul>
         <li><a href="#state-machine-overview">State Machine Overview</a></li>
@@ -867,6 +871,8 @@ Introduction # Before the Zig compiler can understand your code, it must first b
       </ul>
     </li>
     <li><a href="#performance-considerations">Performance Considerations</a></li>
+    <li><a href="#try-it-yourself">Try It Yourself</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -1009,6 +1015,58 @@ Token { .tag = .keyword_const, .loc = { .start = 0, .end = 5 } }
 To get the text: source[0..5] = &#34;const&#34;
 </code></pre><p>This is memory-efficient and enables zero-copy parsing.</p>
 
+<h2 class="relative group">Design Principles: Why No Allocations?
+    <div id="design-principles-why-no-allocations" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#design-principles-why-no-allocations" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>One of the most striking aspects of Zig&rsquo;s tokenizer is that <strong>it performs zero heap allocations</strong>. Look at the API - there&rsquo;s no <code>Allocator</code> parameter anywhere:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="n">source</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="o">:</span><span class="mi">0</span><span class="p">]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="n">Tokenizer</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">Tokenizer</span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">source</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">.</span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>This is possible because of two key design decisions:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ WHY ZERO ALLOCATIONS?                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. TOKENS STORE INDICES, NOT STRINGS                                │
+│                                                                      │
+│    Instead of:  Token { text: &#34;const&#34; }     ← needs allocation      │
+│    We store:    Token { start: 0, end: 5 }  ← just two integers     │
+│                                                                      │
+│    To get the text: source[token.loc.start..token.loc.end]          │
+│                                                                      │
+│ 2. NULL-TERMINATED SOURCE BUFFER                                    │
+│                                                                      │
+│    The source is [:0]const u8 - guaranteed null terminator          │
+│    This means:                                                       │
+│    • No bounds checking needed on every character                   │
+│    • EOF detection is &#34;free&#34; (just check for \0)                    │
+│    • No need to store buffer length separately                      │
+│                                                                      │
+│ Result: The tokenizer is blazingly fast with zero memory overhead   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
 <h2 class="relative group">Understanding the State Machine
     <div id="understanding-the-state-machine" class="anchor"></div>
     
@@ -3026,6 +3084,61 @@ This allows better error messages than generic .invalid
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 </code></pre>
+<h2 class="relative group">Try It Yourself
+    <div id="try-it-yourself" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#try-it-yourself" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>You can explore how the tokenizer works by dumping the tokens for any Zig file:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># See all tokens for a file</span>
+</span></span><span class="line"><span class="cl">zig ast-check --dump-tokens your_file.zig
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This is a great way to understand how Zig breaks down your code into its fundamental pieces.</p>
+<hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>For deeper exploration of Zig&rsquo;s tokenizer:</p>
+<ul>
+<li>
+<p><strong><a
+  href="https://mitchellh.com/zig/tokenizer"
+    target="_blank"
+  >Zig Tokenizer</a></strong> by Mitchell Hashimoto - An excellent deep dive into the tokenizer implementation, state machine design, and performance optimizations.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://github.com/ziglang/zig/wiki/Glossary"
+    target="_blank"
+  >Zig GitHub Wiki Glossary</a></strong> - Official terminology for compiler internals.</p>
+</li>
+<li>
+<p><strong>Source Code</strong>: <a
+  href="https://github.com/ziglang/zig/blob/master/lib/std/zig/Tokenizer.zig"
+    target="_blank"
+  ><code>lib/std/zig/Tokenizer.zig</code></a> - The actual implementation (1,769 lines of elegant Zig).</p>
+</li>
+</ul>
+<hr>
+
 <h2 class="relative group">Conclusion
     <div id="conclusion" class="anchor"></div>
     

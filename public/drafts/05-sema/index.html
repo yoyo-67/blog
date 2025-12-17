@@ -217,7 +217,7 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "5338"
+    "wordCount": "5748"
   }]
   </script>
 
@@ -621,7 +621,7 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5338 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">26 mins</span>
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5748 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
     
 
     
@@ -757,6 +757,8 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
     </li>
     <li><a href="#part-8-from-zir-to-air">Part 8: From ZIR to AIR</a>
       <ul>
+        <li><a href="#the-inst_map-connecting-zir-to-air">The inst_map: Connecting ZIR to AIR</a></li>
+        <li><a href="#the-core-types">The Core Types</a></li>
         <li><a href="#the-transformation">The Transformation</a></li>
         <li><a href="#complete-example">Complete Example</a></li>
       </ul>
@@ -773,6 +775,7 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
         <li><a href="#summary-what-sema-does">Summary: What Sema Does</a></li>
       </ul>
     </li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -841,6 +844,8 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
     </li>
     <li><a href="#part-8-from-zir-to-air">Part 8: From ZIR to AIR</a>
       <ul>
+        <li><a href="#the-inst_map-connecting-zir-to-air">The inst_map: Connecting ZIR to AIR</a></li>
+        <li><a href="#the-core-types">The Core Types</a></li>
         <li><a href="#the-transformation">The Transformation</a></li>
         <li><a href="#complete-example">Complete Example</a></li>
       </ul>
@@ -857,6 +862,7 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
         <li><a href="#summary-what-sema-does">Summary: What Sema Does</a></li>
       </ul>
     </li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -1888,6 +1894,80 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
     
 </h2>
 
+<h3 class="relative group">The inst_map: Connecting ZIR to AIR
+    <div id="the-inst_map-connecting-zir-to-air" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-inst_map-connecting-zir-to-air" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>One of the most important data structures in Sema is the <code>inst_map</code>. This is a map from ZIR instructions to AIR instructions:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE INST_MAP: ZIR → AIR MAPPING                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ As Sema processes ZIR instructions, it needs to track what each    │
+│ instruction becomes in AIR. The inst_map provides this mapping:    │
+│                                                                      │
+│   ZIR                           AIR                                 │
+│   ───────────────────           ───────────────────                 │
+│   %1 = param(0)        ──────▶  %1 = arg(0, u32)                   │
+│   %2 = param(1)        ──────▶  %2 = arg(1, u32)                   │
+│   %3 = add(%1, %2)     ──────▶  %3 = add_u32(%1, %2)               │
+│   %4 = ret(%3)         ──────▶  %4 = ret_u32(%3)                   │
+│                                                                      │
+│ Why is this needed?                                                 │
+│                                                                      │
+│ 1. FORWARD REFERENCES                                               │
+│    When processing %3 = add(%1, %2), we need to look up what       │
+│    %1 and %2 became in AIR                                         │
+│                                                                      │
+│ 2. NOT ALL ZIR BECOMES AIR                                          │
+│    Some ZIR instructions (like type annotations) are resolved      │
+│    at compile time and don&#39;t produce AIR instructions              │
+│                                                                      │
+│ 3. COMPTIME EVALUATION                                              │
+│    If %3 = add(%1, %2) can be computed at comptime, it might      │
+│    become a constant in AIR rather than an add instruction         │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Core Types
+    <div id="the-core-types" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-core-types" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Sema works with three central types to represent values during analysis:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ SEMA&#39;S CORE TYPES                                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. Value                                                            │
+│    ───────                                                          │
+│    A comptime-known value (but untyped!)                           │
+│    Examples: 42, &#34;hello&#34;, true                                     │
+│                                                                      │
+│ 2. Type                                                             │
+│    ─────                                                            │
+│    A comptime-known type                                            │
+│    Examples: u32, []const u8, fn(i32) i32                          │
+│                                                                      │
+│ 3. TypedValue                                                       │
+│    ───────────                                                      │
+│    A value paired with its exact type                              │
+│    Examples: (42, comptime_int), (42, u32)                         │
+│                                                                      │
+│ The distinction matters because the same value (42) can have       │
+│ different types (comptime_int, u8, u32, i64, etc.)                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
 <h3 class="relative group">The Transformation
     <div id="the-transformation" class="anchor"></div>
     
@@ -2215,6 +2295,44 @@ Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While 
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre><hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>For deeper exploration of Sema and semantic analysis:</p>
+<ul>
+<li>
+<p><strong><a
+  href="https://mitchellh.com/zig/sema"
+    target="_blank"
+  >Zig Sema: ZIR =&gt; AIR</a></strong> by Mitchell Hashimoto - Excellent deep dive into how semantic analysis works, including the crucial <code>inst_map</code> that maps ZIR to AIR instructions.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://github.com/ziglang/zig/wiki/Glossary"
+    target="_blank"
+  >Zig GitHub Wiki Glossary</a></strong> - Official terminology for compiler internals.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://matklad.github.io/2023/02/10/how-a-zig-ide-could-work.html"
+    target="_blank"
+  >How a Zig IDE Could Work</a></strong> by Alex Kladov - Discusses Sema&rsquo;s role in incremental compilation and IDE integration.</p>
+</li>
+<li>
+<p><strong>Source Code</strong>: <a
+  href="https://github.com/ziglang/zig/blob/master/src/Sema.zig"
+    target="_blank"
+  ><code>src/Sema.zig</code></a> - The 37,000+ line implementation.</p>
+</li>
+</ul>
+<hr>
 
 <h2 class="relative group">Conclusion
     <div id="conclusion" class="anchor"></div>

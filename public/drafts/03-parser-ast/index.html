@@ -217,7 +217,7 @@ Introduction # After the tokenizer breaks source code into tokens, the parser or
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "11660"
+    "wordCount": "11756"
   }]
   </script>
 
@@ -621,7 +621,7 @@ Introduction # After the tokenizer breaks source code into tokens, the parser or
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>11660 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">55 mins</span>
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>11756 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">56 mins</span>
     
 
     
@@ -741,6 +741,7 @@ Introduction # After the tokenizer breaks source code into tokens, the parser or
       <ul>
         <li><a href="#traditional-array-of-structs-aos">Traditional: Array-of-Structs (AoS)</a></li>
         <li><a href="#zigs-choice-struct-of-arrays-soa">Zig&rsquo;s Choice: Struct-of-Arrays (SoA)</a></li>
+        <li><a href="#real-world-memory-savings">Real-World Memory Savings</a></li>
         <li><a href="#why-soa-is-better-for-compilers">Why SoA is Better for Compilers</a></li>
       </ul>
     </li>
@@ -812,6 +813,7 @@ Introduction # After the tokenizer breaks source code into tokens, the parser or
       </ul>
     </li>
     <li><a href="#summary-the-parsers-job">Summary: The Parser&rsquo;s Job</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -864,6 +866,7 @@ Introduction # After the tokenizer breaks source code into tokens, the parser or
       <ul>
         <li><a href="#traditional-array-of-structs-aos">Traditional: Array-of-Structs (AoS)</a></li>
         <li><a href="#zigs-choice-struct-of-arrays-soa">Zig&rsquo;s Choice: Struct-of-Arrays (SoA)</a></li>
+        <li><a href="#real-world-memory-savings">Real-World Memory Savings</a></li>
         <li><a href="#why-soa-is-better-for-compilers">Why SoA is Better for Compilers</a></li>
       </ul>
     </li>
@@ -935,6 +938,7 @@ Introduction # After the tokenizer breaks source code into tokens, the parser or
       </ul>
     </li>
     <li><a href="#summary-the-parsers-job">Summary: The Parser&rsquo;s Job</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -1634,6 +1638,17 @@ AST node just stores: main_token = 1 (index of &#34;add&#34; token)
 │ └──────┴──────┴──────┴──────┴──────┴──────┘                 │
 └─────────────────────────────────────────────────────────────┘
 </code></pre>
+<h3 class="relative group">Real-World Memory Savings
+    <div id="real-world-memory-savings" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#real-world-memory-savings" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>According to Mitchell Hashimoto&rsquo;s analysis, this layout can save <strong>37.5% of memory</strong> for typical AST structures. When you&rsquo;re parsing large codebases with tens of thousands of nodes, this adds up to significant savings.</p>
+
 <h3 class="relative group">Why SoA is Better for Compilers
     <div id="why-soa-is-better-for-compilers" class="anchor"></div>
     
@@ -4672,6 +4687,44 @@ Node Table:
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 </code></pre><hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>For deeper exploration of Zig&rsquo;s parser:</p>
+<ul>
+<li>
+<p><strong><a
+  href="https://mitchellh.com/zig/parser"
+    target="_blank"
+  >Zig Parser</a></strong> by Mitchell Hashimoto - Detailed walkthrough of the parsing process, state management, and the Ast struct.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://devlog.hexops.com/2021/zig-parser-combinators-and-why-theyre-awesome/"
+    target="_blank"
+  >Parser Combinators in Zig</a></strong> by Hexops - Alternative parsing approaches in Zig.</p>
+</li>
+<li>
+<p><strong><a
+  href="https://github.com/ziglang/zig/wiki/Glossary"
+    target="_blank"
+  >Zig GitHub Wiki Glossary</a></strong> - Official terminology and definitions.</p>
+</li>
+<li>
+<p><strong>Source Code</strong>: <a
+  href="https://github.com/ziglang/zig/blob/master/lib/std/zig/Ast.zig"
+    target="_blank"
+  ><code>lib/std/zig/Ast.zig</code></a> - The AST data structures and parser implementation.</p>
+</li>
+</ul>
+<hr>
 
 <h2 class="relative group">Conclusion
     <div id="conclusion" class="anchor"></div>
