@@ -87,6 +87,46 @@ To get the text: source[0..5] = "const"
 
 This is memory-efficient and enables zero-copy parsing.
 
+## Design Principles: Why No Allocations?
+
+One of the most striking aspects of Zig's tokenizer is that **it performs zero heap allocations**. Look at the API - there's no `Allocator` parameter anywhere:
+
+```zig
+pub fn init(source: [:0]const u8) Tokenizer {
+    return Tokenizer{
+        .source = source,
+        .index = 0,
+    };
+}
+```
+
+This is possible because of two key design decisions:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ WHY ZERO ALLOCATIONS?                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. TOKENS STORE INDICES, NOT STRINGS                                │
+│                                                                      │
+│    Instead of:  Token { text: "const" }     ← needs allocation      │
+│    We store:    Token { start: 0, end: 5 }  ← just two integers     │
+│                                                                      │
+│    To get the text: source[token.loc.start..token.loc.end]          │
+│                                                                      │
+│ 2. NULL-TERMINATED SOURCE BUFFER                                    │
+│                                                                      │
+│    The source is [:0]const u8 - guaranteed null terminator          │
+│    This means:                                                       │
+│    • No bounds checking needed on every character                   │
+│    • EOF detection is "free" (just check for \0)                    │
+│    • No need to store buffer length separately                      │
+│                                                                      │
+│ Result: The tokenizer is blazingly fast with zero memory overhead   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ## Understanding the State Machine
 
 The tokenizer works like a vending machine - it reads characters one by one and transitions between states until it has a complete token.

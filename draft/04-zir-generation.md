@@ -1124,6 +1124,66 @@ fn max(a: i32, b: i32) i32 {
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+### The Scope System
+
+AstGen uses a sophisticated scope system to track identifiers. There are seven scope types:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ ASTGEN SCOPE TYPES                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. Scope.Top           File-level scope (the root)                 │
+│                                                                      │
+│ 2. GenZir              Block-level state tracking                  │
+│                        Tracks current block's instructions          │
+│                                                                      │
+│ 3. Scope.Namespace     Unordered declaration sets                  │
+│                        For structs, enums, etc.                     │
+│                                                                      │
+│ 4. Scope.LocalVal      Individual identifier bindings              │
+│    Scope.LocalPtr      (value vs pointer semantics)                │
+│                                                                      │
+│ 5. Scope.Defer         Defer/errdefer tracking                     │
+│                        Knows what to run on scope exit             │
+│                                                                      │
+│ When you reference a variable, AstGen walks UP through scopes      │
+│ until it finds the definition - this is how shadowing works.       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### String Interning
+
+All strings in ZIR are interned into a single `string_bytes` array and referenced by offset:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ STRING INTERNING                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Instead of:                                                          │
+│   instruction1 { name: "add" }      ← 3 bytes                       │
+│   instruction2 { name: "add" }      ← 3 more bytes (duplicate!)     │
+│   instruction3 { name: "multiply" } ← 8 bytes                       │
+│                                                                      │
+│ ZIR stores:                                                          │
+│   string_bytes: "add\0multiply\0"   ← All strings together          │
+│                  ↑    ↑                                              │
+│                  0    4                                              │
+│                                                                      │
+│   instruction1 { name_offset: 0 }   ← Just an integer               │
+│   instruction2 { name_offset: 0 }   ← Same offset = same string     │
+│   instruction3 { name_offset: 4 }   ← Points to "multiply"          │
+│                                                                      │
+│ Benefits:                                                            │
+│   • Deduplication is automatic                                      │
+│   • Comparison is just integer equality                             │
+│   • After ZIR is built, the AST and source can be freed            │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ### Summary: What ZIR Achieves
 
 ```

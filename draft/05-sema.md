@@ -846,6 +846,72 @@ Store each unique type/value ONCE, refer to it by index:
 
 ## Part 8: From ZIR to AIR
 
+### The inst_map: Connecting ZIR to AIR
+
+One of the most important data structures in Sema is the `inst_map`. This is a map from ZIR instructions to AIR instructions:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ THE INST_MAP: ZIR → AIR MAPPING                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ As Sema processes ZIR instructions, it needs to track what each    │
+│ instruction becomes in AIR. The inst_map provides this mapping:    │
+│                                                                      │
+│   ZIR                           AIR                                 │
+│   ───────────────────           ───────────────────                 │
+│   %1 = param(0)        ──────▶  %1 = arg(0, u32)                   │
+│   %2 = param(1)        ──────▶  %2 = arg(1, u32)                   │
+│   %3 = add(%1, %2)     ──────▶  %3 = add_u32(%1, %2)               │
+│   %4 = ret(%3)         ──────▶  %4 = ret_u32(%3)                   │
+│                                                                      │
+│ Why is this needed?                                                 │
+│                                                                      │
+│ 1. FORWARD REFERENCES                                               │
+│    When processing %3 = add(%1, %2), we need to look up what       │
+│    %1 and %2 became in AIR                                         │
+│                                                                      │
+│ 2. NOT ALL ZIR BECOMES AIR                                          │
+│    Some ZIR instructions (like type annotations) are resolved      │
+│    at compile time and don't produce AIR instructions              │
+│                                                                      │
+│ 3. COMPTIME EVALUATION                                              │
+│    If %3 = add(%1, %2) can be computed at comptime, it might      │
+│    become a constant in AIR rather than an add instruction         │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### The Core Types
+
+Sema works with three central types to represent values during analysis:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ SEMA'S CORE TYPES                                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. Value                                                            │
+│    ───────                                                          │
+│    A comptime-known value (but untyped!)                           │
+│    Examples: 42, "hello", true                                     │
+│                                                                      │
+│ 2. Type                                                             │
+│    ─────                                                            │
+│    A comptime-known type                                            │
+│    Examples: u32, []const u8, fn(i32) i32                          │
+│                                                                      │
+│ 3. TypedValue                                                       │
+│    ───────────                                                      │
+│    A value paired with its exact type                              │
+│    Examples: (42, comptime_int), (42, u32)                         │
+│                                                                      │
+│ The distinction matters because the same value (42) can have       │
+│ different types (comptime_int, u8, u32, i64, etc.)                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ### The Transformation
 
 Sema transforms untyped ZIR into typed AIR:

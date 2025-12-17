@@ -470,6 +470,10 @@ Memory Layout:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Real-World Memory Savings
+
+According to Mitchell Hashimoto's analysis, this layout can save **37.5% of memory** for typical AST structures. When you're parsing large codebases with tens of thousands of nodes, this adds up to significant savings.
+
 ### Why SoA is Better for Compilers
 
 ```

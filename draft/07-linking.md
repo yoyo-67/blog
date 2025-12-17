@@ -1090,6 +1090,49 @@ One of Zig's killer features - enabled by the single compilation unit approach:
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+### GOT: The Secret to Moving Functions
+
+How can a function move to a new address without updating all callers? The answer is the **Global Offset Table**:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ GOT ENABLES IN-PLACE PATCHING                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ WITHOUT GOT:                                                        │
+│                                                                      │
+│   func_a:                        func_b is at 0x2000               │
+│     call 0x2000  ──────────────▶ ┌─────────────┐                   │
+│                                  │   func_b    │                   │
+│   func_c:                        └─────────────┘                   │
+│     call 0x2000  ──────────────▶                                   │
+│                                                                      │
+│   If func_b moves to 0x3000, we must update EVERY caller!          │
+│   That's slow and defeats incremental compilation.                 │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ WITH GOT:                                                           │
+│                                                                      │
+│   func_a:                        GOT:                               │
+│     call [GOT+8]  ─────────────▶ [8]: 0x2000 ──▶ func_b            │
+│                                                                      │
+│   func_c:                                                           │
+│     call [GOT+8]  ─────────────▶ (same entry)                      │
+│                                                                      │
+│   If func_b moves to 0x3000:                                        │
+│     • Update GOT[8] = 0x3000    ← Just ONE write!                  │
+│     • func_a and func_c unchanged                                  │
+│     • All callers automatically use new address                    │
+│                                                                      │
+│ This is why Zig uses GOT for ALL internal function calls in       │
+│ incremental mode - it enables moving functions freely.             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+This design, as Loris Cro notes, gets Zig "90% of the way to hot code swapping" - the ability to update running programs without restarting them.
+
 ---
 
 ## Part 8: The Linking Process Step by Step
