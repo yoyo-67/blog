@@ -1,0 +1,2447 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Zig Compiler Internals Part 5: Semantic Analysis &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Zig Compiler Internals Part 5: Semantic Analysis &middot; Yohai&#39;s Blog">
+  
+
+  
+  
+  
+  
+  
+  <link rel="canonical" href="http://localhost:1313/drafts/05-sema/">
+  
+
+  
+  
+    <meta name="author" content="Yohai">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:1313/drafts/05-sema/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Zig Compiler Internals Part 5: Semantic Analysis">
+  <meta property="og:description" content="Zig Compiler Internals Part 5: Semantic Analysis # The heart of the compiler: type checking, comptime, and more
+Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While the parser checks that your code is grammatically correct, Sema checks that it actually makes sense.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="drafts">
+    <meta property="article:published_time" content="2025-12-17T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-17T00:00:00+00:00">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Zig Compiler Internals Part 5: Semantic Analysis">
+  <meta name="twitter:description" content="Zig Compiler Internals Part 5: Semantic Analysis # The heart of the compiler: type checking, comptime, and more
+Introduction # Sema (Semantic Analysis) is the brain of the Zig compiler. While the parser checks that your code is grammatically correct, Sema checks that it actually makes sense.">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Drafts",
+    "name": "Zig Compiler Internals Part 5: Semantic Analysis",
+    "headline": "Zig Compiler Internals Part 5: Semantic Analysis",
+    
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eZig Compiler Internals Part 5: Semantic Analysis\n    \u003cdiv id=\u0022zig-compiler-internals-part-5-semantic-analysis\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#zig-compiler-internals-part-5-semantic-analysis\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003e\u003cem\u003eThe heart of the compiler: type checking, comptime, and more\u003c\/em\u003e\u003c\/p\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eIntroduction\n    \u003cdiv id=\u0022introduction\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#introduction\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003e\u003cstrong\u003eSema\u003c\/strong\u003e (Semantic Analysis) is the brain of the Zig compiler. While the parser checks that your code is grammatically correct, Sema checks that it actually \u003cem\u003emakes sense\u003c\/em\u003e.\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:1313/drafts/05-sema/",
+    "author" : {
+      "@type": "Person",
+      "name": "Yohai"
+    },
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-17T00:00:00\u002b00:00",
+    "datePublished": "2025-12-17T00:00:00\u002b00:00",
+    
+    "dateModified": "2025-12-17T00:00:00\u002b00:00",
+    
+    
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "5338"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          Yohai&rsquo;s Blog
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/drafts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Drafts"
+  title="Drafts">
+  
+  
+    <p class="text-base font-medium">
+      Drafts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/drafts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Drafts"
+    title="Drafts">
+    
+    
+      <p class="text-bg font-bg">
+        Drafts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >Yohai&#39;s Blog</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/"
+      >Drafts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/05-sema/"
+      >Zig Compiler Internals Part 5: Semantic Analysis</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Zig Compiler Internals Part 5: Semantic Analysis
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5338 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">26 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Yohai
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-why-do-we-need-semantic-analysis">Part 1: Why Do We Need Semantic Analysis?</a>
+      <ul>
+        <li><a href="#syntax-vs-semantics">Syntax vs Semantics</a></li>
+        <li><a href="#what-sema-catches">What Sema Catches</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-what-is-type-checking">Part 2: What is Type Checking?</a>
+      <ul>
+        <li><a href="#the-core-idea">The Core Idea</a></li>
+        <li><a href="#how-type-checking-works">How Type Checking Works</a></li>
+        <li><a href="#type-inference">Type Inference</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-what-is-comptime">Part 3: What is Comptime?</a>
+      <ul>
+        <li><a href="#the-revolutionary-idea">The Revolutionary Idea</a></li>
+        <li><a href="#what-can-run-at-comptime">What Can Run at Comptime?</a></li>
+        <li><a href="#how-sema-evaluates-comptime">How Sema Evaluates Comptime</a></li>
+        <li><a href="#branch-quota-preventing-infinite-loops">Branch Quota: Preventing Infinite Loops</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-what-is-type-coercion">Part 4: What is Type Coercion?</a>
+      <ul>
+        <li><a href="#the-problem-types-dont-always-match">The Problem: Types Don&rsquo;t Always Match</a></li>
+        <li><a href="#safe-vs-unsafe-coercions">Safe vs Unsafe Coercions</a></li>
+        <li><a href="#how-sema-does-coercion">How Sema Does Coercion</a></li>
+        <li><a href="#peer-type-resolution">Peer Type Resolution</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-what-are-generics">Part 5: What Are Generics?</a>
+      <ul>
+        <li><a href="#the-problem-code-duplication">The Problem: Code Duplication</a></li>
+        <li><a href="#the-solution-generic-functions">The Solution: Generic Functions</a></li>
+        <li><a href="#how-sema-handles-generics-instantiation">How Sema Handles Generics (Instantiation)</a></li>
+        <li><a href="#generics-can-fail-per-instantiation">Generics Can Fail Per-Instantiation</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-safety-checks">Part 6: Safety Checks</a>
+      <ul>
+        <li><a href="#what-are-safety-checks">What Are Safety Checks?</a></li>
+        <li><a href="#types-of-safety-checks">Types of Safety Checks</a></li>
+        <li><a href="#safe-mode-vs-release-mode">Safe Mode vs Release Mode</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-the-internpool">Part 7: The InternPool</a>
+      <ul>
+        <li><a href="#the-problem-duplicate-types">The Problem: Duplicate Types</a></li>
+        <li><a href="#the-solution-intern-pool">The Solution: Intern Pool</a></li>
+        <li><a href="#values-are-interned-too">Values Are Interned Too</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-from-zir-to-air">Part 8: From ZIR to AIR</a>
+      <ul>
+        <li><a href="#the-transformation">The Transformation</a></li>
+        <li><a href="#complete-example">Complete Example</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-error-messages">Part 9: Error Messages</a>
+      <ul>
+        <li><a href="#good-error-messages-are-critical">Good Error Messages Are Critical</a></li>
+        <li><a href="#how-sema-tracks-source-locations">How Sema Tracks Source Locations</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
+      <ul>
+        <li><a href="#where-sema-fits">Where Sema Fits</a></li>
+        <li><a href="#summary-what-sema-does">Summary: What Sema Does</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-why-do-we-need-semantic-analysis">Part 1: Why Do We Need Semantic Analysis?</a>
+      <ul>
+        <li><a href="#syntax-vs-semantics">Syntax vs Semantics</a></li>
+        <li><a href="#what-sema-catches">What Sema Catches</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-what-is-type-checking">Part 2: What is Type Checking?</a>
+      <ul>
+        <li><a href="#the-core-idea">The Core Idea</a></li>
+        <li><a href="#how-type-checking-works">How Type Checking Works</a></li>
+        <li><a href="#type-inference">Type Inference</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-what-is-comptime">Part 3: What is Comptime?</a>
+      <ul>
+        <li><a href="#the-revolutionary-idea">The Revolutionary Idea</a></li>
+        <li><a href="#what-can-run-at-comptime">What Can Run at Comptime?</a></li>
+        <li><a href="#how-sema-evaluates-comptime">How Sema Evaluates Comptime</a></li>
+        <li><a href="#branch-quota-preventing-infinite-loops">Branch Quota: Preventing Infinite Loops</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-what-is-type-coercion">Part 4: What is Type Coercion?</a>
+      <ul>
+        <li><a href="#the-problem-types-dont-always-match">The Problem: Types Don&rsquo;t Always Match</a></li>
+        <li><a href="#safe-vs-unsafe-coercions">Safe vs Unsafe Coercions</a></li>
+        <li><a href="#how-sema-does-coercion">How Sema Does Coercion</a></li>
+        <li><a href="#peer-type-resolution">Peer Type Resolution</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-what-are-generics">Part 5: What Are Generics?</a>
+      <ul>
+        <li><a href="#the-problem-code-duplication">The Problem: Code Duplication</a></li>
+        <li><a href="#the-solution-generic-functions">The Solution: Generic Functions</a></li>
+        <li><a href="#how-sema-handles-generics-instantiation">How Sema Handles Generics (Instantiation)</a></li>
+        <li><a href="#generics-can-fail-per-instantiation">Generics Can Fail Per-Instantiation</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-safety-checks">Part 6: Safety Checks</a>
+      <ul>
+        <li><a href="#what-are-safety-checks">What Are Safety Checks?</a></li>
+        <li><a href="#types-of-safety-checks">Types of Safety Checks</a></li>
+        <li><a href="#safe-mode-vs-release-mode">Safe Mode vs Release Mode</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-the-internpool">Part 7: The InternPool</a>
+      <ul>
+        <li><a href="#the-problem-duplicate-types">The Problem: Duplicate Types</a></li>
+        <li><a href="#the-solution-intern-pool">The Solution: Intern Pool</a></li>
+        <li><a href="#values-are-interned-too">Values Are Interned Too</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-from-zir-to-air">Part 8: From ZIR to AIR</a>
+      <ul>
+        <li><a href="#the-transformation">The Transformation</a></li>
+        <li><a href="#complete-example">Complete Example</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-error-messages">Part 9: Error Messages</a>
+      <ul>
+        <li><a href="#good-error-messages-are-critical">Good Error Messages Are Critical</a></li>
+        <li><a href="#how-sema-tracks-source-locations">How Sema Tracks Source Locations</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
+      <ul>
+        <li><a href="#where-sema-fits">Where Sema Fits</a></li>
+        <li><a href="#summary-what-sema-does">Summary: What Sema Does</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+
+        <div class="article-content max-w-prose mb-20">
+          
+<h1 class="relative group">Zig Compiler Internals Part 5: Semantic Analysis
+    <div id="zig-compiler-internals-part-5-semantic-analysis" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zig-compiler-internals-part-5-semantic-analysis" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p><em>The heart of the compiler: type checking, comptime, and more</em></p>
+<hr>
+
+<h2 class="relative group">Introduction
+    <div id="introduction" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#introduction" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Sema</strong> (Semantic Analysis) is the brain of the Zig compiler. While the parser checks that your code is grammatically correct, Sema checks that it actually <em>makes sense</em>.</p>
+<p>Think of it this way:</p>
+<ul>
+<li><strong>Parser</strong>: &ldquo;This sentence has correct grammar&rdquo;</li>
+<li><strong>Sema</strong>: &ldquo;This sentence actually means something coherent&rdquo;</li>
+</ul>
+<p>Before diving into how Sema works, let&rsquo;s understand <strong>why</strong> we need it.</p>
+<hr>
+
+<h2 class="relative group">Part 1: Why Do We Need Semantic Analysis?
+    <div id="part-1-why-do-we-need-semantic-analysis" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-1-why-do-we-need-semantic-analysis" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Syntax vs Semantics
+    <div id="syntax-vs-semantics" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#syntax-vs-semantics" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>The parser only checks <strong>syntax</strong> (grammar). It doesn&rsquo;t understand <strong>meaning</strong>:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ SYNTAX vs SEMANTICS                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ SYNTAX = Grammar rules                                              │
+│ &#34;Does this follow the language&#39;s structure?&#34;                        │
+│                                                                      │
+│   const x = 5 + 3;     ✓ Valid syntax                              │
+│   const x 5 + = 3      ✗ Invalid syntax (parser catches this)      │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ SEMANTICS = Meaning                                                 │
+│ &#34;Does this actually make sense?&#34;                                    │
+│                                                                      │
+│   const x: u32 = &#34;hello&#34;;    ✓ Valid syntax!                       │
+│                               ✗ Invalid semantics (can&#39;t assign     │
+│                                 string to integer)                  │
+│                                                                      │
+│   const y = a + b;           ✓ Valid syntax!                       │
+│                               ✗ Invalid semantics (a and b don&#39;t   │
+│                                 exist)                              │
+│                                                                      │
+│   const z = foo();           ✓ Valid syntax!                       │
+│                               ✗ Invalid semantics (foo doesn&#39;t     │
+│                                 exist, or returns wrong type)       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">What Sema Catches
+    <div id="what-sema-catches" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-sema-catches" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Sema is responsible for catching ALL of these errors:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ ERRORS THAT SEMA CATCHES                                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. TYPE MISMATCHES                                                  │
+│    ─────────────────                                                │
+│    const x: u32 = &#34;hello&#34;;      // Can&#39;t assign string to u32      │
+│    const y: i8 = 1000;          // 1000 doesn&#39;t fit in i8          │
+│    foo(5) where foo expects string  // Wrong argument type         │
+│                                                                      │
+│ 2. UNDEFINED REFERENCES                                             │
+│    ─────────────────                                                │
+│    const x = y + 1;             // y doesn&#39;t exist                 │
+│    foo();                       // foo doesn&#39;t exist               │
+│    obj.field                    // field doesn&#39;t exist             │
+│                                                                      │
+│ 3. INVALID OPERATIONS                                               │
+│    ─────────────────                                                │
+│    &#34;hello&#34; + &#34;world&#34;            // Can&#39;t add strings (use ++)      │
+│    5 / 0                        // Division by zero (at comptime)  │
+│    arr[100] where arr.len = 10  // Out of bounds (at comptime)     │
+│                                                                      │
+│ 4. CONTROL FLOW ERRORS                                              │
+│    ─────────────────                                                │
+│    fn foo() u32 { }             // Missing return value            │
+│    break; (outside loop)        // Break not in loop               │
+│    unreachable code             // Code after return               │
+│                                                                      │
+│ 5. COMPTIME ERRORS                                                  │
+│    ─────────────────                                                │
+│    comptime { while(true) {} }  // Infinite loop at compile time   │
+│    @compileError(&#34;msg&#34;)         // Explicit error                  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 2: What is Type Checking?
+    <div id="part-2-what-is-type-checking" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-2-what-is-type-checking" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Core Idea
+    <div id="the-core-idea" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-core-idea" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Every expression has a <strong>type</strong>. Type checking ensures types are used correctly:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ EVERY EXPRESSION HAS A TYPE                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Expression              Type                                        │
+│ ──────────────────      ─────────────────                          │
+│ 42                      comptime_int (integer, size unknown)       │
+│ 42.5                    comptime_float                              │
+│ &#34;hello&#34;                 *const [5:0]u8                              │
+│ true                    bool                                        │
+│ x (where x: u32)        u32                                        │
+│ arr[i]                  element type of arr                        │
+│ foo()                   return type of foo                         │
+│ a + b                   common type of a and b                     │
+│ if (c) x else y         common type of x and y                     │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Type Checking Works
+    <div id="how-type-checking-works" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-type-checking-works" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Sema walks through each expression and verifies types match:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ EXAMPLE: const sum: u32 = a + b;                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Step 1: Look up &#39;a&#39;                                                 │
+│         → Found: a is u32                                           │
+│                                                                      │
+│ Step 2: Look up &#39;b&#39;                                                 │
+│         → Found: b is u32                                           │
+│                                                                      │
+│ Step 3: Check &#39;a + b&#39;                                               │
+│         → Can u32 be added to u32? YES                             │
+│         → Result type: u32                                          │
+│                                                                      │
+│ Step 4: Check assignment                                            │
+│         → Target type: u32 (from declaration)                       │
+│         → Source type: u32 (from a + b)                            │
+│         → Do they match? YES                                        │
+│                                                                      │
+│ Result: Type check PASSED ✓                                         │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ EXAMPLE: const sum: u32 = a + &#34;hello&#34;;                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Step 1: Look up &#39;a&#39;                                                 │
+│         → Found: a is u32                                           │
+│                                                                      │
+│ Step 2: Look up &#34;hello&#34;                                             │
+│         → Type: *const [5:0]u8 (string literal)                    │
+│                                                                      │
+│ Step 3: Check &#39;a + &#34;hello&#34;&#39;                                         │
+│         → Can u32 be added to string? NO!                          │
+│         → ERROR: &#34;invalid operands to + operator&#34;                  │
+│                                                                      │
+│ Result: Type check FAILED ✗                                         │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Type Inference
+    <div id="type-inference" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#type-inference" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Sometimes you don&rsquo;t specify the type - Sema figures it out:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ TYPE INFERENCE                                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ EXPLICIT typing (you specify the type):                             │
+│                                                                      │
+│   const x: u32 = 42;    // You said it&#39;s u32                       │
+│                                                                      │
+│ INFERRED typing (Sema figures it out):                              │
+│                                                                      │
+│   const x = @as(u32, 42);   // Sema sees @as, knows it&#39;s u32       │
+│   const y = foo();          // Sema looks at foo&#39;s return type     │
+│   const z = a + b;          // Sema finds common type of a and b   │
+│                                                                      │
+│ How inference works:                                                │
+│                                                                      │
+│   const result = if (condition) value1 else value2;                │
+│                                                                      │
+│   1. Analyze value1 → type T1                                      │
+│   2. Analyze value2 → type T2                                      │
+│   3. Find &#34;peer type&#34; of T1 and T2                                 │
+│      (smallest type that can hold both)                            │
+│   4. result has that peer type                                     │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 3: What is Comptime?
+    <div id="part-3-what-is-comptime" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-3-what-is-comptime" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Revolutionary Idea
+    <div id="the-revolutionary-idea" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-revolutionary-idea" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Zig can run code <strong>at compile time</strong>. This is called &ldquo;comptime&rdquo;:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ RUNTIME vs COMPTIME                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ RUNTIME: Code runs when you execute the program                     │
+│                                                                      │
+│   fn add(a: u32, b: u32) u32 {                                     │
+│       return a + b;  // Computed when program runs                 │
+│   }                                                                  │
+│                                                                      │
+│   pub fn main() void {                                              │
+│       const x = add(5, 3);  // 8 computed at runtime               │
+│   }                                                                  │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ COMPTIME: Code runs during compilation                              │
+│                                                                      │
+│   fn add(a: u32, b: u32) u32 {                                     │
+│       return a + b;                                                 │
+│   }                                                                  │
+│                                                                      │
+│   pub fn main() void {                                              │
+│       const x = comptime add(5, 3);  // 8 computed by COMPILER     │
+│   }                                                                  │
+│                                                                      │
+│   The compiled program just has &#34;const x = 8&#34; - no add() call!     │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">What Can Run at Comptime?
+    <div id="what-can-run-at-comptime" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-can-run-at-comptime" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ COMPTIME CAPABILITIES                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ ✓ CAN do at comptime:                                              │
+│   ─────────────────────                                             │
+│   • Arithmetic: comptime { 5 + 3 }                                 │
+│   • Function calls: comptime { factorial(10) }                     │
+│   • Loops: comptime { for (items) |item| ... }                     │
+│   • Conditionals: comptime { if (x) a else b }                     │
+│   • String operations: comptime { &#34;hello&#34; ++ &#34; world&#34; }            │
+│   • Type manipulation: comptime { @TypeOf(x) }                     │
+│   • Building data structures: comptime { makeArray() }             │
+│                                                                      │
+│ ✗ CANNOT do at comptime:                                           │
+│   ─────────────────────                                             │
+│   • Read files from disk                                            │
+│   • Network operations                                              │
+│   • User input                                                      │
+│   • Anything that depends on runtime state                         │
+│   • Call external C functions                                       │
+│   • Access runtime memory addresses                                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Sema Evaluates Comptime
+    <div id="how-sema-evaluates-comptime" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-sema-evaluates-comptime" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>When Sema sees comptime code, it actually <strong>executes</strong> it:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ COMPTIME EVALUATION EXAMPLE                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Source code:                                                        │
+│                                                                      │
+│   const factorial = comptime blk: {                                │
+│       var result: u64 = 1;                                         │
+│       var i: u64 = 1;                                              │
+│       while (i &lt;= 10) : (i += 1) {                                 │
+│           result *= i;                                              │
+│       }                                                              │
+│       break :blk result;                                           │
+│   };                                                                 │
+│                                                                      │
+│ What Sema does:                                                     │
+│                                                                      │
+│   1. Sees &#34;comptime&#34; block                                         │
+│   2. EXECUTES the code (like an interpreter):                      │
+│      - result = 1, i = 1                                           │
+│      - Loop: result = 1, i = 2                                     │
+│      - Loop: result = 2, i = 3                                     │
+│      - Loop: result = 6, i = 4                                     │
+│      - ... continues ...                                            │
+│      - Loop: result = 3628800, i = 11                              │
+│      - Loop ends (11 &gt; 10)                                         │
+│   3. Returns value: 3628800                                        │
+│                                                                      │
+│ What ends up in the compiled program:                              │
+│                                                                      │
+│   const factorial = 3628800;   // Just the result!                 │
+│                                                                      │
+│ No loop, no multiplication - just the precomputed answer.          │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Branch Quota: Preventing Infinite Loops
+    <div id="branch-quota-preventing-infinite-loops" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#branch-quota-preventing-infinite-loops" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>What if comptime code has an infinite loop? Sema has protection:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ BRANCH QUOTA                                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ The problem:                                                        │
+│                                                                      │
+│   const x = comptime blk: {                                        │
+│       while (true) {}    // Infinite loop!                         │
+│       break :blk 0;      // Never reached                          │
+│   };                                                                 │
+│                                                                      │
+│   Without protection, the compiler would hang forever.             │
+│                                                                      │
+│ The solution: Branch Quota                                          │
+│                                                                      │
+│   Sema counts every branch (loop iteration, if, etc.)              │
+│   Default limit: 1000 branches                                      │
+│                                                                      │
+│   comptime {                                                        │
+│       var i: u32 = 0;                                              │
+│       while (i &lt; 2000) : (i += 1) {  // 2000 iterations            │
+│           // ...                                                    │
+│       }                                                              │
+│   }                                                                  │
+│                                                                      │
+│   Result:                                                           │
+│   error: evaluation exceeded 1000 backwards branches               │
+│   note: use @setEvalBranchQuota() to raise limit                   │
+│                                                                      │
+│ To allow more iterations:                                           │
+│                                                                      │
+│   comptime {                                                        │
+│       @setEvalBranchQuota(10000);  // Raise limit                  │
+│       // ... now can do 10000 branches                             │
+│   }                                                                  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 4: What is Type Coercion?
+    <div id="part-4-what-is-type-coercion" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-4-what-is-type-coercion" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Problem: Types Don&rsquo;t Always Match
+    <div id="the-problem-types-dont-always-match" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-problem-types-dont-always-match" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Sometimes you have a value of one type but need another type:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE COERCION PROBLEM                                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ fn takesU64(x: u64) void { ... }                                   │
+│                                                                      │
+│ const value: u32 = 42;                                             │
+│ takesU64(value);   // ERROR? value is u32, function wants u64!    │
+│                                                                      │
+│ Should this be an error?                                            │
+│                                                                      │
+│ • Strict view: YES! Types must match exactly.                      │
+│ • Practical view: NO! u32 fits perfectly in u64, it&#39;s safe.       │
+│                                                                      │
+│ Zig takes the practical view with SAFE coercions.                  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Safe vs Unsafe Coercions
+    <div id="safe-vs-unsafe-coercions" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#safe-vs-unsafe-coercions" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ COERCION RULES                                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ SAFE (Implicit - Sema does automatically):                         │
+│ ────────────────────────────────────────────                        │
+│                                                                      │
+│   u32 → u64         ✓ Widening (32 bits → 64 bits, no data loss)  │
+│   i16 → i32         ✓ Widening                                     │
+│   u8  → u32         ✓ Widening                                     │
+│   *T  → *const T    ✓ Adding const (more restrictive)             │
+│   T   → ?T          ✓ Value to optional                            │
+│   *[N]T → []T       ✓ Array pointer to slice                       │
+│                                                                      │
+│ UNSAFE (Must be explicit - you need @intCast, etc.):               │
+│ ─────────────────────────────────────────────────────               │
+│                                                                      │
+│   u64 → u32         ✗ Narrowing (might lose data!)                 │
+│   i32 → u32         ✗ Signed to unsigned (negative becomes huge!) │
+│   f64 → u32         ✗ Float to int (loses decimal)                │
+│   *const T → *T     ✗ Removing const (dangerous!)                  │
+│                                                                      │
+│ For unsafe conversions, you must be explicit:                      │
+│                                                                      │
+│   const big: u64 = 1000;                                           │
+│   const small: u32 = @intCast(big);  // You&#39;re taking responsibility
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Sema Does Coercion
+    <div id="how-sema-does-coercion" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-sema-does-coercion" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ COERCION WALKTHROUGH                                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Code: fn foo(x: u64) void { ... }                                  │
+│       const val: u32 = 42;                                         │
+│       foo(val);                                                     │
+│                                                                      │
+│ Step 1: Sema analyzes foo(val)                                     │
+│         → Parameter type expected: u64                              │
+│         → Argument type provided: u32                               │
+│                                                                      │
+│ Step 2: Types don&#39;t match! Try coercion.                           │
+│         → Is u32 → u64 safe?                                       │
+│         → u32 is 32 bits, u64 is 64 bits                          │
+│         → 32 &lt; 64, so this is widening                             │
+│         → YES, safe to coerce!                                     │
+│                                                                      │
+│ Step 3: Insert coercion                                            │
+│         → Original: foo(val)                                       │
+│         → With coercion: foo(@intCast(val))  // Compiler adds this│
+│                                                                      │
+│ Step 4: Generate AIR                                               │
+│         → AIR includes the widening instruction                    │
+│                                                                      │
+│ The programmer writes: foo(val)                                    │
+│ The compiler generates: load val, widen to u64, call foo          │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Peer Type Resolution
+    <div id="peer-type-resolution" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#peer-type-resolution" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>When Sema needs to find a common type:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ PEER TYPE RESOLUTION                                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Problem: What type is the result of `if (cond) a else b`?          │
+│                                                                      │
+│ Example 1:                                                          │
+│   const a: u8 = 10;                                                │
+│   const b: u16 = 20;                                               │
+│   const result = if (cond) a else b;                               │
+│                                                                      │
+│   → a is u8, b is u16                                              │
+│   → Peer type = u16 (can hold both u8 and u16 values)             │
+│   → result is u16                                                   │
+│                                                                      │
+│ Example 2:                                                          │
+│   const a: i32 = -5;                                               │
+│   const b: u32 = 10;                                               │
+│   const result = if (cond) a else b;                               │
+│                                                                      │
+│   → a is i32 (signed), b is u32 (unsigned)                        │
+│   → Peer type = i64 (can hold both i32 range and u32 range)       │
+│   → result is i64                                                   │
+│                                                                      │
+│ Example 3:                                                          │
+│   const a: u32 = 10;                                               │
+│   const b: []const u8 = &#34;hello&#34;;                                   │
+│   const result = if (cond) a else b;                               │
+│                                                                      │
+│   → a is u32, b is string                                          │
+│   → NO peer type exists!                                           │
+│   → ERROR: incompatible types                                      │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 5: What Are Generics?
+    <div id="part-5-what-are-generics" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-5-what-are-generics" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Problem: Code Duplication
+    <div id="the-problem-code-duplication" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-problem-code-duplication" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Without generics, you&rsquo;d write the same code multiple times:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE CODE DUPLICATION PROBLEM                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Without generics:                                                   │
+│                                                                      │
+│   fn maxU32(a: u32, b: u32) u32 {                                  │
+│       return if (a &gt; b) a else b;                                  │
+│   }                                                                  │
+│                                                                      │
+│   fn maxI32(a: i32, b: i32) i32 {                                  │
+│       return if (a &gt; b) a else b;                                  │
+│   }                                                                  │
+│                                                                      │
+│   fn maxU64(a: u64, b: u64) u64 {                                  │
+│       return if (a &gt; b) a else b;                                  │
+│   }                                                                  │
+│                                                                      │
+│   fn maxF32(a: f32, b: f32) f32 {                                  │
+│       return if (a &gt; b) a else b;                                  │
+│   }                                                                  │
+│                                                                      │
+│   // Same logic repeated for EVERY type!                           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Solution: Generic Functions
+    <div id="the-solution-generic-functions" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-solution-generic-functions" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Write it once, use it with any type:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ GENERIC SOLUTION                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ With generics (Zig style):                                          │
+│                                                                      │
+│   fn max(comptime T: type, a: T, b: T) T {                         │
+│       return if (a &gt; b) a else b;                                  │
+│   }                                                                  │
+│                                                                      │
+│ Usage:                                                               │
+│                                                                      │
+│   max(u32, 5, 10)      → returns 10 (u32)                          │
+│   max(i32, -5, 3)      → returns 3 (i32)                           │
+│   max(f64, 1.5, 2.5)   → returns 2.5 (f64)                         │
+│                                                                      │
+│ One function, infinite types!                                       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Sema Handles Generics (Instantiation)
+    <div id="how-sema-handles-generics-instantiation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-sema-handles-generics-instantiation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ GENERIC INSTANTIATION                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ When you call: max(u32, 5, 10)                                     │
+│                                                                      │
+│ Step 1: Sema sees the call                                         │
+│         → Function: max                                             │
+│         → First argument: u32 (this is a TYPE, not a value)        │
+│         → Second argument: 5                                        │
+│         → Third argument: 10                                        │
+│                                                                      │
+│ Step 2: Sema creates a &#34;specialized&#34; version                       │
+│         → Take the generic function body                           │
+│         → Replace every &#34;T&#34; with &#34;u32&#34;                             │
+│         → Type-check this specialized version                      │
+│                                                                      │
+│ Step 3: The specialized function                                   │
+│                                                                      │
+│   // What Sema actually analyzes:                                  │
+│   fn max_u32(a: u32, b: u32) u32 {                                 │
+│       return if (a &gt; b) a else b;                                  │
+│   }                                                                  │
+│                                                                      │
+│ Step 4: Cache the instantiation                                    │
+│         → If max(u32, ...) is called again, reuse this version    │
+│         → Don&#39;t re-analyze!                                        │
+│                                                                      │
+│ If you also call max(f64, 1.5, 2.5):                              │
+│         → Sema creates ANOTHER specialized version for f64        │
+│         → Now there are TWO versions in the compiled code          │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Generics Can Fail Per-Instantiation
+    <div id="generics-can-fail-per-instantiation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#generics-can-fail-per-instantiation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ PER-INSTANTIATION ERRORS                                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ fn max(comptime T: type, a: T, b: T) T {                           │
+│     return if (a &gt; b) a else b;   // Uses &gt; operator               │
+│ }                                                                    │
+│                                                                      │
+│ max(u32, 5, 10)      ✓ Works! u32 supports &gt;                       │
+│ max(f64, 1.5, 2.5)   ✓ Works! f64 supports &gt;                       │
+│ max(bool, true, false) ✗ ERROR! bool doesn&#39;t support &gt;            │
+│                                                                      │
+│ The error only happens when you TRY to use it with bool.           │
+│ The generic function itself is fine.                                │
+│                                                                      │
+│ Error message:                                                      │
+│   error: operator &gt; not defined for type &#39;bool&#39;                    │
+│    --&gt; src/main.zig:2:23                                           │
+│     |                                                               │
+│   2 |     return if (a &gt; b) a else b;                              │
+│     |                   ^                                           │
+│   note: called from here:                                          │
+│    --&gt; src/main.zig:6:5                                            │
+│     |                                                               │
+│   6 |     max(bool, true, false)                                   │
+│     |     ^^^                                                       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 6: Safety Checks
+    <div id="part-6-safety-checks" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-6-safety-checks" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What Are Safety Checks?
+    <div id="what-are-safety-checks" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-are-safety-checks" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Zig inserts checks to catch bugs at runtime:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ SAFETY CHECKS                                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ You write:                                                          │
+│                                                                      │
+│   fn getElement(arr: []u32, index: usize) u32 {                    │
+│       return arr[index];                                            │
+│   }                                                                  │
+│                                                                      │
+│ What Sema generates (in safe mode):                                │
+│                                                                      │
+│   fn getElement(arr: []u32, index: usize) u32 {                    │
+│       // Safety check inserted by Sema:                            │
+│       if (index &gt;= arr.len) {                                      │
+│           @panic(&#34;index out of bounds&#34;);                           │
+│       }                                                              │
+│       return arr[index];                                            │
+│   }                                                                  │
+│                                                                      │
+│ This catches bugs that would otherwise cause memory corruption!    │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Types of Safety Checks
+    <div id="types-of-safety-checks" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#types-of-safety-checks" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ SAFETY CHECK TYPES                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. BOUNDS CHECKS (array/slice access)                              │
+│    ─────────────────────────────────────                           │
+│    arr[i]           → Check: i &lt; arr.len                           │
+│    slice[5..10]     → Check: 10 &lt;= slice.len                       │
+│                                                                      │
+│ 2. NULL CHECKS (optional unwrapping)                               │
+│    ─────────────────────────────────────                           │
+│    optional.?       → Check: optional != null                      │
+│    ptr.*            → Check: ptr is valid                          │
+│                                                                      │
+│ 3. OVERFLOW CHECKS (arithmetic)                                    │
+│    ─────────────────────────────────────                           │
+│    a + b            → Check: result fits in type                   │
+│    a * b            → Check: no overflow                           │
+│    a - b            → Check: no underflow (for unsigned)           │
+│                                                                      │
+│ 4. ALIGNMENT CHECKS (pointer casting)                              │
+│    ─────────────────────────────────────                           │
+│    @ptrCast(ptr)    → Check: alignment is correct                  │
+│                                                                      │
+│ 5. UNREACHABLE CHECKS                                              │
+│    ─────────────────────────────────────                           │
+│    unreachable      → Panic if reached                             │
+│    else =&gt; unreachable (in switch)                                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Safe Mode vs Release Mode
+    <div id="safe-mode-vs-release-mode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#safe-mode-vs-release-mode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ BUILD MODES                                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Debug (default):                                                    │
+│   ✓ All safety checks enabled                                      │
+│   ✓ No optimizations                                               │
+│   → Catches bugs, slow                                              │
+│                                                                      │
+│ ReleaseSafe:                                                        │
+│   ✓ All safety checks enabled                                      │
+│   ✓ Optimizations enabled                                          │
+│   → Catches bugs, medium speed                                      │
+│                                                                      │
+│ ReleaseFast:                                                        │
+│   ✗ Safety checks DISABLED                                         │
+│   ✓ Maximum optimizations                                          │
+│   → Maximum speed, but undefined behavior if bugs exist            │
+│                                                                      │
+│ ReleaseSmall:                                                       │
+│   ✗ Safety checks DISABLED                                         │
+│   ✓ Optimizations for size                                         │
+│   → Smallest binary, same risks as ReleaseFast                    │
+│                                                                      │
+│ You can also control per-scope:                                    │
+│                                                                      │
+│   @setRuntimeSafety(false);  // Disable for this scope             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 7: The InternPool
+    <div id="part-7-the-internpool" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-7-the-internpool" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Problem: Duplicate Types
+    <div id="the-problem-duplicate-types" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-problem-duplicate-types" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Types are compared frequently. Without optimization:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE DUPLICATE TYPE PROBLEM                                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Code:                                                                │
+│   const a: u32 = 5;                                                │
+│   const b: u32 = 10;                                               │
+│   const c: u32 = a + b;                                            │
+│                                                                      │
+│ Without interning (wasteful):                                       │
+│                                                                      │
+│   a.type = Type{ .tag = .int, .bits = 32, .signed = false }       │
+│   b.type = Type{ .tag = .int, .bits = 32, .signed = false }       │
+│   c.type = Type{ .tag = .int, .bits = 32, .signed = false }       │
+│                                                                      │
+│   Three separate allocations for THE SAME type!                    │
+│                                                                      │
+│ To compare types:                                                   │
+│   a.type == b.type?                                                │
+│   → Must compare every field: tag, bits, signed...                 │
+│   → Slow!                                                           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Solution: Intern Pool
+    <div id="the-solution-intern-pool" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-solution-intern-pool" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Store each unique type/value ONCE, refer to it by index:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE INTERN POOL SOLUTION                                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ InternPool (shared storage):                                        │
+│                                                                      │
+│   ┌───────┬────────────────────────────────────────────────────┐   │
+│   │ Index │ Value                                               │   │
+│   ├───────┼────────────────────────────────────────────────────┤   │
+│   │   0   │ Type{ .tag = .void }                               │   │
+│   │   1   │ Type{ .tag = .bool }                               │   │
+│   │   2   │ Type{ .tag = .int, .bits = 8, .signed = false }   │   │  // u8
+│   │   3   │ Type{ .tag = .int, .bits = 16, .signed = false }  │   │  // u16
+│   │   4   │ Type{ .tag = .int, .bits = 32, .signed = false }  │   │  // u32
+│   │   5   │ Type{ .tag = .int, .bits = 32, .signed = true }   │   │  // i32
+│   │  ...  │ ...                                                 │   │
+│   └───────┴────────────────────────────────────────────────────┘   │
+│                                                                      │
+│ Now variables just store the INDEX:                                 │
+│                                                                      │
+│   a.type = 4   // Points to u32 in the pool                        │
+│   b.type = 4   // Points to SAME u32                               │
+│   c.type = 4   // Points to SAME u32                               │
+│                                                                      │
+│ To compare types:                                                   │
+│   a.type == b.type?                                                │
+│   → 4 == 4?                                                        │
+│   → YES! (just compare two integers)                               │
+│   → FAST!                                                           │
+│                                                                      │
+│ Benefits:                                                            │
+│   • Type comparison is just integer comparison (O(1))              │
+│   • Memory saved by not duplicating identical types                │
+│   • Cache-friendly (types stored contiguously)                     │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Values Are Interned Too
+    <div id="values-are-interned-too" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#values-are-interned-too" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ VALUE INTERNING                                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Comptime values are also interned:                                  │
+│                                                                      │
+│   const x = 42;                                                     │
+│   const y = 42;                                                     │
+│   const z = 42;                                                     │
+│                                                                      │
+│ InternPool:                                                         │
+│   ┌───────┬────────────────────────────────────────────────────┐   │
+│   │  100  │ Value{ .int = 42, .type = comptime_int }           │   │
+│   └───────┴────────────────────────────────────────────────────┘   │
+│                                                                      │
+│   x.value = 100                                                     │
+│   y.value = 100   // Same index!                                   │
+│   z.value = 100   // Same index!                                   │
+│                                                                      │
+│ String literals too:                                                │
+│                                                                      │
+│   const a = &#34;hello&#34;;                                               │
+│   const b = &#34;hello&#34;;                                               │
+│                                                                      │
+│   Both point to the SAME interned string!                          │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 8: From ZIR to AIR
+    <div id="part-8-from-zir-to-air" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-8-from-zir-to-air" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Transformation
+    <div id="the-transformation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-transformation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Sema transforms untyped ZIR into typed AIR:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ ZIR → AIR TRANSFORMATION                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ ZIR (input to Sema):                                               │
+│   Untyped, doesn&#39;t know sizes, doesn&#39;t know validity               │
+│                                                                      │
+│   %1 = param(0)              // Some parameter                     │
+│   %2 = param(1)              // Another parameter                  │
+│   %3 = add(%1, %2)           // Add them (somehow?)                │
+│   %4 = ret(%3)               // Return something                   │
+│                                                                      │
+│                        ↓ SEMA ↓                                     │
+│                                                                      │
+│ AIR (output from Sema):                                            │
+│   Fully typed, sized, validated                                     │
+│                                                                      │
+│   %1 = arg(0, type=u32)      // Parameter 0 is u32                │
+│   %2 = arg(1, type=u32)      // Parameter 1 is u32                │
+│   %3 = add_u32(%1, %2)       // Add two u32s, result is u32       │
+│   %4 = ret_u32(%3)           // Return a u32                       │
+│                                                                      │
+│ The AIR knows:                                                      │
+│   ✓ Exact types of everything                                      │
+│   ✓ Exact sizes in bytes                                           │
+│   ✓ Which specific machine operations to use                       │
+│   ✓ All operations have been validated                             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Complete Example
+    <div id="complete-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#complete-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ COMPLETE SEMA WALKTHROUGH                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Source code:                                                        │
+│                                                                      │
+│   fn add(a: u32, b: u32) u32 {                                     │
+│       return a + b;                                                 │
+│   }                                                                  │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ ZIR (from AstGen):                                                  │
+│                                                                      │
+│   %0 = func_decl(&#34;add&#34;, ...)                                       │
+│   %1 = block {                                                      │
+│       %2 = param(0)                                                │
+│       %3 = param(1)                                                │
+│       %4 = add(%2, %3)                                             │
+│       %5 = ret(%4)                                                 │
+│   }                                                                  │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ Sema processing:                                                    │
+│                                                                      │
+│ Step 1: Analyze function signature                                  │
+│         → Parameter &#34;a&#34;: look up type annotation &#34;u32&#34;             │
+│         → Resolve &#34;u32&#34;: it&#39;s the 32-bit unsigned integer type    │
+│         → Parameter &#34;b&#34;: same, it&#39;s u32                            │
+│         → Return type: look up &#34;u32&#34;, same type                    │
+│         → Create function type: fn(u32, u32) u32                   │
+│                                                                      │
+│ Step 2: Analyze %2 = param(0)                                      │
+│         → This is the first parameter                               │
+│         → From step 1, we know it&#39;s type u32                       │
+│         → AIR: %2 has type u32                                     │
+│                                                                      │
+│ Step 3: Analyze %3 = param(1)                                      │
+│         → Second parameter, type u32                                │
+│         → AIR: %3 has type u32                                     │
+│                                                                      │
+│ Step 4: Analyze %4 = add(%2, %3)                                   │
+│         → Left operand: %2 is u32                                  │
+│         → Right operand: %3 is u32                                 │
+│         → Can u32 be added to u32? YES                            │
+│         → Result type: u32                                         │
+│         → AIR: %4 = add(u32, %2, %3), type = u32                  │
+│                                                                      │
+│ Step 5: Analyze %5 = ret(%4)                                       │
+│         → Return value: %4 is u32                                  │
+│         → Expected return type: u32 (from function signature)      │
+│         → Do they match? YES                                       │
+│         → AIR: %5 = ret(%4)                                        │
+│                                                                      │
+│ Step 6: All checks passed!                                         │
+│         → Generate AIR for this function                           │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ AIR output:                                                         │
+│                                                                      │
+│   function &#34;add&#34;: fn(u32, u32) u32 {                               │
+│       %0 = arg(0)          // type: u32                            │
+│       %1 = arg(1)          // type: u32                            │
+│       %2 = add(%0, %1)     // type: u32                            │
+│       ret %2                                                        │
+│   }                                                                  │
+│                                                                      │
+│ Ready for code generation!                                          │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 9: Error Messages
+    <div id="part-9-error-messages" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-9-error-messages" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Good Error Messages Are Critical
+    <div id="good-error-messages-are-critical" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#good-error-messages-are-critical" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Sema produces detailed, helpful error messages:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ ERROR MESSAGE QUALITY                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ BAD error (unhelpful):                                              │
+│                                                                      │
+│   error: type mismatch                                              │
+│                                                                      │
+│   (What types? Where? What did I do wrong?)                        │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ GOOD error (Zig style):                                             │
+│                                                                      │
+│   error: expected type &#39;u32&#39;, found &#39;i32&#39;                          │
+│    --&gt; src/main.zig:10:15                                          │
+│     |                                                               │
+│   9 |  fn foo(x: u32) void {}                                      │
+│     |            --- expected due to this parameter type           │
+│  10 |  foo(my_signed_value);                                       │
+│     |      ^^^^^^^^^^^^^^^ expected &#39;u32&#39;, found &#39;i32&#39;             │
+│     |                                                               │
+│   note: signed-to-unsigned conversion is not implicit              │
+│   note: consider using @intCast if this is intentional             │
+│                                                                      │
+│ This tells you:                                                     │
+│   ✓ Exactly what&#39;s wrong                                           │
+│   ✓ Exactly where it is                                            │
+│   ✓ Why the expected type is what it is                            │
+│   ✓ How to fix it                                                  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Sema Tracks Source Locations
+    <div id="how-sema-tracks-source-locations" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-sema-tracks-source-locations" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ SOURCE LOCATION CHAIN                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Every AIR instruction traces back to source:                       │
+│                                                                      │
+│   AIR instruction                                                   │
+│        ↓                                                            │
+│   ZIR instruction (has src_node)                                   │
+│        ↓                                                            │
+│   AST node (has main_token)                                        │
+│        ↓                                                            │
+│   Token (has start position)                                       │
+│        ↓                                                            │
+│   Source file + line + column                                      │
+│                                                                      │
+│ When an error occurs, Sema walks this chain to build the message.  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 10: The Big Picture
+    <div id="part-10-the-big-picture" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-10-the-big-picture" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Where Sema Fits
+    <div id="where-sema-fits" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#where-sema-fits" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE COMPILATION PIPELINE                                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                      SOURCE CODE                             │  │
+│   │         fn add(a: u32, b: u32) u32 { return a+b; }          │  │
+│   └────────────────────────┬────────────────────────────────────┘  │
+│                            │                                        │
+│                            ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                       TOKENIZER                              │  │
+│   │  Breaks into tokens                                          │  │
+│   └────────────────────────┬────────────────────────────────────┘  │
+│                            │                                        │
+│                            ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                        PARSER                                │  │
+│   │  Builds AST (checks syntax)                                  │  │
+│   └────────────────────────┬────────────────────────────────────┘  │
+│                            │                                        │
+│                            ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                        ASTGEN                                │  │
+│   │  Converts to ZIR (untyped instructions)                     │  │
+│   └────────────────────────┬────────────────────────────────────┘  │
+│                            │                                        │
+│                            ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                         SEMA                  ◄── YOU ARE HERE│
+│   │                                                              │  │
+│   │  • Type checking &amp; inference                                 │  │
+│   │  • Comptime evaluation                                       │  │
+│   │  • Generic instantiation                                     │  │
+│   │  • Coercion insertion                                        │  │
+│   │  • Safety check generation                                   │  │
+│   │  • Error detection &amp; reporting                               │  │
+│   │                                                              │  │
+│   │  Input: ZIR (untyped)                                       │  │
+│   │  Output: AIR (fully typed)                                  │  │
+│   └────────────────────────┬────────────────────────────────────┘  │
+│                            │                                        │
+│                            ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                       CODEGEN                                │  │
+│   │  Generates machine code from AIR                            │  │
+│   └─────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Summary: What Sema Does
+    <div id="summary-what-sema-does" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#summary-what-sema-does" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ SEMA KEY POINTS                                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. TYPE CHECKING                                                    │
+│    Verifies every operation uses compatible types                  │
+│    Catches type mismatches before runtime                          │
+│                                                                      │
+│ 2. TYPE INFERENCE                                                   │
+│    Figures out types you didn&#39;t explicitly specify                 │
+│    Uses context to determine the right type                        │
+│                                                                      │
+│ 3. COMPTIME EVALUATION                                              │
+│    Actually executes compile-time code                             │
+│    Replaces comptime expressions with their results                │
+│                                                                      │
+│ 4. GENERIC INSTANTIATION                                            │
+│    Creates specialized versions of generic functions               │
+│    Type-checks each instantiation separately                       │
+│                                                                      │
+│ 5. COERCION                                                         │
+│    Automatically converts between compatible types                 │
+│    Inserts necessary conversion instructions                       │
+│                                                                      │
+│ 6. SAFETY CHECKS                                                    │
+│    Inserts runtime checks for bounds, overflow, null, etc.        │
+│    Can be disabled for maximum performance                         │
+│                                                                      │
+│ 7. INTERNING                                                        │
+│    Deduplicates types and values                                   │
+│    Makes type comparison fast (just compare indices)               │
+│                                                                      │
+│ 8. ERROR REPORTING                                                  │
+│    Produces detailed, actionable error messages                    │
+│    Points to exact source locations                                │
+│                                                                      │
+│ OUTPUT: AIR (Analyzed Intermediate Representation)                 │
+│   → Fully typed                                                    │
+│   → All operations validated                                       │
+│   → Ready for code generation                                      │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Conclusion
+    <div id="conclusion" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#conclusion" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Sema is the heart of the Zig compiler. It&rsquo;s where:</p>
+<ul>
+<li><strong>Types are verified</strong> - ensuring your code is type-safe</li>
+<li><strong>Comptime runs</strong> - executing code at compile time for metaprogramming</li>
+<li><strong>Generics work</strong> - creating specialized versions for each type combination</li>
+<li><strong>Safety is inserted</strong> - catching bugs before they cause damage</li>
+<li><strong>Errors are reported</strong> - with helpful, precise messages</li>
+</ul>
+<p>At 37,763 lines, Sema is by far the largest component of the compiler, and for good reason - semantic analysis is where the real intelligence lives.</p>
+<p>The output of Sema is <strong>AIR</strong> (Analyzed Intermediate Representation), which is fully typed and validated. In the next article, we&rsquo;ll explore AIR and how it gets turned into actual machine code.</p>
+<hr>
+<p><strong>Previous</strong>: <a
+  href="./04-zir-generation.md">Part 4: ZIR Generation</a>
+<strong>Next</strong>: <a
+  href="./06-air-codegen.md">Part 6: AIR and Code Generation</a></p>
+<p><strong>Series Index</strong>:</p>
+<ol>
+<li><a
+  href="./01-bootstrap-process.md">Bootstrap Process</a></li>
+<li><a
+  href="./02-tokenizer.md">Tokenizer</a></li>
+<li><a
+  href="./03-parser-ast.md">Parser and AST</a></li>
+<li><a
+  href="./04-zir-generation.md">ZIR Generation</a></li>
+<li><strong>Semantic Analysis</strong> (this article)</li>
+<li><a
+  href="./06-air-codegen.md">AIR and Code Generation</a></li>
+<li><a
+  href="./07-linking.md">Linking</a></li>
+</ol>
+
+          
+          
+          
+        </div>
+        
+        
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_drafts/05-sema.md"
+          data-oid-likes="likes_drafts/05-sema.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+            <a
+              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/06-air-codegen/">
+              <span class="leading-6">
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Zig Compiler Internals Part 6: AIR and Code Generation
+              </span>
+            </a>
+            
+              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time>
+              </span>
+            
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+            <a
+              class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/04-zir-generation/">
+              <span class="leading-6">
+                Zig Compiler Internals Part 4: ZIR Generation&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+              </span>
+            </a>
+            
+              <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time>
+              </span>
+            
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Yohai
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:1313/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>

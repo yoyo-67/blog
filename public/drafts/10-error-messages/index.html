@@ -1,0 +1,2575 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Part 10: Error Messages - The User Interface of a Compiler &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Part 10: Error Messages - The User Interface of a Compiler &middot; Yohai&#39;s Blog">
+  
+
+  
+  
+  
+  
+  
+  <link rel="canonical" href="http://localhost:1313/drafts/10-error-messages/">
+  
+
+  
+  
+    <meta name="author" content="Yohai">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:1313/drafts/10-error-messages/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Part 10: Error Messages - The User Interface of a Compiler">
+  <meta property="og:description" content="Part 10: Error Messages - The User Interface of a Compiler # In this final article, we’ll explore how Zig produces its famously helpful error messages. Error messages are the primary way a compiler communicates with developers - they’re the “user interface” of a compiler. Zig takes this seriously.
+Part 1: Why Error Messages Matter # The Developer Experience # You spend more time reading error messages than you might think:">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="drafts">
+    <meta property="article:published_time" content="2025-12-17T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-17T00:00:00+00:00">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Part 10: Error Messages - The User Interface of a Compiler">
+  <meta name="twitter:description" content="Part 10: Error Messages - The User Interface of a Compiler # In this final article, we’ll explore how Zig produces its famously helpful error messages. Error messages are the primary way a compiler communicates with developers - they’re the “user interface” of a compiler. Zig takes this seriously.
+Part 1: Why Error Messages Matter # The Developer Experience # You spend more time reading error messages than you might think:">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Drafts",
+    "name": "Part 10: Error Messages - The User Interface of a Compiler",
+    "headline": "Part 10: Error Messages - The User Interface of a Compiler",
+    
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003ePart 10: Error Messages - The User Interface of a Compiler\n    \u003cdiv id=\u0022part-10-error-messages---the-user-interface-of-a-compiler\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#part-10-error-messages---the-user-interface-of-a-compiler\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eIn this final article, we\u0026rsquo;ll explore how Zig produces its famously helpful error messages. Error messages are the primary way a compiler communicates with developers - they\u0026rsquo;re the \u0026ldquo;user interface\u0026rdquo; of a compiler. Zig takes this seriously.\u003c\/p\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003ePart 1: Why Error Messages Matter\n    \u003cdiv id=\u0022part-1-why-error-messages-matter\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#part-1-why-error-messages-matter\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\n\u003ch3 class=\u0022relative group\u0022\u003eThe Developer Experience\n    \u003cdiv id=\u0022the-developer-experience\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-developer-experience\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h3\u003e\n\u003cp\u003eYou spend more time reading error messages than you might think:\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:1313/drafts/10-error-messages/",
+    "author" : {
+      "@type": "Person",
+      "name": "Yohai"
+    },
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-17T00:00:00\u002b00:00",
+    "datePublished": "2025-12-17T00:00:00\u002b00:00",
+    
+    "dateModified": "2025-12-17T00:00:00\u002b00:00",
+    
+    
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "3744"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          Yohai&rsquo;s Blog
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/drafts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Drafts"
+  title="Drafts">
+  
+  
+    <p class="text-base font-medium">
+      Drafts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/drafts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Drafts"
+    title="Drafts">
+    
+    
+      <p class="text-bg font-bg">
+        Drafts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >Yohai&#39;s Blog</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/"
+      >Drafts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/10-error-messages/"
+      >Part 10: Error Messages - The User Interface of a Compiler</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Part 10: Error Messages - The User Interface of a Compiler
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>3744 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">18 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Yohai
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#part-1-why-error-messages-matter">Part 1: Why Error Messages Matter</a>
+      <ul>
+        <li><a href="#the-developer-experience">The Developer Experience</a></li>
+        <li><a href="#bad-error-messages-c-example">Bad Error Messages (C++ Example)</a></li>
+        <li><a href="#good-error-messages-zig">Good Error Messages (Zig)</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-the-anatomy-of-a-zig-error">Part 2: The Anatomy of a Zig Error</a>
+      <ul>
+        <li><a href="#what-makes-up-an-error">What Makes Up an Error?</a></li>
+        <li><a href="#the-sourcelocation-struct">The SourceLocation Struct</a></li>
+        <li><a href="#how-the-caret-display-works">How the Caret Display Works</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-source-location-tracking-through-the-pipeline">Part 3: Source Location Tracking Through the Pipeline</a>
+      <ul>
+        <li><a href="#how-locations-flow-through-compilation">How Locations Flow Through Compilation</a></li>
+        <li><a href="#token-location-storage">Token Location Storage</a></li>
+        <li><a href="#ast-node-token-references">AST Node Token References</a></li>
+        <li><a href="#zir-source-tracking">ZIR Source Tracking</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-error-generation-at-each-stage">Part 4: Error Generation at Each Stage</a>
+      <ul>
+        <li><a href="#stage-1-tokenizer-errors">Stage 1: Tokenizer Errors</a></li>
+        <li><a href="#stage-2-parser-errors">Stage 2: Parser Errors</a></li>
+        <li><a href="#stage-3-astgen-zir-errors">Stage 3: AstGen (ZIR) Errors</a></li>
+        <li><a href="#stage-4-sema-errors">Stage 4: Sema Errors</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-the-errorbundle-system">Part 5: The ErrorBundle System</a>
+      <ul>
+        <li><a href="#why-a-bundle">Why a Bundle?</a></li>
+        <li><a href="#the-wip-work-in-progress-builder">The Wip (Work-in-Progress) Builder</a></li>
+        <li><a href="#adding-an-error">Adding an Error</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-rendering-error-messages">Part 6: Rendering Error Messages</a>
+      <ul>
+        <li><a href="#the-rendering-process">The Rendering Process</a></li>
+        <li><a href="#color-coding">Color Coding</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-reference-traces">Part 7: Reference Traces</a>
+      <ul>
+        <li><a href="#what-are-reference-traces">What Are Reference Traces?</a></li>
+        <li><a href="#how-reference-traces-work">How Reference Traces Work</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-notes-and-contextual-help">Part 8: Notes and Contextual Help</a>
+      <ul>
+        <li><a href="#adding-helpful-notes">Adding Helpful Notes</a></li>
+        <li><a href="#duplicate-error-suppression">Duplicate Error Suppression</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-comptime-error-messages">Part 9: Comptime Error Messages</a>
+      <ul>
+        <li><a href="#the-challenge-of-comptime-errors">The Challenge of Comptime Errors</a></li>
+        <li><a href="#comptime-stack-traces">Comptime Stack Traces</a></li>
+        <li><a href="#compilelog-for-debugging">@compileLog for Debugging</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-design-principles">Part 10: Design Principles</a>
+      <ul>
+        <li><a href="#what-makes-zig-errors-good">What Makes Zig Errors Good?</a></li>
+        <li><a href="#comparison-good-vs-bad">Comparison: Good vs Bad</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-11-the-complete-picture">Part 11: The Complete Picture</a>
+      <ul>
+        <li><a href="#error-messages-tie-everything-together">Error Messages Tie Everything Together</a></li>
+        <li><a href="#the-full-series">The Full Series</a></li>
+      </ul>
+    </li>
+    <li><a href="#summary">Summary</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#part-1-why-error-messages-matter">Part 1: Why Error Messages Matter</a>
+      <ul>
+        <li><a href="#the-developer-experience">The Developer Experience</a></li>
+        <li><a href="#bad-error-messages-c-example">Bad Error Messages (C++ Example)</a></li>
+        <li><a href="#good-error-messages-zig">Good Error Messages (Zig)</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-the-anatomy-of-a-zig-error">Part 2: The Anatomy of a Zig Error</a>
+      <ul>
+        <li><a href="#what-makes-up-an-error">What Makes Up an Error?</a></li>
+        <li><a href="#the-sourcelocation-struct">The SourceLocation Struct</a></li>
+        <li><a href="#how-the-caret-display-works">How the Caret Display Works</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-source-location-tracking-through-the-pipeline">Part 3: Source Location Tracking Through the Pipeline</a>
+      <ul>
+        <li><a href="#how-locations-flow-through-compilation">How Locations Flow Through Compilation</a></li>
+        <li><a href="#token-location-storage">Token Location Storage</a></li>
+        <li><a href="#ast-node-token-references">AST Node Token References</a></li>
+        <li><a href="#zir-source-tracking">ZIR Source Tracking</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-error-generation-at-each-stage">Part 4: Error Generation at Each Stage</a>
+      <ul>
+        <li><a href="#stage-1-tokenizer-errors">Stage 1: Tokenizer Errors</a></li>
+        <li><a href="#stage-2-parser-errors">Stage 2: Parser Errors</a></li>
+        <li><a href="#stage-3-astgen-zir-errors">Stage 3: AstGen (ZIR) Errors</a></li>
+        <li><a href="#stage-4-sema-errors">Stage 4: Sema Errors</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-the-errorbundle-system">Part 5: The ErrorBundle System</a>
+      <ul>
+        <li><a href="#why-a-bundle">Why a Bundle?</a></li>
+        <li><a href="#the-wip-work-in-progress-builder">The Wip (Work-in-Progress) Builder</a></li>
+        <li><a href="#adding-an-error">Adding an Error</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-rendering-error-messages">Part 6: Rendering Error Messages</a>
+      <ul>
+        <li><a href="#the-rendering-process">The Rendering Process</a></li>
+        <li><a href="#color-coding">Color Coding</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-reference-traces">Part 7: Reference Traces</a>
+      <ul>
+        <li><a href="#what-are-reference-traces">What Are Reference Traces?</a></li>
+        <li><a href="#how-reference-traces-work">How Reference Traces Work</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-notes-and-contextual-help">Part 8: Notes and Contextual Help</a>
+      <ul>
+        <li><a href="#adding-helpful-notes">Adding Helpful Notes</a></li>
+        <li><a href="#duplicate-error-suppression">Duplicate Error Suppression</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-comptime-error-messages">Part 9: Comptime Error Messages</a>
+      <ul>
+        <li><a href="#the-challenge-of-comptime-errors">The Challenge of Comptime Errors</a></li>
+        <li><a href="#comptime-stack-traces">Comptime Stack Traces</a></li>
+        <li><a href="#compilelog-for-debugging">@compileLog for Debugging</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-design-principles">Part 10: Design Principles</a>
+      <ul>
+        <li><a href="#what-makes-zig-errors-good">What Makes Zig Errors Good?</a></li>
+        <li><a href="#comparison-good-vs-bad">Comparison: Good vs Bad</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-11-the-complete-picture">Part 11: The Complete Picture</a>
+      <ul>
+        <li><a href="#error-messages-tie-everything-together">Error Messages Tie Everything Together</a></li>
+        <li><a href="#the-full-series">The Full Series</a></li>
+      </ul>
+    </li>
+    <li><a href="#summary">Summary</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+
+        <div class="article-content max-w-prose mb-20">
+          
+<h1 class="relative group">Part 10: Error Messages - The User Interface of a Compiler
+    <div id="part-10-error-messages---the-user-interface-of-a-compiler" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-10-error-messages---the-user-interface-of-a-compiler" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p>In this final article, we&rsquo;ll explore how Zig produces its famously helpful error messages. Error messages are the primary way a compiler communicates with developers - they&rsquo;re the &ldquo;user interface&rdquo; of a compiler. Zig takes this seriously.</p>
+<hr>
+
+<h2 class="relative group">Part 1: Why Error Messages Matter
+    <div id="part-1-why-error-messages-matter" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-1-why-error-messages-matter" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Developer Experience
+    <div id="the-developer-experience" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-developer-experience" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>You spend more time reading error messages than you might think:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                  A TYPICAL DEVELOPMENT CYCLE                 │
+│                                                              │
+│   Write code ──► Compile ──► Read errors ──► Fix ──► Repeat │
+│                      │              │                        │
+│                      └──────────────┘                        │
+│                       (this loop happens MANY times)         │
+│                                                              │
+│   Good error messages = faster iteration                     │
+│   Bad error messages = frustration + time wasted             │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Bad Error Messages (C++ Example)
+    <div id="bad-error-messages-c-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#bad-error-messages-c-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// You wrote:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;&gt;</span> <span class="n">items</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">items</span><span class="p">.</span><span class="n">push_back</span><span class="p">({</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#34;hello&#34;</span><span class="p">});</span>  <span class="c1">// Typo: should be insert
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// You get (GCC, simplified):
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="nl">error</span><span class="p">:</span> <span class="n">no</span> <span class="n">matching</span> <span class="n">function</span> <span class="k">for</span> <span class="n">call</span> <span class="n">to</span> <span class="err">&#39;</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">__cxx11</span><span class="o">::</span><span class="n">basic_string</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">&gt;&gt;&gt;::</span><span class="n">push_back</span><span class="p">(</span><span class="o">&lt;</span><span class="n">brace</span><span class="o">-</span><span class="n">enclosed</span>
+</span></span><span class="line"><span class="cl"><span class="n">initializer</span> <span class="n">list</span><span class="o">&gt;</span><span class="p">)</span><span class="err">&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="nl">note</span><span class="p">:</span> <span class="nl">candidate</span><span class="p">:</span> <span class="err">&#39;</span><span class="kt">void</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">_Tp</span><span class="p">,</span> <span class="n">_Alloc</span><span class="o">&gt;::</span><span class="n">push_back</span><span class="p">(</span><span class="k">const</span>
+</span></span><span class="line"><span class="cl"><span class="n">value_type</span><span class="o">&amp;</span><span class="p">)</span> <span class="p">[</span><span class="n">with</span> <span class="n">_Tp</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">__cxx11</span><span class="o">::</span><span class="n">basic_string</span><span class="o">&lt;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">char</span><span class="o">&gt;&gt;</span><span class="p">;</span> <span class="n">_Alloc</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">allocator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">__cxx11</span><span class="o">::</span>
+</span></span><span class="line"><span class="cl"><span class="n">basic_string</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">&gt;&gt;&gt;</span><span class="p">;</span> <span class="n">value_type</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">__cxx11</span><span class="o">::</span>
+</span></span><span class="line"><span class="cl"><span class="n">basic_string</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">&gt;&gt;</span><span class="p">]</span><span class="err">&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="nl">note</span><span class="p">:</span> <span class="nl">candidate</span><span class="p">:</span> <span class="err">&#39;</span><span class="kt">void</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">_Tp</span><span class="p">,</span> <span class="n">_Alloc</span><span class="o">&gt;::</span><span class="n">push_back</span><span class="p">(</span><span class="n">value_type</span><span class="o">&amp;&amp;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">[</span><span class="n">with</span> <span class="n">_Tp</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">__cxx11</span><span class="o">::</span><span class="n">basic_string</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">&gt;&gt;</span><span class="p">;</span> <span class="p">...]</span>
+</span></span><span class="line"><span class="cl"><span class="p">...</span> <span class="p">(</span><span class="mi">100</span> <span class="n">more</span> <span class="n">lines</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>What does this even mean?</p>
+
+<h3 class="relative group">Good Error Messages (Zig)
+    <div id="good-error-messages-zig" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#good-error-messages-zig" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// You wrote:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">x</span><span class="o">:</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">5</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// You get:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">error</span><span class="o">:</span><span class="w"> </span><span class="kt">type</span><span class="w"> </span><span class="err">&#39;</span><span class="kt">u8</span><span class="err">&#39;</span><span class="w"> </span><span class="n">cannot</span><span class="w"> </span><span class="n">represent</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="err">&#39;</span><span class="o">-</span><span class="mi">5</span><span class="err">&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="p">.</span><span class="n">zig</span><span class="o">:</span><span class="mi">3</span><span class="o">:</span><span class="mi">15</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">x</span><span class="o">:</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">5</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">               </span><span class="o">^~</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">note</span><span class="o">:</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">unsigned</span><span class="w"> </span><span class="kt">type</span><span class="w"> </span><span class="n">cannot</span><span class="w"> </span><span class="n">represent</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">negative</span><span class="w"> </span><span class="n">value</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Clear. Actionable. Points exactly to the problem.</p>
+<hr>
+
+<h2 class="relative group">Part 2: The Anatomy of a Zig Error
+    <div id="part-2-the-anatomy-of-a-zig-error" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-2-the-anatomy-of-a-zig-error" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What Makes Up an Error?
+    <div id="what-makes-up-an-error" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-makes-up-an-error" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>std/zig/ErrorBundle.zig</code>, every error has these components:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    ERROR MESSAGE STRUCTURE                   │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  SourceLocation                                      │    │
+│  │  ├── src_path: &#34;src/main.zig&#34;                       │    │
+│  │  ├── line: 3                                        │    │
+│  │  ├── column: 15                                     │    │
+│  │  ├── span_start: byte offset of &#39;~&#39; start          │    │
+│  │  ├── span_main: byte offset of &#39;^&#39; (main error)    │    │
+│  │  ├── span_end: byte offset of &#39;~&#39; end              │    │
+│  │  ├── source_line: &#34;const x: u8 = -5;&#34;              │    │
+│  │  └── reference_trace: (where this was referenced)   │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  ErrorMessage                                        │    │
+│  │  ├── msg: &#34;type &#39;u8&#39; cannot represent &#39;-5&#39;&#34;         │    │
+│  │  ├── count: 1 (or N if duplicate)                   │    │
+│  │  ├── src_loc: reference to SourceLocation           │    │
+│  │  └── notes: [                                        │    │
+│  │        &#34;an unsigned type cannot represent negative&#34;  │    │
+│  │      ]                                               │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The SourceLocation Struct
+    <div id="the-sourcelocation-struct" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-sourcelocation-struct" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From the actual source code (<code>ErrorBundle.zig:52</code>):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">SourceLocation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">src_path</span><span class="o">:</span><span class="w"> </span><span class="n">String</span><span class="p">,</span><span class="w">           </span><span class="c1">// File path
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">line</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">                  </span><span class="c1">// Line number (0-indexed)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">column</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">                </span><span class="c1">// Column number (0-indexed)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">span_start</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">            </span><span class="c1">// Byte offset of first &#39;~&#39;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">span_main</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">             </span><span class="c1">// Byte offset of &#39;^&#39;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">span_end</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">              </span><span class="c1">// Byte offset after last &#39;~&#39;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">source_line</span><span class="o">:</span><span class="w"> </span><span class="n">OptionalString</span><span class="p">,</span><span class="w"> </span><span class="c1">// The actual source line text
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">reference_trace_len</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">    </span><span class="c1">// For &#34;referenced by:&#34; traces
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">How the Caret Display Works
+    <div id="how-the-caret-display-works" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-the-caret-display-works" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    CARET DISPLAY LOGIC                       │
+│                                                              │
+│   Source line:  const x: u8 = -5;                           │
+│   Display:                    ^~                             │
+│                               │                              │
+│                               └── span_main (the &#39;^&#39;)        │
+│                                                              │
+│   span_start ────────┐                                       │
+│   span_main  ────────┼── These three values determine       │
+│   span_end   ────────┘   where to draw ~ and ^               │
+│                                                              │
+│   From ErrorBundle.zig:241-248:                              │
+│                                                              │
+│   const before_caret = span_main - span_start;               │
+│   const after_caret = span_end - span_main - 1;              │
+│   write(&#39;~&#39; * before_caret);  // Tildes before              │
+│   write(&#39;^&#39;);                  // The caret                  │
+│   write(&#39;~&#39; * after_caret);   // Tildes after               │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 3: Source Location Tracking Through the Pipeline
+    <div id="part-3-source-location-tracking-through-the-pipeline" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-3-source-location-tracking-through-the-pipeline" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">How Locations Flow Through Compilation
+    <div id="how-locations-flow-through-compilation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-locations-flow-through-compilation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Remember from previous articles: the compilation pipeline is:</p>
+<pre tabindex="0"><code>Source → Tokens → AST → ZIR → Sema/AIR → Machine Code
+</code></pre><p>Source locations must flow through EVERY stage:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│              SOURCE LOCATION FLOW                            │
+│                                                              │
+│  SOURCE TEXT                                                 │
+│  &#34;const x: u8 = -5;&#34;                                         │
+│       └── byte offsets: 0, 1, 2, 3, ...                     │
+│                                                              │
+│           │                                                  │
+│           ▼                                                  │
+│                                                              │
+│  TOKENIZER                                                   │
+│  Token { tag: .keyword_const, loc: { start: 0, end: 5 } }   │
+│  Token { tag: .identifier,    loc: { start: 6, end: 7 } }   │
+│  Token { tag: .colon,         loc: { start: 7, end: 8 } }   │
+│  ...                                                         │
+│       └── Each token stores its byte range                  │
+│                                                              │
+│           │                                                  │
+│           ▼                                                  │
+│                                                              │
+│  PARSER (AST)                                                │
+│  Node { tag: .simple_var_decl, main_token: 1 }              │
+│       └── Node stores TOKEN INDEX (not byte offset)         │
+│       └── We can look up bytes via: tokens[main_token].loc  │
+│                                                              │
+│           │                                                  │
+│           ▼                                                  │
+│                                                              │
+│  ZIR                                                         │
+│  Instruction { tag: .int, data: ..., src_node: 5 }          │
+│       └── ZIR stores AST NODE INDEX                         │
+│       └── We can trace: node → token → bytes                │
+│                                                              │
+│           │                                                  │
+│           ▼                                                  │
+│                                                              │
+│  SEMA/AIR                                                    │
+│  Tracks ZIR instruction index                                │
+│       └── We can trace: zir_inst → node → token → bytes     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Token Location Storage
+    <div id="token-location-storage" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#token-location-storage" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>tokenizer.zig:3-10</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">tag</span><span class="o">:</span><span class="w"> </span><span class="n">Tag</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">loc</span><span class="o">:</span><span class="w"> </span><span class="n">Loc</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">start</span><span class="o">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">,</span><span class="w">   </span><span class="c1">// Byte offset where token starts
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">end</span><span class="o">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">,</span><span class="w">     </span><span class="c1">// Byte offset where token ends
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Every token remembers exactly where it came from in the source!</p>
+
+<h3 class="relative group">AST Node Token References
+    <div id="ast-node-token-references" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#ast-node-token-references" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>Ast.zig:36</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">TokenIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">u32</span><span class="p">;</span><span class="w">  </span><span class="c1">// Index into token array
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>AST nodes don&rsquo;t store byte offsets directly - they store TOKEN INDICES. This is more compact and allows computing byte offsets when needed:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Get the byte offset from a token index
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">tokenStart</span><span class="p">(</span><span class="n">tree</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="kr">const</span><span class="w"> </span><span class="n">Ast</span><span class="p">,</span><span class="w"> </span><span class="n">token_index</span><span class="o">:</span><span class="w"> </span><span class="n">TokenIndex</span><span class="p">)</span><span class="w"> </span><span class="n">ByteOffset</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">tree</span><span class="p">.</span><span class="n">tokens</span><span class="p">.</span><span class="nf">items</span><span class="p">(.</span><span class="n">start</span><span class="p">)[</span><span class="n">token_index</span><span class="p">];</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">ZIR Source Tracking
+    <div id="zir-source-tracking" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zir-source-tracking" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>ZIR instructions track their source AST node. From <code>AstGen.zig</code>, when creating errors:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">failNode</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">astgen</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">AstGen</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Ast</span><span class="p">.</span><span class="n">Node</span><span class="p">.</span><span class="n">Index</span><span class="p">,</span><span class="w">        </span><span class="c1">// Points to AST node
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">comptime</span><span class="w"> </span><span class="n">format</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">args</span><span class="o">:</span><span class="w"> </span><span class="n">anytype</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">InnerError</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Error is associated with this AST node
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="c1">// Which points to tokens → which point to byte offsets
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><hr>
+
+<h2 class="relative group">Part 4: Error Generation at Each Stage
+    <div id="part-4-error-generation-at-each-stage" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-4-error-generation-at-each-stage" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Stage 1: Tokenizer Errors
+    <div id="stage-1-tokenizer-errors" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#stage-1-tokenizer-errors" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>The tokenizer can detect errors like:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    TOKENIZER ERRORS                          │
+│                                                              │
+│  Invalid characters:                                         │
+│    const x = @;    // &#39;@&#39; not valid here                     │
+│                                                              │
+│  Unterminated strings:                                       │
+│    const s = &#34;hello                                          │
+│              ^~~~~~~~~ error: unterminated string            │
+│                                                              │
+│  Invalid escape sequences:                                   │
+│    const s = &#34;hello\q&#34;;                                      │
+│                    ^~ error: invalid escape sequence         │
+│                                                              │
+│  Invalid number literals:                                    │
+│    const x = 0b123;  // &#39;2&#39; and &#39;3&#39; not valid in binary      │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Stage 2: Parser Errors
+    <div id="stage-2-parser-errors" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#stage-2-parser-errors" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>Ast.zig:2923-2973</code>, the parser defines many error types:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">tag</span><span class="o">:</span><span class="w"> </span><span class="n">Tag</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">is_note</span><span class="o">:</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">token</span><span class="o">:</span><span class="w"> </span><span class="n">TokenIndex</span><span class="p">,</span><span class="w">          </span><span class="c1">// WHERE the error is
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">extra</span><span class="o">:</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">},</span><span class="w">       </span><span class="c1">// Additional context
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">expected_block</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">expected_expr</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">expected_semi_or_lbrace</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">expected_statement</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">expected_type_expr</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">expected_var_decl</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">chained_comparison_operators</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">unattached_doc_comment</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// ... many more
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Example parser error:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// You wrote:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">if</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1">// Missing parentheses
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Error:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">error</span><span class="o">:</span><span class="w"> </span><span class="n">expected</span><span class="w"> </span><span class="s">&#39;(&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">found</span><span class="w"> </span><span class="s">&#39;x&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="p">.</span><span class="n">zig</span><span class="o">:</span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">    </span><span class="o">^</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">Stage 3: AstGen (ZIR) Errors
+    <div id="stage-3-astgen-zir-errors" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#stage-3-astgen-zir-errors" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>AstGen.zig:11344-11460</code>, multiple error functions:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Error at an AST node
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">fn</span><span class="w"> </span><span class="nf">failNode</span><span class="p">(</span><span class="n">astgen</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">AstGen</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Ast</span><span class="p">.</span><span class="n">Node</span><span class="p">.</span><span class="n">Index</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="kr">comptime</span><span class="w"> </span><span class="n">format</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="o">:</span><span class="w"> </span><span class="n">anytype</span><span class="p">)</span><span class="w"> </span><span class="n">InnerError</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Error at a specific token
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">fn</span><span class="w"> </span><span class="nf">failTok</span><span class="p">(</span><span class="n">astgen</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">AstGen</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="o">:</span><span class="w"> </span><span class="n">Ast</span><span class="p">.</span><span class="n">TokenIndex</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">           </span><span class="kr">comptime</span><span class="w"> </span><span class="n">format</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="o">:</span><span class="w"> </span><span class="n">anytype</span><span class="p">)</span><span class="w"> </span><span class="n">InnerError</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Error at a token + byte offset (for precision)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">fn</span><span class="w"> </span><span class="nf">failOff</span><span class="p">(</span><span class="n">astgen</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">AstGen</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="o">:</span><span class="w"> </span><span class="n">Ast</span><span class="p">.</span><span class="n">TokenIndex</span><span class="p">,</span><span class="w"> </span><span class="n">byte_offset</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">           </span><span class="kr">comptime</span><span class="w"> </span><span class="n">format</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="o">:</span><span class="w"> </span><span class="n">anytype</span><span class="p">)</span><span class="w"> </span><span class="n">InnerError</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Error with additional notes
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">fn</span><span class="w"> </span><span class="nf">failNodeNotes</span><span class="p">(</span><span class="n">astgen</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">AstGen</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="o">:</span><span class="w"> </span><span class="n">Ast</span><span class="p">.</span><span class="n">Node</span><span class="p">.</span><span class="n">Index</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                 </span><span class="kr">comptime</span><span class="w"> </span><span class="n">format</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="o">:</span><span class="w"> </span><span class="n">anytype</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                 </span><span class="n">notes</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u32</span><span class="p">)</span><span class="w"> </span><span class="n">InnerError</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Example AstGen error:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// You wrote:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">fn</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">break</span><span class="p">;</span><span class="w">  </span><span class="c1">// break outside loop
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Error:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">error</span><span class="o">:</span><span class="w"> </span><span class="err">&#39;</span><span class="k">break</span><span class="err">&#39;</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">inside</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">loop</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="p">.</span><span class="n">zig</span><span class="o">:</span><span class="mi">2</span><span class="o">:</span><span class="mi">5</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="k">break</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">     </span><span class="o">^~~~~</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">Stage 4: Sema Errors
+    <div id="stage-4-sema-errors" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#stage-4-sema-errors" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Semantic analysis catches type errors and more:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// You wrote:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">x</span><span class="o">:</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">256</span><span class="p">;</span><span class="w">  </span><span class="c1">// Too big for u8
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Error:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">error</span><span class="o">:</span><span class="w"> </span><span class="kt">type</span><span class="w"> </span><span class="err">&#39;</span><span class="kt">u8</span><span class="err">&#39;</span><span class="w"> </span><span class="n">cannot</span><span class="w"> </span><span class="n">represent</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">256</span><span class="err">&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="p">.</span><span class="n">zig</span><span class="o">:</span><span class="mi">1</span><span class="o">:</span><span class="mi">15</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">x</span><span class="o">:</span><span class="w"> </span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">256</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">               </span><span class="o">^~~</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">note</span><span class="o">:</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">operation</span><span class="w"> </span><span class="n">would</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="mi">0</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><hr>
+
+<h2 class="relative group">Part 5: The ErrorBundle System
+    <div id="part-5-the-errorbundle-system" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-5-the-errorbundle-system" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Why a Bundle?
+    <div id="why-a-bundle" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-a-bundle" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>During compilation, errors are generated in many places. The <code>ErrorBundle</code> collects them all:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    ERROR BUNDLE STRUCTURE                    │
+│                                                              │
+│  From ErrorBundle.zig:16-18:                                 │
+│                                                              │
+│  string_bytes: []const u8    // All error message text      │
+│  extra: []const u32          // Structured data             │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  string_bytes:                                       │    │
+│  │  &#34;type &#39;u8&#39; cannot...\0note: unsigned...\0file.zig\0&#34;   │
+│  │   ▲                    ▲                 ▲           │    │
+│  │   │                    │                 │           │    │
+│  │   index 0              index 25          index 45    │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  extra: (packed struct data)                         │    │
+│  │  [ErrorMessageList | ErrorMessage | SourceLocation]  │    │
+│  │                                                      │    │
+│  │  ErrorMessageList: { len: 2, start: 5 }             │    │
+│  │  ErrorMessage: { msg: 0, src_loc: 10, notes_len: 1 }│    │
+│  │  SourceLocation: { line: 3, column: 15, ... }       │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  Why this design?                                            │
+│  - Compact: no pointers, just indices                        │
+│  - Serializable: can send between processes                  │
+│  - Efficient: single allocation for all strings             │
+│  - Supports incremental: can add/remove errors              │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Wip (Work-in-Progress) Builder
+    <div id="the-wip-work-in-progress-builder" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-wip-work-in-progress-builder" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Errors are built incrementally using <code>ErrorBundle.Wip</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// From ErrorBundle.zig:321-344
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">Wip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">gpa</span><span class="o">:</span><span class="w"> </span><span class="n">Allocator</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">string_bytes</span><span class="o">:</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="nf">ArrayListUnmanaged</span><span class="p">(</span><span class="kt">u8</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">extra</span><span class="o">:</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="nf">ArrayListUnmanaged</span><span class="p">(</span><span class="kt">u32</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">root_list</span><span class="o">:</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="nf">ArrayListUnmanaged</span><span class="p">(</span><span class="n">MessageIndex</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="n">wip</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">Wip</span><span class="p">,</span><span class="w"> </span><span class="n">gpa</span><span class="o">:</span><span class="w"> </span><span class="n">Allocator</span><span class="p">)</span><span class="w"> </span><span class="o">!</span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Initialize with empty state
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="c1">// Reserve index 0 for null string
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">Adding an Error
+    <div id="adding-an-error" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#adding-an-error" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Conceptually, adding an error:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// 1. Add the error message text to string_bytes
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">msg_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">string_bytes</span><span class="p">.</span><span class="n">len</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">try</span><span class="w"> </span><span class="n">string_bytes</span><span class="p">.</span><span class="nf">appendSlice</span><span class="p">(</span><span class="s">&#34;type &#39;u8&#39; cannot represent &#39;-5&#39;&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">try</span><span class="w"> </span><span class="n">string_bytes</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w">  </span><span class="c1">// null terminator
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// 2. Add the source location to extra
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">src_loc_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">extra</span><span class="p">.</span><span class="n">len</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">try</span><span class="w"> </span><span class="nf">addExtra</span><span class="p">(</span><span class="n">SourceLocation</span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">src_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">path_index</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">line</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">column</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">span_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">span_main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">span_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// 3. Add the error message to extra
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">try</span><span class="w"> </span><span class="nf">addExtra</span><span class="p">(</span><span class="n">ErrorMessage</span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">msg_index</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">src_loc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">src_loc_index</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="n">notes_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// 4. Add the note message similarly
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><hr>
+
+<h2 class="relative group">Part 6: Rendering Error Messages
+    <div id="part-6-rendering-error-messages" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-6-rendering-error-messages" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Rendering Process
+    <div id="the-rendering-process" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-rendering-process" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>ErrorBundle.zig:172-305</code>, errors are rendered with colors and formatting:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">renderErrorMessageToWriter</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">eb</span><span class="o">:</span><span class="w"> </span><span class="n">ErrorBundle</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">options</span><span class="o">:</span><span class="w"> </span><span class="n">RenderOptions</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">err_msg_index</span><span class="o">:</span><span class="w"> </span><span class="n">MessageIndex</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">w</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">Writer</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">kind</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w">    </span><span class="c1">// &#34;error&#34; or &#34;note&#34;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">color</span><span class="o">:</span><span class="w"> </span><span class="n">Color</span><span class="p">,</span><span class="w">        </span><span class="c1">// red for errors, cyan for notes
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">indent</span><span class="o">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="o">!</span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 1. Print location: &#34;file.zig:3:15: &#34;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="nf">print</span><span class="p">(</span><span class="s">&#34;{s}:{d}:{d}: &#34;</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">column</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="c1">// +1 for 1-indexed display
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 2. Print kind in color: &#34;error: &#34;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">ttyconf</span><span class="p">.</span><span class="nf">setColor</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="n">color</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="nf">writeAll</span><span class="p">(</span><span class="n">kind</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="nf">writeAll</span><span class="p">(</span><span class="s">&#34;: &#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 3. Print message
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="nf">writeMsg</span><span class="p">(</span><span class="n">eb</span><span class="p">,</span><span class="w"> </span><span class="n">err_msg</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="n">prefix_len</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 4. Print source line
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="nf">writeAll</span><span class="p">(</span><span class="n">source_line</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 5. Print caret indicator
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="c1">//    ~~~^~~~
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="nf">splatByteAll</span><span class="p">(</span><span class="s">&#39;~&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">before_caret</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="nf">writeByte</span><span class="p">(</span><span class="s">&#39;^&#39;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="nf">splatByteAll</span><span class="p">(</span><span class="s">&#39;~&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">after_caret</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 6. Recursively print notes
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">eb</span><span class="p">.</span><span class="nf">getNotes</span><span class="p">(</span><span class="n">err_msg_index</span><span class="p">))</span><span class="w"> </span><span class="o">|</span><span class="n">note</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">try</span><span class="w"> </span><span class="nf">renderErrorMessageToWriter</span><span class="p">(...,</span><span class="w"> </span><span class="n">note</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;note&#34;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">cyan</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">Color Coding
+    <div id="color-coding" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#color-coding" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    COLOR SCHEME                              │
+│                                                              │
+│  BOLD WHITE:   file path and location                        │
+│  RED:          &#34;error:&#34; label                                │
+│  BOLD WHITE:   error message text                            │
+│  (no color):   source code line                              │
+│  GREEN:        ~~~^~~~ caret indicator                       │
+│  CYAN:         &#34;note:&#34; label                                 │
+│  DIM:          &#34;referenced by:&#34; traces                       │
+│                                                              │
+│  Example with colors:                                        │
+│                                                              │
+│  src/main.zig:3:15: error: type &#39;u8&#39; cannot represent &#39;-5&#39;  │
+│  │               │  │       │                                │
+│  └─ bold white   │  │       └─ bold white                    │
+│                  │  └─ red                                   │
+│                  └─ bold white                               │
+│                                                              │
+│  const x: u8 = -5;                                           │
+│                ^~                                            │
+│                │                                             │
+│                └─ green                                      │
+│                                                              │
+│  note: an unsigned type cannot represent negative values     │
+│  │     │                                                     │
+│  │     └─ white                                              │
+│  └─ cyan                                                     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 7: Reference Traces
+    <div id="part-7-reference-traces" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-7-reference-traces" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What Are Reference Traces?
+    <div id="what-are-reference-traces" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-are-reference-traces" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>When an error occurs deep in a call chain, it helps to know HOW you got there:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// lib.zig
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="n">x</span><span class="o">:</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="nb">@compileError</span><span class="p">(</span><span class="s">&#34;value too large&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// main.zig
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">lib</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@import</span><span class="p">(</span><span class="s">&#34;lib.zig&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">process</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">lib</span><span class="p">.</span><span class="nf">validate</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span><span class="w">  </span><span class="c1">// &lt;-- called from here
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nf">process</span><span class="p">();</span><span class="w">          </span><span class="c1">// &lt;-- called from here
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Without reference traces:</p>
+<pre tabindex="0"><code>error: value too large
+ --&gt; lib.zig:2:17
+</code></pre><p>Where was this called from? You have to search manually.</p>
+<p>With reference traces:</p>
+<pre tabindex="0"><code>error: value too large
+ --&gt; lib.zig:2:17
+  |
+2 |     if (x &gt; 100) @compileError(&#34;value too large&#34;);
+  |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  |
+referenced by:
+    process: main.zig:5:18
+    main: main.zig:9:5
+</code></pre>
+<h3 class="relative group">How Reference Traces Work
+    <div id="how-reference-traces-work" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-reference-traces-work" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>ErrorBundle.zig:77-86</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">ReferenceTrace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">decl_name</span><span class="o">:</span><span class="w"> </span><span class="n">String</span><span class="p">,</span><span class="w">        </span><span class="c1">// &#34;process&#34;, &#34;main&#34;, etc.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">src_loc</span><span class="o">:</span><span class="w"> </span><span class="n">SourceLocationIndex</span><span class="p">,</span><span class="w">  </span><span class="c1">// Where in that function
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Each source location can have multiple reference traces, forming a &ldquo;call stack&rdquo; of comptime evaluation.</p>
+<hr>
+
+<h2 class="relative group">Part 8: Notes and Contextual Help
+    <div id="part-8-notes-and-contextual-help" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-8-notes-and-contextual-help" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Adding Helpful Notes
+    <div id="adding-helpful-notes" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#adding-helpful-notes" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Notes provide additional context:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Error:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">error</span><span class="o">:</span><span class="w"> </span><span class="n">expected</span><span class="w"> </span><span class="kt">type</span><span class="w"> </span><span class="err">&#39;</span><span class="kt">u32</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">found</span><span class="w"> </span><span class="err">&#39;</span><span class="kt">i32</span><span class="err">&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="p">.</span><span class="n">zig</span><span class="o">:</span><span class="mi">5</span><span class="o">:</span><span class="mi">12</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">5</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">            </span><span class="o">^</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">note</span><span class="o">:</span><span class="w"> </span><span class="n">parameter</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="err">&#39;</span><span class="n">foo</span><span class="err">&#39;</span><span class="w"> </span><span class="n">expects</span><span class="w"> </span><span class="kt">type</span><span class="w"> </span><span class="err">&#39;</span><span class="kt">u32</span><span class="err">&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="p">.</span><span class="n">zig</span><span class="o">:</span><span class="mi">1</span><span class="o">:</span><span class="mi">8</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">n</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="o">|</span><span class="w">        </span><span class="o">^~~~~~</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The note points to WHERE the expected type came from - the function signature.</p>
+
+<h3 class="relative group">Duplicate Error Suppression
+    <div id="duplicate-error-suppression" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#duplicate-error-suppression" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>From <code>ErrorMessage</code> struct:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="kr">const</span><span class="w"> </span><span class="n">ErrorMessage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">msg</span><span class="o">:</span><span class="w"> </span><span class="n">String</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">count</span><span class="o">:</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">  </span><span class="c1">// Incremented for duplicates
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>If the same error occurs multiple times:</p>
+<pre tabindex="0"><code>error: unused variable &#39;x&#39; (5 times)
+</code></pre><p>Instead of printing the same error 5 times!</p>
+<hr>
+
+<h2 class="relative group">Part 9: Comptime Error Messages
+    <div id="part-9-comptime-error-messages" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-9-comptime-error-messages" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Challenge of Comptime Errors
+    <div id="the-challenge-of-comptime-errors" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-challenge-of-comptime-errors" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Comptime code runs at compile time, but errors should show the SOURCE location:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">comptimeAssert</span><span class="p">(</span><span class="kr">comptime</span><span class="w"> </span><span class="n">ok</span><span class="o">:</span><span class="w"> </span><span class="kt">bool</span><span class="p">)</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ok</span><span class="p">)</span><span class="w"> </span><span class="nb">@compileError</span><span class="p">(</span><span class="s">&#34;assertion failed&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nf">comptimeAssert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span><span class="w">  </span><span class="c1">// Error should point HERE
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">Comptime Stack Traces
+    <div id="comptime-stack-traces" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#comptime-stack-traces" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Zig shows the full comptime evaluation stack:</p>
+<pre tabindex="0"><code>error: assertion failed
+ --&gt; src/util.zig:2:14
+  |
+2 |     if (!ok) @compileError(&#34;assertion failed&#34;);
+  |              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  |
+note: called from src/main.zig:6:5
+  |
+6 |     comptimeAssert(false);
+  |     ^~~~~~~~~~~~~~~~~~~~~
+</code></pre>
+<h3 class="relative group">@compileLog for Debugging
+    <div id="compilelog-for-debugging" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#compilelog-for-debugging" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">complexComptime</span><span class="p">(</span><span class="kr">comptime</span><span class="w"> </span><span class="n">T</span><span class="o">:</span><span class="w"> </span><span class="kt">type</span><span class="p">)</span><span class="w"> </span><span class="kt">type</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nb">@compileLog</span><span class="p">(</span><span class="s">&#34;T is:&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">);</span><span class="w">       </span><span class="c1">// Prints at compile time
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="nb">@compileLog</span><span class="p">(</span><span class="s">&#34;size:&#34;</span><span class="p">,</span><span class="w"> </span><span class="nb">@sizeOf</span><span class="p">(</span><span class="n">T</span><span class="p">));</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">T</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Output:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">Compile</span><span class="w"> </span><span class="n">Log</span><span class="w"> </span><span class="n">Output</span><span class="o">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nb">@as</span><span class="p">(</span><span class="kt">type</span><span class="p">,</span><span class="w"> </span><span class="kt">u32</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nb">@as</span><span class="p">(</span><span class="kt">comptime_int</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>This helps debug comptime logic!</p>
+<hr>
+
+<h2 class="relative group">Part 10: Design Principles
+    <div id="part-10-design-principles" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-10-design-principles" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What Makes Zig Errors Good?
+    <div id="what-makes-zig-errors-good" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-makes-zig-errors-good" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│              ZIG ERROR MESSAGE PRINCIPLES                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. POINT TO THE PROBLEM                                     │
+│     - Exact file, line, column                               │
+│     - Visual caret (^) on the problematic token              │
+│     - Span (~) shows the full expression                     │
+│                                                              │
+│  2. EXPLAIN WHAT&#39;S WRONG                                     │
+│     - Clear, jargon-free language                            │
+│     - &#34;cannot&#34; not &#34;you can&#39;t&#34;                               │
+│     - State the conflict explicitly                          │
+│                                                              │
+│  3. SHOW CONTEXT                                             │
+│     - Display the source line                                │
+│     - Add notes for related locations                        │
+│     - Reference traces for call chains                       │
+│                                                              │
+│  4. SUGGEST FIXES (when possible)                            │
+│     - &#34;did you mean &#39;x&#39;?&#34;                                    │
+│     - &#34;consider using @intCast&#34;                              │
+│                                                              │
+│  5. DON&#39;T OVERWHELM                                          │
+│     - Deduplicate repeated errors                            │
+│     - Stop after reasonable number of errors                 │
+│     - Most important error first                             │
+│                                                              │
+│  6. WORK EVERYWHERE                                          │
+│     - Colors when terminal supports it                       │
+│     - Plain text fallback                                    │
+│     - Machine-readable format available                      │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Comparison: Good vs Bad
+    <div id="comparison-good-vs-bad" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#comparison-good-vs-bad" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    BAD ERROR MESSAGE                         │
+│                                                              │
+│  error: E0308                                                │
+│  mismatched types                                            │
+│                                                              │
+│  Problems:                                                   │
+│  - Error code (E0308) requires lookup                        │
+│  - No location                                               │
+│  - No context                                                │
+│  - What types? Where?                                        │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    GOOD ERROR MESSAGE                        │
+│                                                              │
+│  error: expected type &#39;u32&#39;, found &#39;i32&#39;                     │
+│   --&gt; src/main.zig:10:15                                     │
+│    |                                                         │
+│  10|     return x + y;                                       │
+│    |               ^                                         │
+│    |                                                         │
+│  note: function return type declared here                    │
+│   --&gt; src/main.zig:8:20                                      │
+│    |                                                         │
+│   8| fn add(x: i32, y: i32) u32 {                            │
+│    |                        ^^^                              │
+│                                                              │
+│  Why it&#39;s good:                                              │
+│  - Exact location                                            │
+│  - States both types                                         │
+│  - Shows source                                              │
+│  - Points to related location (return type declaration)      │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 11: The Complete Picture
+    <div id="part-11-the-complete-picture" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-11-the-complete-picture" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Error Messages Tie Everything Together
+    <div id="error-messages-tie-everything-together" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#error-messages-tie-everything-together" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│           HOW ERRORS CONNECT THE WHOLE COMPILER              │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  SOURCE CODE                                         │    │
+│  │  &#34;const x: u8 = -5;&#34;                                │    │
+│  │   └── byte offsets: 0, 1, 2, ...                    │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                           │                                  │
+│                           ▼                                  │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  TOKENIZER (Article 2)                               │    │
+│  │  Token.Loc { start: 14, end: 16 }                   │    │
+│  │   └── Preserves byte ranges                         │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                           │                                  │
+│                           ▼                                  │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  PARSER (Article 3)                                  │    │
+│  │  Node { main_token: 5 }                             │    │
+│  │   └── Points to token index                         │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                           │                                  │
+│                           ▼                                  │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  ZIR (Article 4)                                     │    │
+│  │  Inst { src_node: 3 }                               │    │
+│  │   └── Points to AST node                            │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                           │                                  │
+│                           ▼                                  │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  SEMA (Article 5)                                    │    │
+│  │  Tracks ZIR instruction                              │    │
+│  │   └── Can trace back through all stages             │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                           │                                  │
+│                           ▼                                  │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  ERROR BUNDLE                                        │    │
+│  │                                                      │    │
+│  │  Collects: ZIR inst → AST node → Token → Bytes      │    │
+│  │  Builds: SourceLocation { line: 1, col: 15, ... }   │    │
+│  │  Renders: &#34;src/main.zig:1:15: error: ...&#34;           │    │
+│  │                                                      │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                           │                                  │
+│                           ▼                                  │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  TERMINAL OUTPUT                                     │    │
+│  │                                                      │    │
+│  │  src/main.zig:1:15: error: type &#39;u8&#39; cannot...      │    │
+│  │                                                      │    │
+│  │  1 | const x: u8 = -5;                              │    │
+│  │    |               ^~                                │    │
+│  │                                                      │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  The error message is the culmination of ALL the careful     │
+│  source tracking throughout the entire compiler pipeline!    │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Full Series
+    <div id="the-full-series" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-full-series" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│              ZIG COMPILER INTERNALS: COMPLETE                │
+│                                                              │
+│   Article 1: Bootstrap Process                               │
+│       How Zig builds itself                                  │
+│                                                              │
+│   Article 2: Tokenizer                                       │
+│       Breaking source into tokens                            │
+│                                                              │
+│   Article 3: Parser &amp; AST                                    │
+│       Building the syntax tree                               │
+│                                                              │
+│   Article 4: ZIR Generation                                  │
+│       Creating the intermediate representation               │
+│                                                              │
+│   Article 5: Semantic Analysis                               │
+│       Type checking, comptime, generics                      │
+│                                                              │
+│   Article 6: AIR &amp; Code Generation                           │
+│       From typed IR to machine code                          │
+│                                                              │
+│   Article 7: Linking                                         │
+│       Combining objects into executables                     │
+│                                                              │
+│   Article 8: Caching &amp; Incremental Compilation               │
+│       Making rebuilds fast                                   │
+│                                                              │
+│   Article 9: Build System                                    │
+│       build.zig and the build graph                          │
+│                                                              │
+│   Article 10: Error Messages                                 │
+│       The user interface of the compiler                     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Summary
+    <div id="summary" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#summary" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Error messages are where all the careful engineering of the compiler pays off for the developer:</p>
+<ol>
+<li>
+<p><strong>Source Location Tracking</strong> - Every token, node, and instruction remembers where it came from</p>
+</li>
+<li>
+<p><strong>ErrorBundle</strong> - A compact, serializable structure that collects errors from all compilation stages</p>
+</li>
+<li>
+<p><strong>Rich Context</strong> - Notes, reference traces, and source line display help developers understand errors</p>
+</li>
+<li>
+<p><strong>Thoughtful Design</strong> - Colors, deduplication, and clear language make errors actionable</p>
+</li>
+<li>
+<p><strong>Full Pipeline Integration</strong> - Errors can point to any stage (tokenizer, parser, ZIR, Sema) with full source context</p>
+</li>
+</ol>
+<p>The quality of error messages is not an afterthought - it&rsquo;s designed into every layer of the compiler. Each stage preserves the information needed to produce helpful diagnostics.</p>
+<p>This is the &ldquo;user interface&rdquo; of the compiler, and Zig takes it seriously.</p>
+<hr>
+<p><em>This concludes our 10-part series on Zig Compiler Internals. We&rsquo;ve journeyed from source code to executable, exploring every stage of the compilation pipeline. Understanding these internals helps you write better Zig code and appreciate the engineering that makes Zig fast, safe, and pleasant to use.</em></p>
+
+          
+          
+          
+        </div>
+        
+        
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_drafts/10-error-messages.md"
+          data-oid-likes="likes_drafts/10-error-messages.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+            <a
+              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/11-comptime/">
+              <span class="leading-6">
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Part 11: Comptime - Compile-Time Execution Deep Dive
+              </span>
+            </a>
+            
+              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time>
+              </span>
+            
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+            <a
+              class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/13-mini-compiler/">
+              <span class="leading-6">
+                Building a Mini Zig Compiler: From Source to C&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+              </span>
+            </a>
+            
+              <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time>
+              </span>
+            
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Yohai
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:1313/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>

@@ -1,0 +1,2185 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Appendix: Zig Patterns and Methods Reference &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Appendix: Zig Patterns and Methods Reference &middot; Yohai&#39;s Blog">
+  
+
+  
+  
+  
+  
+  
+  <link rel="canonical" href="http://localhost:1313/drafts/appendix-zig-patterns/">
+  
+
+  
+  
+    <meta name="author" content="Yohai">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:1313/drafts/appendix-zig-patterns/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Appendix: Zig Patterns and Methods Reference">
+  <meta property="og:description" content="Appendix: Zig Patterns and Methods Reference # Understanding the common patterns used throughout the Zig compiler
+Introduction # When reading the Zig compiler source code, you’ll encounter many standard library methods and patterns that might be unfamiliar. This appendix explains what they mean and why they’re used.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="drafts">
+    <meta property="article:published_time" content="2025-12-17T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-17T00:00:00+00:00">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Appendix: Zig Patterns and Methods Reference">
+  <meta name="twitter:description" content="Appendix: Zig Patterns and Methods Reference # Understanding the common patterns used throughout the Zig compiler
+Introduction # When reading the Zig compiler source code, you’ll encounter many standard library methods and patterns that might be unfamiliar. This appendix explains what they mean and why they’re used.">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Drafts",
+    "name": "Appendix: Zig Patterns and Methods Reference",
+    "headline": "Appendix: Zig Patterns and Methods Reference",
+    
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eAppendix: Zig Patterns and Methods Reference\n    \u003cdiv id=\u0022appendix-zig-patterns-and-methods-reference\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#appendix-zig-patterns-and-methods-reference\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003e\u003cem\u003eUnderstanding the common patterns used throughout the Zig compiler\u003c\/em\u003e\u003c\/p\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eIntroduction\n    \u003cdiv id=\u0022introduction\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#introduction\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eWhen reading the Zig compiler source code, you\u0026rsquo;ll encounter many standard library methods and patterns that might be unfamiliar. This appendix explains what they mean and why they\u0026rsquo;re used.\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:1313/drafts/appendix-zig-patterns/",
+    "author" : {
+      "@type": "Person",
+      "name": "Yohai"
+    },
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-17T00:00:00\u002b00:00",
+    "datePublished": "2025-12-17T00:00:00\u002b00:00",
+    
+    "dateModified": "2025-12-17T00:00:00\u002b00:00",
+    
+    
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "4625"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          Yohai&rsquo;s Blog
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/drafts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Drafts"
+  title="Drafts">
+  
+  
+    <p class="text-base font-medium">
+      Drafts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/drafts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Drafts"
+    title="Drafts">
+    
+    
+      <p class="text-bg font-bg">
+        Drafts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >Yohai&#39;s Blog</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/"
+      >Drafts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/appendix-zig-patterns/"
+      >Appendix: Zig Patterns and Methods Reference</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Appendix: Zig Patterns and Methods Reference
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>4625 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">22 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Yohai
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#understanding-capacity-and-length">Understanding &ldquo;Capacity&rdquo; and &ldquo;Length&rdquo;</a>
+      <ul>
+        <li><a href="#why-does-this-matter">Why Does This Matter?</a></li>
+      </ul>
+    </li>
+    <li><a href="#the-assume-pattern">The &ldquo;Assume&rdquo; Pattern</a>
+      <ul>
+        <li><a href="#what-does-assume-mean">What Does &ldquo;Assume&rdquo; Mean?</a></li>
+        <li><a href="#why-use-assume">Why Use &ldquo;Assume&rdquo;?</a></li>
+        <li><a href="#the-danger-of-assume">The Danger of &ldquo;Assume&rdquo;</a></li>
+      </ul>
+    </li>
+    <li><a href="#capacity-methods-explained">Capacity Methods Explained</a>
+      <ul>
+        <li><a href="#ensuretotalcapacity-vs-ensureunusedcapacity">ensureTotalCapacity vs ensureUnusedCapacity</a></li>
+      </ul>
+    </li>
+    <li><a href="#arraylist-methods-reference">ArrayList Methods Reference</a></li>
+    <li><a href="#hashmap-methods-reference">HashMap Methods Reference</a></li>
+    <li><a href="#multiarraylist-explained">MultiArrayList Explained</a>
+      <ul>
+        <li><a href="#multiarraylist-usage">MultiArrayList Usage</a></li>
+      </ul>
+    </li>
+    <li><a href="#staticstringmap-explained">StaticStringMap Explained</a></li>
+    <li><a href="#slices-explained">Slices Explained</a></li>
+    <li><a href="#sentinel-terminated-slices">Sentinel-Terminated Slices</a></li>
+    <li><a href="#error-handling-patterns">Error Handling Patterns</a></li>
+    <li><a href="#labeled-control-flow">Labeled Control Flow</a></li>
+    <li><a href="#common-builtins">Common Builtins</a></li>
+    <li><a href="#build-modes-and-safety">Build Modes and Safety</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#understanding-capacity-and-length">Understanding &ldquo;Capacity&rdquo; and &ldquo;Length&rdquo;</a>
+      <ul>
+        <li><a href="#why-does-this-matter">Why Does This Matter?</a></li>
+      </ul>
+    </li>
+    <li><a href="#the-assume-pattern">The &ldquo;Assume&rdquo; Pattern</a>
+      <ul>
+        <li><a href="#what-does-assume-mean">What Does &ldquo;Assume&rdquo; Mean?</a></li>
+        <li><a href="#why-use-assume">Why Use &ldquo;Assume&rdquo;?</a></li>
+        <li><a href="#the-danger-of-assume">The Danger of &ldquo;Assume&rdquo;</a></li>
+      </ul>
+    </li>
+    <li><a href="#capacity-methods-explained">Capacity Methods Explained</a>
+      <ul>
+        <li><a href="#ensuretotalcapacity-vs-ensureunusedcapacity">ensureTotalCapacity vs ensureUnusedCapacity</a></li>
+      </ul>
+    </li>
+    <li><a href="#arraylist-methods-reference">ArrayList Methods Reference</a></li>
+    <li><a href="#hashmap-methods-reference">HashMap Methods Reference</a></li>
+    <li><a href="#multiarraylist-explained">MultiArrayList Explained</a>
+      <ul>
+        <li><a href="#multiarraylist-usage">MultiArrayList Usage</a></li>
+      </ul>
+    </li>
+    <li><a href="#staticstringmap-explained">StaticStringMap Explained</a></li>
+    <li><a href="#slices-explained">Slices Explained</a></li>
+    <li><a href="#sentinel-terminated-slices">Sentinel-Terminated Slices</a></li>
+    <li><a href="#error-handling-patterns">Error Handling Patterns</a></li>
+    <li><a href="#labeled-control-flow">Labeled Control Flow</a></li>
+    <li><a href="#common-builtins">Common Builtins</a></li>
+    <li><a href="#build-modes-and-safety">Build Modes and Safety</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+
+        <div class="article-content max-w-prose mb-20">
+          
+<h1 class="relative group">Appendix: Zig Patterns and Methods Reference
+    <div id="appendix-zig-patterns-and-methods-reference" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#appendix-zig-patterns-and-methods-reference" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p><em>Understanding the common patterns used throughout the Zig compiler</em></p>
+<hr>
+
+<h2 class="relative group">Introduction
+    <div id="introduction" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#introduction" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>When reading the Zig compiler source code, you&rsquo;ll encounter many standard library methods and patterns that might be unfamiliar. This appendix explains what they mean and why they&rsquo;re used.</p>
+
+<h2 class="relative group">Understanding &ldquo;Capacity&rdquo; and &ldquo;Length&rdquo;
+    <div id="understanding-capacity-and-length" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#understanding-capacity-and-length" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Before diving into methods, you need to understand two fundamental concepts:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    LENGTH vs CAPACITY                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Think of an ArrayList like a PARKING LOT:                                   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        PARKING LOT                                   │    │
+│  │                                                                      │    │
+│  │   [🚗][🚙][🚕][  ][  ][  ][  ][  ][  ][  ]                          │    │
+│  │    0   1   2   3   4   5   6   7   8   9                            │    │
+│  │                                                                      │    │
+│  │   LENGTH = 3      (cars actually parked)                            │    │
+│  │   CAPACITY = 10   (total parking spaces available)                  │    │
+│  │                                                                      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  In code:                                                                    │
+│  ─────────                                                                   │
+│    var list = ArrayList(Car).init(allocator);                               │
+│    // Initially: length=0, capacity=0 (no parking lot yet!)                 │
+│                                                                              │
+│    try list.append(car1);  // Allocates space, adds car                     │
+│    try list.append(car2);                                                   │
+│    try list.append(car3);                                                   │
+│    // Now: length=3, capacity=maybe 4 or 8 (allocator decides)              │
+│                                                                              │
+│    list.items.len     // = 3 (the length)                                   │
+│    list.capacity      // = 8 (total slots allocated)                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Why Does This Matter?
+    <div id="why-does-this-matter" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-does-this-matter" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    THE REALLOCATION PROBLEM                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  When capacity is full and you add more items:                               │
+│                                                                              │
+│  Before append:                                                              │
+│  ┌─────────────────────────────────────────┐                                │
+│  │ [🚗][🚙][🚕][🚐]                         │  length=4, capacity=4         │
+│  └─────────────────────────────────────────┘  (FULL!)                       │
+│                                                                              │
+│  You want to add one more car...                                            │
+│                                                                              │
+│  What happens:                                                               │
+│  1. Allocate NEW bigger parking lot (capacity=8)                            │
+│  2. COPY all existing cars to new lot                                       │
+│  3. Free old parking lot                                                    │
+│  4. Add new car                                                             │
+│                                                                              │
+│  After append:                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ [🚗][🚙][🚕][🚐][🚖][  ][  ][  ]                                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│  length=5, capacity=8                                                       │
+│                                                                              │
+│  This copying is EXPENSIVE! Especially with millions of items.              │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">The &ldquo;Assume&rdquo; Pattern
+    <div id="the-assume-pattern" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-assume-pattern" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What Does &ldquo;Assume&rdquo; Mean?
+    <div id="what-does-assume-mean" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-does-assume-mean" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    WHAT &#34;ASSUME&#34; MEANS                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  &#34;Assume&#34; = &#34;I PROMISE this is true, don&#39;t bother checking&#34;                 │
+│                                                                              │
+│  It&#39;s a CONTRACT between you and the compiler:                              │
+│                                                                              │
+│    YOU promise: &#34;There IS enough capacity&#34;                                  │
+│    COMPILER promises: &#34;I won&#39;t waste time checking&#34;                         │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  SAFE version (with checks):                                                 │
+│  ──────────────────────────                                                  │
+│                                                                              │
+│    fn append(item) !void {                                                  │
+│        if (self.items.len &gt;= self.capacity) {   // CHECK                    │
+│            try self.growCapacity();              // MIGHT ALLOCATE          │
+│        }                                                                     │
+│        self.items[self.items.len] = item;                                   │
+│        self.items.len += 1;                                                 │
+│    }                                                                         │
+│                                                                              │
+│  ASSUME version (no checks):                                                 │
+│  ──────────────────────────                                                  │
+│                                                                              │
+│    fn appendAssumeCapacity(item) void {  // Note: no error return!         │
+│        // NO CHECK - you promised there&#39;s space!                            │
+│        self.items[self.items.len] = item;                                   │
+│        self.items.len += 1;                                                 │
+│    }                                                                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Why Use &ldquo;Assume&rdquo;?
+    <div id="why-use-assume" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-use-assume" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    WHY &#34;ASSUME&#34; IS FASTER                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Scenario: Adding 1,000,000 items to a list                                 │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  SLOW WAY (1,000,000 checks):                                               │
+│  ────────────────────────────                                                │
+│                                                                              │
+│    for (items) |item| {                                                      │
+│        try list.append(item);                                               │
+│    }                                                                         │
+│                                                                              │
+│    What happens each iteration:                                              │
+│      1. Check: is len &lt; capacity?           ← BRANCH (CPU penalty)          │
+│      2. If no: allocate, copy, free         ← SLOW (happens ~20 times)      │
+│      3. Store item                                                           │
+│      4. Increment length                                                     │
+│                                                                              │
+│    Total: 1,000,000 checks + ~20 reallocations                              │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  FAST WAY (1 check, then assume):                                           │
+│  ────────────────────────────────                                            │
+│                                                                              │
+│    try list.ensureUnusedCapacity(items.len);  // ONE allocation upfront     │
+│    for (items) |item| {                                                      │
+│        list.appendAssumeCapacity(item);       // No checks!                 │
+│    }                                                                         │
+│                                                                              │
+│    What happens each iteration:                                              │
+│      1. Store item                           ← Just this!                   │
+│      2. Increment length                                                     │
+│                                                                              │
+│    Total: 1 allocation + 0 checks in loop                                   │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  Performance difference: Often 10-100x faster in tight loops!               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Danger of &ldquo;Assume&rdquo;
+    <div id="the-danger-of-assume" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-danger-of-assume" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DANGER: BREAKING THE PROMISE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  What if you LIE and there ISN&#39;T enough capacity?                           │
+│                                                                              │
+│    var list = ArrayList(u8).init(allocator);                                │
+│    // capacity = 0, length = 0                                              │
+│                                                                              │
+│    list.appendAssumeCapacity(&#39;x&#39;);  // BOOM! 💥                             │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  In DEBUG mode:                                                              │
+│  ──────────────                                                              │
+│    panic: index out of bounds                                               │
+│    └── Nice error message, program crashes safely                           │
+│                                                                              │
+│  In RELEASE FAST mode:                                                       │
+│  ─────────────────────                                                       │
+│    Undefined behavior!                                                       │
+│    └── Memory corruption, security vulnerability, demons fly out            │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  RULE: Only use &#34;Assume&#34; methods when you have PROVEN capacity exists       │
+│                                                                              │
+│    // CORRECT:                                                               │
+│    try list.ensureUnusedCapacity(10);   // Guarantee space                  │
+│    list.appendAssumeCapacity(x);         // Safe: we just ensured it        │
+│                                                                              │
+│    // WRONG:                                                                 │
+│    list.appendAssumeCapacity(x);         // No guarantee!                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">Capacity Methods Explained
+    <div id="capacity-methods-explained" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#capacity-methods-explained" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">ensureTotalCapacity vs ensureUnusedCapacity
+    <div id="ensuretotalcapacity-vs-ensureunusedcapacity" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#ensuretotalcapacity-vs-ensureunusedcapacity" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CAPACITY METHODS COMPARED                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Current state: [🚗][🚙][🚕][  ][  ]                                        │
+│                  length=3, capacity=5                                       │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  ensureTotalCapacity(10)                                                    │
+│  ───────────────────────                                                     │
+│  &#34;Make sure I can hold 10 items TOTAL&#34;                                      │
+│                                                                              │
+│  Result: [🚗][🚙][🚕][  ][  ][  ][  ][  ][  ][  ]                           │
+│          length=3, capacity=10                                              │
+│                                                                              │
+│  Can now add: 10 - 3 = 7 more items                                         │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  ensureUnusedCapacity(10)                                                   │
+│  ────────────────────────                                                    │
+│  &#34;Make sure I can add 10 MORE items&#34;                                        │
+│                                                                              │
+│  Result: [🚗][🚙][🚕][  ][  ][  ][  ][  ][  ][  ][  ][  ][  ]               │
+│          length=3, capacity=13                                              │
+│                                                                              │
+│  Can now add: exactly 10 more items (as requested)                          │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  WHEN TO USE WHICH:                                                          │
+│                                                                              │
+│    ensureTotalCapacity:                                                     │
+│      - You know the FINAL size                                              │
+│      - Example: &#34;I&#39;ll have exactly 100 nodes&#34;                               │
+│                                                                              │
+│    ensureUnusedCapacity:                                                    │
+│      - You know how many MORE you&#39;ll add                                    │
+│      - Example: &#34;I&#39;m about to add 5 items in this loop&#34;                     │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">ArrayList Methods Reference
+    <div id="arraylist-methods-reference" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#arraylist-methods-reference" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ARRAYLIST COMPLETE REFERENCE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  CREATION                                                                    │
+│  ────────                                                                    │
+│                                                                              │
+│  ArrayList(T).init(allocator)                                               │
+│    Creates empty list. Capacity=0, Length=0                                 │
+│                                                                              │
+│  ArrayList(T).initCapacity(allocator, n)                                    │
+│    Creates list with pre-allocated capacity of n                            │
+│    Good when you know approximate size upfront                              │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  ADDING ITEMS                                                                │
+│  ────────────                                                                │
+│                                                                              │
+│  append(item) !void                                                         │
+│    Add one item. May allocate. May return error.                            │
+│    SAFE but slower                                                          │
+│                                                                              │
+│  appendAssumeCapacity(item) void                                            │
+│    Add one item. NO allocation. NO error possible.                          │
+│    FAST but requires prior ensureCapacity call                              │
+│                                                                              │
+│  appendSlice(items) !void                                                   │
+│    Add multiple items from slice. May allocate.                             │
+│                                                                              │
+│  appendSliceAssumeCapacity(items) void                                      │
+│    Add multiple items. No allocation.                                       │
+│                                                                              │
+│  appendNTimes(item, n) !void                                                │
+│    Add same item n times. May allocate.                                     │
+│                                                                              │
+│  appendNTimesAssumeCapacity(item, n) void                                   │
+│    Add same item n times. No allocation.                                    │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  CAPACITY MANAGEMENT                                                         │
+│  ───────────────────                                                         │
+│                                                                              │
+│  ensureTotalCapacity(n) !void                                               │
+│    Ensure can hold n items total                                            │
+│                                                                              │
+│  ensureTotalCapacityPrecise(n) !void                                        │
+│    Same, but don&#39;t over-allocate                                            │
+│                                                                              │
+│  ensureUnusedCapacity(n) !void                                              │
+│    Ensure can add n more items                                              │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  ACCESSING ITEMS                                                             │
+│  ───────────────                                                             │
+│                                                                              │
+│  list.items                                                                  │
+│    The underlying slice []T. Use for iteration.                             │
+│    Example: for (list.items) |item| { ... }                                 │
+│                                                                              │
+│  list.items[i]                                                               │
+│    Access item at index i                                                   │
+│                                                                              │
+│  list.items.len                                                              │
+│    Number of items (the length)                                             │
+│                                                                              │
+│  list.capacity                                                               │
+│    Total allocated space                                                    │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  REMOVING ITEMS                                                              │
+│  ──────────────                                                              │
+│                                                                              │
+│  pop() T                                                                    │
+│    Remove and return last item. Panics if empty.                            │
+│                                                                              │
+│  popOrNull() ?T                                                             │
+│    Remove and return last item. Returns null if empty.                      │
+│                                                                              │
+│  orderedRemove(index) T                                                     │
+│    Remove at index, shift remaining items left.                             │
+│    Preserves order. O(n) complexity.                                        │
+│                                                                              │
+│  swapRemove(index) T                                                        │
+│    Remove at index, replace with last item.                                 │
+│    Doesn&#39;t preserve order. O(1) complexity.                                 │
+│                                                                              │
+│  clearRetainingCapacity()                                                   │
+│    Set length to 0, but keep allocated memory.                              │
+│    Good for reusing the list.                                               │
+│                                                                              │
+│  clearAndFree()                                                             │
+│    Set length to 0 AND free all memory.                                     │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  CLEANUP                                                                     │
+│  ───────                                                                     │
+│                                                                              │
+│  deinit()                                                                   │
+│    Free all memory. List is unusable after this.                            │
+│    Always call when done!                                                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">HashMap Methods Reference
+    <div id="hashmap-methods-reference" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#hashmap-methods-reference" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    HASHMAP REFERENCE                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  HashMaps also have capacity (number of buckets)                            │
+│                                                                              │
+│  LOOKUP                                                                      │
+│  ──────                                                                      │
+│                                                                              │
+│  get(key) ?V                                                                │
+│    Get value for key. Returns null if not found.                            │
+│                                                                              │
+│    if (map.get(&#34;foo&#34;)) |value| {                                            │
+│        // value exists                                                      │
+│    } else {                                                                  │
+│        // not found                                                         │
+│    }                                                                         │
+│                                                                              │
+│  getPtr(key) ?*V                                                            │
+│    Get POINTER to value. Lets you modify in place.                          │
+│                                                                              │
+│    if (map.getPtr(&#34;count&#34;)) |ptr| {                                         │
+│        ptr.* += 1;  // Increment value in map                               │
+│    }                                                                         │
+│                                                                              │
+│  contains(key) bool                                                         │
+│    Check if key exists. Doesn&#39;t return value.                               │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  INSERTION                                                                   │
+│  ─────────                                                                   │
+│                                                                              │
+│  put(key, value) !void                                                      │
+│    Insert or update. May allocate (grow hash table).                        │
+│                                                                              │
+│  putAssumeCapacity(key, value) void                                         │
+│    Insert or update. NO allocation.                                         │
+│    Use after ensureUnusedCapacity.                                          │
+│                                                                              │
+│  putNoClobber(key, value) !void                                             │
+│    Insert only if key doesn&#39;t exist.                                        │
+│    Panics if key already exists (debug mode).                               │
+│                                                                              │
+│  getOrPut(key) !GetOrPutResult                                              │
+│    Get existing or create slot for new entry.                               │
+│    Returns pointer + found flag.                                            │
+│                                                                              │
+│    const result = try map.getOrPut(&#34;key&#34;);                                  │
+│    if (!result.found_existing) {                                            │
+│        result.value_ptr.* = initial_value;                                  │
+│    }                                                                         │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  REMOVAL                                                                     │
+│  ───────                                                                     │
+│                                                                              │
+│  remove(key) bool                                                           │
+│    Remove entry. Returns true if was present.                               │
+│                                                                              │
+│  fetchRemove(key) ?KV                                                       │
+│    Remove and return the key-value pair.                                    │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  CAPACITY                                                                    │
+│  ────────                                                                    │
+│                                                                              │
+│  ensureTotalCapacity(n) !void                                               │
+│    Ensure table can hold n entries without rehashing.                       │
+│                                                                              │
+│  ensureUnusedCapacity(n) !void                                              │
+│    Ensure can add n more entries without rehashing.                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">MultiArrayList Explained
+    <div id="multiarraylist-explained" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#multiarraylist-explained" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    WHY MULTIARRAYLIST EXISTS                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Problem: Poor cache performance with Array of Structs                      │
+│                                                                              │
+│  Given this struct:                                                          │
+│    const Node = struct {                                                    │
+│        tag: Tag,      // 1 byte                                             │
+│        data: Data,    // 8 bytes                                            │
+│    };                                                                        │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  ARRAY OF STRUCTS (normal ArrayList):                                       │
+│  ────────────────────────────────────                                        │
+│                                                                              │
+│  Memory layout:                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ tag│ data    │ tag│ data    │ tag│ data    │ tag│ data    │ ...   │    │
+│  │  1 │    8    │  1 │    8    │  1 │    8    │  1 │    8    │       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  When iterating ONLY over tags:                                              │
+│    • Load tag[0]                                                            │
+│    • Skip 8 bytes of data (wasted cache load!)                              │
+│    • Load tag[1]                                                            │
+│    • Skip 8 bytes of data (wasted!)                                         │
+│    • ...                                                                     │
+│                                                                              │
+│  CPU cache loads 64-byte lines but you only use 1 byte!                     │
+│  Efficiency: 1/9 = 11%                                                      │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  STRUCT OF ARRAYS (MultiArrayList):                                         │
+│  ──────────────────────────────────                                          │
+│                                                                              │
+│  Memory layout:                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ tag│ tag│ tag│ tag│ tag│ tag│ ...                                   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ data    │ data    │ data    │ data    │ ...                         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  When iterating ONLY over tags:                                              │
+│    • Load tag[0], tag[1], ..., tag[63] in ONE cache line!                   │
+│    • Process all 64 tags                                                    │
+│    • Load next 64 tags                                                      │
+│    • ...                                                                     │
+│                                                                              │
+│  Efficiency: 64/64 = 100%                                                   │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  WHEN TO USE:                                                                │
+│  ────────────                                                                │
+│                                                                              │
+│  MultiArrayList is better when:                                             │
+│    • You have MANY items (thousands+)                                       │
+│    • You often iterate over ONE field at a time                             │
+│    • Fields have different sizes                                            │
+│                                                                              │
+│  ArrayList is fine when:                                                    │
+│    • Small number of items                                                  │
+│    • You always access all fields together                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">MultiArrayList Usage
+    <div id="multiarraylist-usage" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#multiarraylist-usage" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">Node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">tag</span><span class="o">:</span><span class="w"> </span><span class="n">Tag</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">data</span><span class="o">:</span><span class="w"> </span><span class="n">Data</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Create MultiArrayList
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">var</span><span class="w"> </span><span class="n">nodes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="nf">MultiArrayList</span><span class="p">(</span><span class="n">Node</span><span class="p">){};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">defer</span><span class="w"> </span><span class="n">nodes</span><span class="p">.</span><span class="nf">deinit</span><span class="p">(</span><span class="n">allocator</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Add items
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">try</span><span class="w"> </span><span class="n">nodes</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w"> </span><span class="p">.</span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">add</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data1</span><span class="w"> </span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">try</span><span class="w"> </span><span class="n">nodes</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w"> </span><span class="p">.</span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">sub</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data2</span><span class="w"> </span><span class="p">});</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Access individual arrays (FAST iteration)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nodes</span><span class="p">.</span><span class="nf">items</span><span class="p">(.</span><span class="n">tag</span><span class="p">);</span><span class="w">     </span><span class="c1">// []Tag
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">datas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nodes</span><span class="p">.</span><span class="nf">items</span><span class="p">(.</span><span class="n">data</span><span class="p">);</span><span class="w">   </span><span class="c1">// []Data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Iterate just tags (cache-friendly!)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">tags</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">tag</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">.</span><span class="n">add</span><span class="p">)</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Iterate both together
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">tags</span><span class="p">,</span><span class="w"> </span><span class="n">datas</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="n">tag</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nf">process</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Get single item (all fields)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nodes</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">index</span><span class="p">);</span><span class="w">  </span><span class="c1">// Returns Node struct
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 class="relative group">StaticStringMap Explained
+    <div id="staticstringmap-explained" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#staticstringmap-explained" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    STATICSTRINGMAP - COMPILE-TIME PERFECT HASH              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Problem: Looking up keywords                                                │
+│                                                                              │
+│    Given string &#34;const&#34;, is it a keyword?                                   │
+│    If yes, which token type?                                                │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  NAIVE APPROACH (slow):                                                      │
+│  ─────────────────────                                                       │
+│                                                                              │
+│    fn getKeyword(str: []const u8) ?TokenTag {                               │
+│        if (eql(str, &#34;const&#34;)) return .keyword_const;                        │
+│        if (eql(str, &#34;var&#34;)) return .keyword_var;                            │
+│        if (eql(str, &#34;if&#34;)) return .keyword_if;                              │
+│        // ... 56 more comparisons ...                                       │
+│        return null;                                                         │
+│    }                                                                         │
+│                                                                              │
+│    Worst case: 59 string comparisons!                                       │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  STATICSTRINGMAP (fast):                                                     │
+│  ───────────────────────                                                     │
+│                                                                              │
+│    const keywords = std.StaticStringMap(TokenTag).initComptime(.{           │
+│        .{ &#34;const&#34;, .keyword_const },                                        │
+│        .{ &#34;var&#34;, .keyword_var },                                            │
+│        .{ &#34;if&#34;, .keyword_if },                                              │
+│        // ... all keywords ...                                               │
+│    });                                                                       │
+│                                                                              │
+│    fn getKeyword(str: []const u8) ?TokenTag {                               │
+│        return keywords.get(str);                                            │
+│    }                                                                         │
+│                                                                              │
+│    Always O(1)! Usually just 1-2 comparisons                                │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  HOW IT WORKS:                                                               │
+│  ─────────────                                                               │
+│                                                                              │
+│  At COMPILE TIME:                                                            │
+│    1. Analyze all strings                                                   │
+│    2. Find a hash function with NO collisions (perfect hash)                │
+│    3. Build lookup table                                                    │
+│                                                                              │
+│  At RUNTIME:                                                                 │
+│    1. Hash input string                    ← O(n) where n = string length   │
+│    2. Index into table                     ← O(1)                           │
+│    3. Compare with stored string           ← O(n) but only ONE comparison   │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  WHY &#34;STATIC&#34;:                                                               │
+│  ─────────────                                                               │
+│                                                                              │
+│    • Set of keys is fixed at compile time                                   │
+│    • Cannot add/remove entries at runtime                                   │
+│    • Zero runtime memory allocation                                         │
+│    • Hash function computed once at compile time                            │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">Slices Explained
+    <div id="slices-explained" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#slices-explained" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    WHAT IS A SLICE?                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  A slice is a &#34;view&#34; into an array. It contains:                            │
+│    • Pointer to first element                                               │
+│    • Length (number of elements)                                            │
+│                                                                              │
+│  Memory:                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  H │ e │ l │ l │ o │   │ W │ o │ r │ l │ d │                        │    │
+│  │  0   1   2   3   4   5   6   7   8   9  10                          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│      ▲                   ▲                                                   │
+│      │                   │                                                   │
+│      ptr                 │                                                   │
+│      └───────────────────┘                                                   │
+│              len = 5                                                         │
+│                                                                              │
+│  Slice: []const u8 = .{ .ptr = &amp;buffer[0], .len = 5 }                       │
+│  Contents: &#34;Hello&#34;                                                           │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  SLICE SYNTAX:                                                               │
+│  ─────────────                                                               │
+│                                                                              │
+│  const str = &#34;Hello World&#34;;                                                 │
+│                                                                              │
+│  str[0..5]     &#34;Hello&#34;     (index 0,1,2,3,4)                                │
+│  str[6..11]    &#34;World&#34;     (index 6,7,8,9,10)                               │
+│  str[6..]      &#34;World&#34;     (from 6 to end)                                  │
+│  str[..5]      &#34;Hello&#34;     (from start to 5)                                │
+│                                                                              │
+│  Note: end index is EXCLUSIVE (not included)                                │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  SLICES DON&#39;T COPY:                                                          │
+│  ──────────────────                                                          │
+│                                                                              │
+│  Slicing creates a NEW VIEW, not a copy:                                    │
+│                                                                              │
+│    const original = &#34;Hello World&#34;;                                          │
+│    const slice = original[0..5];  // Just a pointer + length                │
+│                                                                              │
+│  Both point to the SAME memory. No allocation happens.                      │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">Sentinel-Terminated Slices
+    <div id="sentinel-terminated-slices" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#sentinel-terminated-slices" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    SENTINEL-TERMINATED SLICES                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Problem: How does the tokenizer know when it hits end of file?             │
+│                                                                              │
+│  Option 1 (slow): Check index &lt; length every character                      │
+│                                                                              │
+│    while (index &lt; buffer.len) {    // Check #1                              │
+│        const c = buffer[index];    // Access                                │
+│        if (c == &#39;a&#39;) { ... }       // Check #2                              │
+│    }                                                                         │
+│                                                                              │
+│    Two comparisons per character!                                           │
+│                                                                              │
+│  Option 2 (fast): Use sentinel value                                        │
+│                                                                              │
+│    while (true) {                                                           │
+│        const c = buffer[index];    // Access                                │
+│        if (c == 0) break;          // Only one check!                       │
+│        if (c == &#39;a&#39;) { ... }                                                │
+│    }                                                                         │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  WHAT IS A SENTINEL?                                                         │
+│  ───────────────────                                                         │
+│                                                                              │
+│  A special value that marks the end:                                         │
+│                                                                              │
+│  Regular slice:                                                              │
+│  ┌───┬───┬───┬───┬───┐                                                      │
+│  │ H │ e │ l │ l │ o │      len=5, no sentinel                              │
+│  └───┴───┴───┴───┴───┘                                                      │
+│                                                                              │
+│  Sentinel-terminated ([:0]):                                                │
+│  ┌───┬───┬───┬───┬───┬───┐                                                  │
+│  │ H │ e │ l │ l │ o │ 0 │  len=5, sentinel=0                               │
+│  └───┴───┴───┴───┴───┴───┘                                                  │
+│                             ▲                                                │
+│                             sentinel (always present after data)             │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  ZIG SYNTAX:                                                                 │
+│  ───────────                                                                 │
+│                                                                              │
+│    []const u8           Regular slice                                       │
+│    [:0]const u8         Slice terminated by 0 (null)                        │
+│    [:255]u8             Slice terminated by 255                             │
+│    [*:0]const u8        Pointer to unknown-length null-terminated           │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  WHY TOKENIZER USES [:0]const u8:                                           │
+│  ────────────────────────────────                                            │
+│                                                                              │
+│    pub fn init(buffer: [:0]const u8) Tokenizer {                            │
+│        return .{ .buffer = buffer, .index = 0 };                            │
+│    }                                                                         │
+│                                                                              │
+│    // In the hot loop:                                                       │
+│    switch (self.buffer[self.index]) {                                       │
+│        0 =&gt; return .eof,        // Found sentinel = end of file             │
+│        &#39;a&#39;...&#39;z&#39; =&gt; { ... },                                                │
+│        // ...                                                                │
+│    }                                                                         │
+│                                                                              │
+│    No separate bounds check needed!                                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">Error Handling Patterns
+    <div id="error-handling-patterns" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#error-handling-patterns" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG ERROR HANDLING                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ERROR UNIONS                                                                │
+│  ────────────                                                                │
+│                                                                              │
+│  A value that is EITHER an error OR a success value:                        │
+│                                                                              │
+│    fn divide(a: i32, b: i32) !i32 {     // Returns error or i32            │
+│        if (b == 0) return error.DivByZero;                                  │
+│        return a / b;                                                        │
+│    }                                                                         │
+│                                                                              │
+│    // The ! means &#34;this might fail&#34;                                         │
+│    // Full type: error{DivByZero}!i32                                       │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  TRY - &#34;Propagate error if failed&#34;                                          │
+│  ─────────────────────────────────                                           │
+│                                                                              │
+│    fn calculate() !i32 {                                                    │
+│        const x = try divide(10, 2);   // If error, return it immediately   │
+│        const y = try divide(x, 3);    // Same here                         │
+│        return y;                                                            │
+│    }                                                                         │
+│                                                                              │
+│    // &#34;try&#34; is syntax sugar for:                                            │
+│    const x = divide(10, 2) catch |err| return err;                          │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  CATCH - &#34;Handle error here&#34;                                                │
+│  ───────────────────────────                                                 │
+│                                                                              │
+│    // Provide default value on error                                        │
+│    const x = divide(10, 0) catch 0;                                         │
+│                                                                              │
+│    // Handle specific error                                                 │
+│    const x = divide(10, 0) catch |err| {                                    │
+│        std.log.warn(&#34;Division failed: {}&#34;, .{err});                         │
+│        return 0;                                                            │
+│    };                                                                        │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  OPTIONALS (different from errors!)                                         │
+│  ──────────────────────────────────                                          │
+│                                                                              │
+│  A value that might not exist:                                              │
+│                                                                              │
+│    fn find(haystack: []const u8, needle: u8) ?usize {                       │
+│        for (haystack, 0..) |c, i| {                                         │
+│            if (c == needle) return i;                                       │
+│        }                                                                     │
+│        return null;  // Not found                                           │
+│    }                                                                         │
+│                                                                              │
+│  ORELSE - &#34;Use default if null&#34;                                             │
+│  ──────────────────────────────                                              │
+│                                                                              │
+│    const index = find(&#34;hello&#34;, &#39;x&#39;) orelse 0;                               │
+│                                                                              │
+│  IF with unwrap:                                                             │
+│  ───────────────                                                             │
+│                                                                              │
+│    if (find(&#34;hello&#34;, &#39;l&#39;)) |index| {                                        │
+│        // index is usize, guaranteed non-null                               │
+│        std.debug.print(&#34;Found at {}\n&#34;, .{index});                          │
+│    } else {                                                                  │
+│        std.debug.print(&#34;Not found\n&#34;, .{});                                 │
+│    }                                                                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">Labeled Control Flow
+    <div id="labeled-control-flow" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#labeled-control-flow" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    LABELED SWITCH CONTINUE (STATE MACHINE)                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  This is how the tokenizer implements its state machine!                     │
+│                                                                              │
+│  TRADITIONAL APPROACH (slow):                                                │
+│  ────────────────────────────                                                │
+│                                                                              │
+│    var state = State.start;                                                 │
+│    while (true) {                                                           │
+│        state = switch (state) {                                             │
+│            .start =&gt; handleStart(),        // Returns next state            │
+│            .identifier =&gt; handleIdent(),                                    │
+│            .number =&gt; handleNumber(),                                       │
+│            .done =&gt; break,                                                  │
+│        };                                                                    │
+│    }                                                                         │
+│                                                                              │
+│    Problem: Each iteration has:                                              │
+│      • Switch dispatch                                                       │
+│      • Function call (or inline code)                                        │
+│      • Return value assignment                                               │
+│      • Loop back                                                             │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  LABELED SWITCH CONTINUE (fast):                                            │
+│  ───────────────────────────────                                             │
+│                                                                              │
+│    state: switch (State.start) {                                            │
+│        .start =&gt; {                                                          │
+│            // process...                                                    │
+│            continue :state .identifier;  // GOTO another case               │
+│        },                                                                    │
+│        .identifier =&gt; {                                                     │
+│            // process...                                                    │
+│            continue :state .number;                                         │
+│        },                                                                    │
+│        .number =&gt; {                                                         │
+│            // process...                                                    │
+│            // Fall through = exit switch                                    │
+│        },                                                                    │
+│    }                                                                         │
+│                                                                              │
+│    Benefits:                                                                 │
+│      • No loop overhead                                                      │
+│      • Direct jump to next state                                            │
+│      • Compiler can optimize across states                                  │
+│      • No function call overhead                                            │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  VISUAL EXECUTION:                                                           │
+│  ─────────────────                                                           │
+│                                                                              │
+│    state: switch (.start) ──────┐                                           │
+│        .start =&gt; {              │                                           │
+│            // do stuff      ◀───┘                                           │
+│            continue :state .identifier; ───┐                                │
+│        },                                  │                                 │
+│        .identifier =&gt; {                    │                                 │
+│            // do stuff      ◀──────────────┘                                │
+│            continue :state .done; ───┐                                      │
+│        },                            │                                       │
+│        .done =&gt; {                    │                                       │
+│            // do stuff  ◀────────────┘                                      │
+│            // no continue = exit switch ───▶ Continue after switch          │
+│        },                                                                    │
+│    }                                                                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">Common Builtins
+    <div id="common-builtins" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#common-builtins" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    COMMON BUILTINS REFERENCE                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  TYPE CONVERSION                                                             │
+│  ───────────────                                                             │
+│                                                                              │
+│  @intFromEnum(enum_val)         Enum → Integer                              │
+│    const x = @intFromEnum(Color.red);  // x = 0                             │
+│                                                                              │
+│  @enumFromInt(int_val)          Integer → Enum                              │
+│    const c = @enumFromInt(Color, 1);   // c = .green                        │
+│                                                                              │
+│  @intCast(value)                Safe integer cast (panics if doesn&#39;t fit)   │
+│    const small: u8 = @intCast(big_int);                                     │
+│                                                                              │
+│  @truncate(value)               Truncate (discard high bits)                │
+│    const x: u8 = @truncate(0x1234);  // x = 0x34                            │
+│                                                                              │
+│  @ptrCast(ptr)                  Cast pointer type                           │
+│    const int_ptr: *u32 = @ptrCast(byte_ptr);                                │
+│                                                                              │
+│  @as(T, value)                  Explicit type coercion                      │
+│    const x = @as(u32, 5);       // 5 as u32                                 │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  SIZE AND ALIGNMENT                                                          │
+│  ──────────────────                                                          │
+│                                                                              │
+│  @sizeOf(T)                     Size in bytes                               │
+│    @sizeOf(u32) = 4                                                         │
+│    @sizeOf(struct { x: u32, y: u32 }) = 8                                   │
+│                                                                              │
+│  @alignOf(T)                    Alignment requirement                       │
+│    @alignOf(u32) = 4                                                        │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  COMPILE-TIME                                                                │
+│  ────────────                                                                │
+│                                                                              │
+│  @compileLog(values...)         Print at compile time (debugging)           │
+│  @compileError(msg)             Emit compile error                          │
+│  @typeInfo(T)                   Get type information                        │
+│  @Type(info)                    Create type from info                       │
+│  @typeName(T)                   Get type name as string                     │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  DEBUGGING                                                                   │
+│  ─────────                                                                   │
+│                                                                              │
+│  @panic(msg)                    Crash with message                          │
+│  unreachable                    Mark unreachable code                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 class="relative group">Build Modes and Safety
+    <div id="build-modes-and-safety" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#build-modes-and-safety" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                    BUILD MODES                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Mode         │ Safety  │ Optimizations │ Use Case                          │
+│  ─────────────┼─────────┼───────────────┼─────────────────────────────────  │
+│  Debug        │   ON    │     OFF       │ Development, debugging            │
+│  ReleaseSafe  │   ON    │     ON        │ Production with safety            │
+│  ReleaseFast  │   OFF   │     ON        │ Maximum performance               │
+│  ReleaseSmall │   OFF   │     SIZE      │ Embedded, small binaries          │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  WHAT &#34;SAFETY&#34; MEANS:                                                        │
+│  ────────────────────                                                        │
+│                                                                              │
+│  Safety ON:                                                                  │
+│    • Bounds checking on array access                                        │
+│    • Integer overflow detection                                             │
+│    • Null pointer checks                                                    │
+│    • Use-after-free detection (sometimes)                                   │
+│    • Undefined behavior → panic with stack trace                            │
+│                                                                              │
+│  Safety OFF:                                                                 │
+│    • No runtime checks                                                       │
+│    • Undefined behavior → anything can happen                               │
+│    • Faster but dangerous if code has bugs                                  │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  EXAMPLE:                                                                    │
+│  ────────                                                                    │
+│                                                                              │
+│    var arr = [_]u8{ 1, 2, 3 };                                              │
+│    const x = arr[10];  // Out of bounds!                                    │
+│                                                                              │
+│    Debug/ReleaseSafe:                                                       │
+│      panic: index out of bounds                                             │
+│      → Clear error, program crashes safely                                  │
+│                                                                              │
+│    ReleaseFast/ReleaseSmall:                                                │
+│      → Reads garbage memory                                                 │
+│      → Security vulnerability                                               │
+│      → Program might appear to work but is broken                           │
+│                                                                              │
+│  ───────────────────────────────────────────────────────────────────────    │
+│                                                                              │
+│  RECOMMENDATION:                                                             │
+│  ───────────────                                                             │
+│                                                                              │
+│    Development:   Debug (catch bugs early)                                  │
+│    Testing:       ReleaseSafe (realistic perf + safety)                     │
+│    Production:    ReleaseSafe (safety &gt; tiny perf gain)                     │
+│    Hot paths:     ReleaseFast only if profiled and necessary                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+<p><strong>Back to Articles</strong>:</p>
+<ol>
+<li><a
+  href="./01-bootstrap-process.md">Bootstrap Process</a></li>
+<li><a
+  href="./02-tokenizer.md">Tokenizer</a></li>
+<li><a
+  href="./03-parser-ast.md">Parser and AST</a></li>
+<li><a
+  href="./04-zir-generation.md">ZIR Generation</a></li>
+<li><a
+  href="./05-sema.md">Semantic Analysis</a></li>
+<li><a
+  href="./06-air-codegen.md">AIR and Code Generation</a></li>
+<li><a
+  href="./07-linking.md">Linking</a></li>
+</ol>
+
+          
+          
+          
+        </div>
+        
+        
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_drafts/appendix-zig-patterns.md"
+          data-oid-likes="likes_drafts/appendix-zig-patterns.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+            <a
+              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/13-mini-compiler/">
+              <span class="leading-6">
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Building a Mini Zig Compiler: From Source to C
+              </span>
+            </a>
+            
+              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time>
+              </span>
+            
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Yohai
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:1313/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>

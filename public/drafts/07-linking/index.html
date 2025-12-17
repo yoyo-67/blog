@@ -1,0 +1,2559 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Zig Compiler Internals Part 7: Linking &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Zig Compiler Internals Part 7: Linking &middot; Yohai&#39;s Blog">
+  
+
+  
+  
+  
+  
+  
+  <link rel="canonical" href="http://localhost:1313/drafts/07-linking/">
+  
+
+  
+  
+    <meta name="author" content="Yohai">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:1313/drafts/07-linking/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Zig Compiler Internals Part 7: Linking">
+  <meta property="og:description" content="Zig Compiler Internals Part 7: Linking # From object files to executables - the final step
+Introduction # You’ve written your code, it’s been parsed, type-checked, and turned into machine code. But you still don’t have a program you can run! The linker is the final piece of the puzzle - it takes all the pieces and combines them into a single executable file.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="drafts">
+    <meta property="article:published_time" content="2025-12-17T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-17T00:00:00+00:00">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Zig Compiler Internals Part 7: Linking">
+  <meta name="twitter:description" content="Zig Compiler Internals Part 7: Linking # From object files to executables - the final step
+Introduction # You’ve written your code, it’s been parsed, type-checked, and turned into machine code. But you still don’t have a program you can run! The linker is the final piece of the puzzle - it takes all the pieces and combines them into a single executable file.">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Drafts",
+    "name": "Zig Compiler Internals Part 7: Linking",
+    "headline": "Zig Compiler Internals Part 7: Linking",
+    
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eZig Compiler Internals Part 7: Linking\n    \u003cdiv id=\u0022zig-compiler-internals-part-7-linking\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#zig-compiler-internals-part-7-linking\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003e\u003cem\u003eFrom object files to executables - the final step\u003c\/em\u003e\u003c\/p\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eIntroduction\n    \u003cdiv id=\u0022introduction\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#introduction\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eYou\u0026rsquo;ve written your code, it\u0026rsquo;s been parsed, type-checked, and turned into machine code. But you still don\u0026rsquo;t have a program you can run! The \u003cstrong\u003elinker\u003c\/strong\u003e is the final piece of the puzzle - it takes all the pieces and combines them into a single executable file.\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:1313/drafts/07-linking/",
+    "author" : {
+      "@type": "Person",
+      "name": "Yohai"
+    },
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-17T00:00:00\u002b00:00",
+    "datePublished": "2025-12-17T00:00:00\u002b00:00",
+    
+    "dateModified": "2025-12-17T00:00:00\u002b00:00",
+    
+    
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "5694"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          Yohai&rsquo;s Blog
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/drafts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Drafts"
+  title="Drafts">
+  
+  
+    <p class="text-base font-medium">
+      Drafts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/drafts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Drafts"
+    title="Drafts">
+    
+    
+      <p class="text-bg font-bg">
+        Drafts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >Yohai&#39;s Blog</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/"
+      >Drafts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/07-linking/"
+      >Zig Compiler Internals Part 7: Linking</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Zig Compiler Internals Part 7: Linking
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5694 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">27 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Yohai
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-what-is-linking">Part 1: What is Linking?</a>
+      <ul>
+        <li><a href="#the-problem-code-in-pieces">The Problem: Code in Pieces</a></li>
+        <li><a href="#the-solution-linking">The Solution: Linking</a></li>
+        <li><a href="#what-the-linker-does-summary">What the Linker Does (Summary)</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-whats-inside-an-object-file">Part 2: What&rsquo;s Inside an Object File?</a>
+      <ul>
+        <li><a href="#object-file-structure">Object File Structure</a></li>
+        <li><a href="#example-whats-in-maino">Example: What&rsquo;s in main.o</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-symbols---the-names-of-things">Part 3: Symbols - The Names of Things</a>
+      <ul>
+        <li><a href="#what-is-a-symbol">What is a Symbol?</a></li>
+        <li><a href="#defined-vs-undefined-symbols">Defined vs Undefined Symbols</a></li>
+        <li><a href="#symbol-resolution">Symbol Resolution</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-relocations---filling-in-the-holes">Part 4: Relocations - Filling in the Holes</a>
+      <ul>
+        <li><a href="#what-are-relocations">What are Relocations?</a></li>
+        <li><a href="#types-of-relocations">Types of Relocations</a></li>
+        <li><a href="#relocation-in-action">Relocation in Action</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-static-vs-dynamic-linking">Part 5: Static vs Dynamic Linking</a>
+      <ul>
+        <li><a href="#two-ways-to-link-libraries">Two Ways to Link Libraries</a></li>
+        <li><a href="#got-and-plt-dynamic-linking-magic">GOT and PLT: Dynamic Linking Magic</a></li>
+        <li><a href="#how-got-works">How GOT Works</a></li>
+        <li><a href="#how-plt-works">How PLT Works</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-executable-file-formats">Part 6: Executable File Formats</a>
+      <ul>
+        <li><a href="#different-platforms-different-formats">Different Platforms, Different Formats</a></li>
+        <li><a href="#elf-linuxbsd">ELF (Linux/BSD)</a></li>
+        <li><a href="#mach-o-macosios">Mach-O (macOS/iOS)</a></li>
+        <li><a href="#pecoff-windows">PE/COFF (Windows)</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-why-zig-has-its-own-linker">Part 7: Why Zig Has Its Own Linker</a>
+      <ul>
+        <li><a href="#traditional-approach-vs-zig-approach">Traditional Approach vs Zig Approach</a></li>
+        <li><a href="#zigs-four-linkers">Zig&rsquo;s Four Linkers</a></li>
+        <li><a href="#incremental-linking">Incremental Linking</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-the-linking-process-step-by-step">Part 8: The Linking Process Step by Step</a>
+      <ul>
+        <li><a href="#complete-linking-pipeline">Complete Linking Pipeline</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-debug-information">Part 9: Debug Information</a>
+      <ul>
+        <li><a href="#what-is-debug-info">What is Debug Info?</a></li>
+        <li><a href="#dwarf-debug-format">DWARF Debug Format</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-complete-picture">Part 10: The Complete Picture</a>
+      <ul>
+        <li><a href="#full-compilation-pipeline">Full Compilation Pipeline</a></li>
+        <li><a href="#summary-what-we-learned">Summary: What We Learned</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-what-is-linking">Part 1: What is Linking?</a>
+      <ul>
+        <li><a href="#the-problem-code-in-pieces">The Problem: Code in Pieces</a></li>
+        <li><a href="#the-solution-linking">The Solution: Linking</a></li>
+        <li><a href="#what-the-linker-does-summary">What the Linker Does (Summary)</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-whats-inside-an-object-file">Part 2: What&rsquo;s Inside an Object File?</a>
+      <ul>
+        <li><a href="#object-file-structure">Object File Structure</a></li>
+        <li><a href="#example-whats-in-maino">Example: What&rsquo;s in main.o</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-symbols---the-names-of-things">Part 3: Symbols - The Names of Things</a>
+      <ul>
+        <li><a href="#what-is-a-symbol">What is a Symbol?</a></li>
+        <li><a href="#defined-vs-undefined-symbols">Defined vs Undefined Symbols</a></li>
+        <li><a href="#symbol-resolution">Symbol Resolution</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-relocations---filling-in-the-holes">Part 4: Relocations - Filling in the Holes</a>
+      <ul>
+        <li><a href="#what-are-relocations">What are Relocations?</a></li>
+        <li><a href="#types-of-relocations">Types of Relocations</a></li>
+        <li><a href="#relocation-in-action">Relocation in Action</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-static-vs-dynamic-linking">Part 5: Static vs Dynamic Linking</a>
+      <ul>
+        <li><a href="#two-ways-to-link-libraries">Two Ways to Link Libraries</a></li>
+        <li><a href="#got-and-plt-dynamic-linking-magic">GOT and PLT: Dynamic Linking Magic</a></li>
+        <li><a href="#how-got-works">How GOT Works</a></li>
+        <li><a href="#how-plt-works">How PLT Works</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-executable-file-formats">Part 6: Executable File Formats</a>
+      <ul>
+        <li><a href="#different-platforms-different-formats">Different Platforms, Different Formats</a></li>
+        <li><a href="#elf-linuxbsd">ELF (Linux/BSD)</a></li>
+        <li><a href="#mach-o-macosios">Mach-O (macOS/iOS)</a></li>
+        <li><a href="#pecoff-windows">PE/COFF (Windows)</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-why-zig-has-its-own-linker">Part 7: Why Zig Has Its Own Linker</a>
+      <ul>
+        <li><a href="#traditional-approach-vs-zig-approach">Traditional Approach vs Zig Approach</a></li>
+        <li><a href="#zigs-four-linkers">Zig&rsquo;s Four Linkers</a></li>
+        <li><a href="#incremental-linking">Incremental Linking</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-the-linking-process-step-by-step">Part 8: The Linking Process Step by Step</a>
+      <ul>
+        <li><a href="#complete-linking-pipeline">Complete Linking Pipeline</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-debug-information">Part 9: Debug Information</a>
+      <ul>
+        <li><a href="#what-is-debug-info">What is Debug Info?</a></li>
+        <li><a href="#dwarf-debug-format">DWARF Debug Format</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-complete-picture">Part 10: The Complete Picture</a>
+      <ul>
+        <li><a href="#full-compilation-pipeline">Full Compilation Pipeline</a></li>
+        <li><a href="#summary-what-we-learned">Summary: What We Learned</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+
+        <div class="article-content max-w-prose mb-20">
+          
+<h1 class="relative group">Zig Compiler Internals Part 7: Linking
+    <div id="zig-compiler-internals-part-7-linking" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zig-compiler-internals-part-7-linking" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p><em>From object files to executables - the final step</em></p>
+<hr>
+
+<h2 class="relative group">Introduction
+    <div id="introduction" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#introduction" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>You&rsquo;ve written your code, it&rsquo;s been parsed, type-checked, and turned into machine code. But you still don&rsquo;t have a program you can run! The <strong>linker</strong> is the final piece of the puzzle - it takes all the pieces and combines them into a single executable file.</p>
+<p>This article explains:</p>
+<ul>
+<li>What linking is and why we need it</li>
+<li>What object files contain</li>
+<li>How symbols and relocations work</li>
+<li>Why Zig has its own linkers</li>
+<li>How different executable formats work</li>
+</ul>
+<hr>
+
+<h2 class="relative group">Part 1: What is Linking?
+    <div id="part-1-what-is-linking" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-1-what-is-linking" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Problem: Code in Pieces
+    <div id="the-problem-code-in-pieces" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-problem-code-in-pieces" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>When you compile a program, each source file becomes an <strong>object file</strong>. But these pieces can&rsquo;t run on their own:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE PROBLEM: SCATTERED CODE                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Your project:                                                        │
+│                                                                      │
+│   main.zig          utils.zig         math.zig                      │
+│   ─────────         ──────────        ─────────                     │
+│   fn main() {       fn helper() {     fn add() {                    │
+│       helper();         ...               ...                       │
+│       add();        }                 }                             │
+│   }                                                                  │
+│                                                                      │
+│ After compilation (separate object files):                          │
+│                                                                      │
+│   main.o            utils.o           math.o                        │
+│   ─────────         ──────────        ─────────                     │
+│   main:             helper:           add:                          │
+│     call ???        ...               ...                           │
+│     call ???                                                        │
+│        ↑                                                            │
+│        │                                                            │
+│   &#34;I need to call helper and add,                                   │
+│    but I don&#39;t know where they are!&#34;                                │
+│                                                                      │
+│ Each object file is incomplete - it has HOLES where it needs        │
+│ to reference things from other files.                               │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Solution: Linking
+    <div id="the-solution-linking" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-solution-linking" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>The linker combines all pieces and fills in the holes:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE SOLUTION: LINKING                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   main.o + utils.o + math.o                                         │
+│                 │                                                    │
+│                 ▼                                                    │
+│           ┌──────────┐                                              │
+│           │  LINKER  │                                              │
+│           └────┬─────┘                                              │
+│                │                                                     │
+│                ▼                                                     │
+│   ┌─────────────────────────────────────────┐                       │
+│   │          EXECUTABLE                      │                       │
+│   │                                          │                       │
+│   │   main:           (at address 0x1000)   │                       │
+│   │     call 0x2000   ← filled in!          │                       │
+│   │     call 0x3000   ← filled in!          │                       │
+│   │                                          │                       │
+│   │   helper:         (at address 0x2000)   │                       │
+│   │     ...                                  │                       │
+│   │                                          │                       │
+│   │   add:            (at address 0x3000)   │                       │
+│   │     ...                                  │                       │
+│   │                                          │                       │
+│   └─────────────────────────────────────────┘                       │
+│                                                                      │
+│ The linker:                                                         │
+│   1. Puts all the code together                                     │
+│   2. Assigns addresses to everything                                │
+│   3. Fills in all the holes                                         │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">What the Linker Does (Summary)
+    <div id="what-the-linker-does-summary" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-the-linker-does-summary" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ LINKER RESPONSIBILITIES                                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. GATHER INPUTS                                                    │
+│    • Object files (.o) from your code                              │
+│    • Static libraries (.a) you&#39;re using                            │
+│    • Shared libraries (.so/.dylib/.dll) to link against           │
+│                                                                      │
+│ 2. RESOLVE SYMBOLS                                                  │
+│    • &#34;main.o needs &#39;helper&#39;&#34; → found in utils.o                    │
+│    • &#34;main.o needs &#39;printf&#39;&#34; → found in libc.so                    │
+│    • Report errors for undefined symbols                           │
+│                                                                      │
+│ 3. ARRANGE IN MEMORY                                                │
+│    • Put all code together in one section                          │
+│    • Put all data together in another section                      │
+│    • Assign virtual addresses to everything                        │
+│                                                                      │
+│ 4. FIX UP REFERENCES (Relocations)                                 │
+│    • Replace &#34;call ???&#34; with &#34;call 0x2000&#34;                        │
+│    • Replace &#34;load ???&#34; with &#34;load 0x5000&#34;                        │
+│                                                                      │
+│ 5. PRODUCE OUTPUT                                                   │
+│    • Write executable file in proper format                        │
+│    • Add headers the OS needs to load it                           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 2: What&rsquo;s Inside an Object File?
+    <div id="part-2-whats-inside-an-object-file" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-2-whats-inside-an-object-file" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Object File Structure
+    <div id="object-file-structure" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#object-file-structure" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>An object file contains several pieces of information:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ OBJECT FILE ANATOMY                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ ┌─────────────────────────────────────────────────────────────────┐│
+│ │                        OBJECT FILE                               ││
+│ │                                                                   ││
+│ │  ┌─────────────────────────────────────────────────────────────┐││
+│ │  │ HEADER                                                       │││
+│ │  │ • File format (ELF, MachO, COFF)                            │││
+│ │  │ • Target architecture (x86_64, ARM64)                       │││
+│ │  │ • Number of sections                                        │││
+│ │  └─────────────────────────────────────────────────────────────┘││
+│ │                                                                   ││
+│ │  ┌─────────────────────────────────────────────────────────────┐││
+│ │  │ CODE SECTION (.text)                                        │││
+│ │  │ • Machine code for all functions                            │││
+│ │  │ • Contains &#34;holes&#34; where external refs go                   │││
+│ │  └─────────────────────────────────────────────────────────────┘││
+│ │                                                                   ││
+│ │  ┌─────────────────────────────────────────────────────────────┐││
+│ │  │ DATA SECTION (.data)                                        │││
+│ │  │ • Initialized global variables                              │││
+│ │  │ • Constant values                                           │││
+│ │  └─────────────────────────────────────────────────────────────┘││
+│ │                                                                   ││
+│ │  ┌─────────────────────────────────────────────────────────────┐││
+│ │  │ SYMBOL TABLE                                                 │││
+│ │  │ • List of functions/variables this file DEFINES             │││
+│ │  │ • List of functions/variables this file NEEDS               │││
+│ │  └─────────────────────────────────────────────────────────────┘││
+│ │                                                                   ││
+│ │  ┌─────────────────────────────────────────────────────────────┐││
+│ │  │ RELOCATION TABLE                                            │││
+│ │  │ • &#34;At offset 0x10, fill in address of &#39;helper&#39;&#34;            │││
+│ │  │ • &#34;At offset 0x20, fill in address of &#39;global_var&#39;&#34;        │││
+│ │  └─────────────────────────────────────────────────────────────┘││
+│ │                                                                   ││
+│ └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Example: What&rsquo;s in main.o
+    <div id="example-whats-in-maino" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#example-whats-in-maino" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ EXAMPLE: main.o                                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Source code (main.zig):                                             │
+│                                                                      │
+│   const std = @import(&#34;std&#34;);                                       │
+│   extern fn helper() void;      // Defined elsewhere                │
+│                                                                      │
+│   pub fn main() void {                                              │
+│       helper();                                                     │
+│       std.debug.print(&#34;Hello\n&#34;, .{});                             │
+│   }                                                                  │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ Object file (main.o) contains:                                      │
+│                                                                      │
+│ SYMBOL TABLE:                                                       │
+│ ┌──────────────┬────────────────┬─────────────────────────────────┐│
+│ │ Name         │ Type           │ Notes                           ││
+│ ├──────────────┼────────────────┼─────────────────────────────────┤│
+│ │ main         │ DEFINED        │ At offset 0x0000 in .text       ││
+│ │ helper       │ UNDEFINED      │ Need to find this elsewhere!    ││
+│ │ std.debug... │ UNDEFINED      │ Need to find this elsewhere!    ││
+│ └──────────────┴────────────────┴─────────────────────────────────┘│
+│                                                                      │
+│ CODE SECTION (.text):                                               │
+│ ┌──────────┬──────────────────────────────────────────────────────┐│
+│ │ Offset   │ Machine Code                                         ││
+│ ├──────────┼──────────────────────────────────────────────────────┤│
+│ │ 0x0000   │ push rbp          ; main function starts            ││
+│ │ 0x0001   │ mov rbp, rsp                                        ││
+│ │ 0x0004   │ call 0x00000000   ; ← HOLE! Address unknown         ││
+│ │ 0x0009   │ ...               ; rest of main                    ││
+│ └──────────┴──────────────────────────────────────────────────────┘│
+│                                                                      │
+│ RELOCATION TABLE:                                                   │
+│ ┌──────────┬──────────────┬─────────────────────────────────────┐  │
+│ │ Offset   │ Symbol       │ Meaning                             │  │
+│ ├──────────┼──────────────┼─────────────────────────────────────┤  │
+│ │ 0x0005   │ helper       │ &#34;Put address of &#39;helper&#39; here&#34;     │  │
+│ └──────────┴──────────────┴─────────────────────────────────────┘  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 3: Symbols - The Names of Things
+    <div id="part-3-symbols---the-names-of-things" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-3-symbols---the-names-of-things" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What is a Symbol?
+    <div id="what-is-a-symbol" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-is-a-symbol" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>A <strong>symbol</strong> is a name that refers to something in your code:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ WHAT ARE SYMBOLS?                                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Symbols are names for:                                              │
+│                                                                      │
+│   • Functions        fn add(a: i32, b: i32) i32 { ... }            │
+│                          ↑                                          │
+│                      Symbol: &#34;add&#34;                                  │
+│                                                                      │
+│   • Global variables  var counter: u32 = 0;                        │
+│                           ↑                                         │
+│                       Symbol: &#34;counter&#34;                             │
+│                                                                      │
+│   • Constants         const MAX_SIZE: usize = 1024;                │
+│                             ↑                                       │
+│                         Symbol: &#34;MAX_SIZE&#34;                          │
+│                                                                      │
+│ Each symbol has:                                                    │
+│   • A name (like &#34;add&#34; or &#34;counter&#34;)                               │
+│   • A type (function, variable, constant)                          │
+│   • A location (address once linked)                               │
+│   • Visibility (local, global, exported)                           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Defined vs Undefined Symbols
+    <div id="defined-vs-undefined-symbols" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#defined-vs-undefined-symbols" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ DEFINED vs UNDEFINED SYMBOLS                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ DEFINED: &#34;I have this&#34;                                              │
+│ ─────────────────────────                                           │
+│                                                                      │
+│   // In math.zig                                                    │
+│   pub fn add(a: i32, b: i32) i32 {                                 │
+│       return a + b;                                                 │
+│   }                                                                  │
+│                                                                      │
+│   math.o defines symbol &#34;add&#34;                                       │
+│   • The code for add() is IN this file                             │
+│   • It has a specific offset (e.g., 0x100)                         │
+│                                                                      │
+│ UNDEFINED: &#34;I need this&#34;                                            │
+│ ─────────────────────────                                           │
+│                                                                      │
+│   // In main.zig                                                    │
+│   const math = @import(&#34;math.zig&#34;);                                │
+│                                                                      │
+│   pub fn main() void {                                              │
+│       const result = math.add(5, 3);  // Using add()               │
+│   }                                                                  │
+│                                                                      │
+│   main.o has undefined symbol &#34;add&#34;                                 │
+│   • main.o calls add() but doesn&#39;t have the code                   │
+│   • The linker must find it elsewhere                              │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Symbol Resolution
+    <div id="symbol-resolution" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#symbol-resolution" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>The linker matches undefined symbols to defined symbols:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ SYMBOL RESOLUTION                                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ STEP 1: Collect all symbols from all object files                  │
+│                                                                      │
+│   main.o:                                                           │
+│     DEFINES: main                                                   │
+│     NEEDS: add, printf                                             │
+│                                                                      │
+│   math.o:                                                           │
+│     DEFINES: add, subtract, multiply                               │
+│     NEEDS: (nothing)                                                │
+│                                                                      │
+│   libc.so:                                                          │
+│     DEFINES: printf, malloc, free, ...                             │
+│     NEEDS: (nothing)                                                │
+│                                                                      │
+│ STEP 2: Match needs to definitions                                 │
+│                                                                      │
+│   main.o needs &#34;add&#34;     →  Found in math.o ✓                      │
+│   main.o needs &#34;printf&#34;  →  Found in libc.so ✓                     │
+│                                                                      │
+│ STEP 3: Report errors for unresolved symbols                       │
+│                                                                      │
+│   If main.o needs &#34;foo&#34; but no one defines it:                     │
+│                                                                      │
+│   error: undefined reference to &#39;foo&#39;                              │
+│   &gt;&gt;&gt; main.o: in function &#39;main&#39;                                   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 4: Relocations - Filling in the Holes
+    <div id="part-4-relocations---filling-in-the-holes" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-4-relocations---filling-in-the-holes" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What are Relocations?
+    <div id="what-are-relocations" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-are-relocations" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>When code is compiled, we don&rsquo;t know final addresses yet. Relocations tell the linker what to fix:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ WHAT ARE RELOCATIONS?                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Source code:                                                        │
+│                                                                      │
+│   fn main() void {                                                  │
+│       helper();  // Call another function                          │
+│   }                                                                  │
+│                                                                      │
+│ Compiled code (before linking):                                     │
+│                                                                      │
+│   main:                                                              │
+│       call 0x00000000     ; We don&#39;t know helper&#39;s address yet!    │
+│            ↑                                                        │
+│            └── This is a PLACEHOLDER (all zeros)                   │
+│                                                                      │
+│ Relocation entry:                                                   │
+│                                                                      │
+│   &#34;At offset 0x0001, insert the address of symbol &#39;helper&#39;&#34;        │
+│                                                                      │
+│ After linking (addresses known):                                   │
+│                                                                      │
+│   main:       (at address 0x1000)                                  │
+│       call 0x00002000     ; Now we know: helper is at 0x2000!      │
+│            ↑                                                        │
+│            └── FILLED IN by linker                                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Types of Relocations
+    <div id="types-of-relocations" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#types-of-relocations" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Different code patterns need different relocation types:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ RELOCATION TYPES                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. ABSOLUTE                                                         │
+│    ─────────────────────                                            │
+│    &#34;Put the full address here&#34;                                     │
+│                                                                      │
+│    mov rax, 0x0000000000000000   ; Load address of global_var     │
+│              ↑                                                      │
+│              Put absolute address here (64 bits)                   │
+│                                                                      │
+│ 2. PC-RELATIVE (Program Counter Relative)                          │
+│    ─────────────────────                                            │
+│    &#34;Put the distance from here to there&#34;                           │
+│                                                                      │
+│    call 0x00000000               ; Call helper                     │
+│         ↑                                                           │
+│         Put (helper_addr - current_addr) here                      │
+│                                                                      │
+│    Why PC-relative?                                                 │
+│    • Works regardless of where code is loaded                      │
+│    • Essential for position-independent code (shared libraries)   │
+│    • Smaller encoding (32 bits instead of 64)                      │
+│                                                                      │
+│ 3. GOT-RELATIVE (for shared library symbols)                       │
+│    ─────────────────────                                            │
+│    &#34;Look up the address in the Global Offset Table&#34;                │
+│                                                                      │
+│    mov rax, [rip + GOT_OFFSET]   ; Load from GOT                   │
+│                                                                      │
+│    (More on GOT later!)                                            │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Relocation in Action
+    <div id="relocation-in-action" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#relocation-in-action" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ RELOCATION EXAMPLE                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ BEFORE LINKING:                                                     │
+│                                                                      │
+│ main.o (.text section at offset 0):                                │
+│ ┌─────────┬──────────────────────────────────────────────────────┐ │
+│ │ Offset  │ Bytes                    Meaning                     │ │
+│ ├─────────┼──────────────────────────────────────────────────────┤ │
+│ │ 0x0000  │ 55                       push rbp                    │ │
+│ │ 0x0001  │ 48 89 e5                 mov rbp, rsp                │ │
+│ │ 0x0004  │ e8 00 00 00 00           call &lt;PLACEHOLDER&gt;          │ │
+│ │         │    ↑↑↑↑↑↑↑↑↑↑                                        │ │
+│ │         │    These zeros will be filled in                     │ │
+│ │ 0x0009  │ ...                      rest of function            │ │
+│ └─────────┴──────────────────────────────────────────────────────┘ │
+│                                                                      │
+│ Relocation: PC-relative at offset 0x0005, target: &#34;helper&#34;         │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ LINKER ASSIGNS ADDRESSES:                                           │
+│                                                                      │
+│   main:   at 0x1000                                                │
+│   helper: at 0x2000                                                │
+│                                                                      │
+│ LINKER CALCULATES OFFSET:                                           │
+│                                                                      │
+│   call instruction is at: 0x1004                                   │
+│   next instruction is at: 0x1009 (call is 5 bytes)                │
+│   helper is at: 0x2000                                             │
+│   offset = 0x2000 - 0x1009 = 0x0FF7                                │
+│                                                                      │
+│ AFTER LINKING:                                                      │
+│ ┌─────────┬──────────────────────────────────────────────────────┐ │
+│ │ Address │ Bytes                    Meaning                     │ │
+│ ├─────────┼──────────────────────────────────────────────────────┤ │
+│ │ 0x1000  │ 55                       push rbp                    │ │
+│ │ 0x1001  │ 48 89 e5                 mov rbp, rsp                │ │
+│ │ 0x1004  │ e8 f7 0f 00 00           call 0x2000                 │ │
+│ │         │    ↑↑↑↑↑↑↑↑↑↑                                        │ │
+│ │         │    FILLED IN: 0x00000FF7 (little-endian)            │ │
+│ │ 0x1009  │ ...                      rest of function            │ │
+│ └─────────┴──────────────────────────────────────────────────────┘ │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 5: Static vs Dynamic Linking
+    <div id="part-5-static-vs-dynamic-linking" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-5-static-vs-dynamic-linking" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Two Ways to Link Libraries
+    <div id="two-ways-to-link-libraries" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#two-ways-to-link-libraries" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ STATIC vs DYNAMIC LINKING                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ STATIC LINKING                                                      │
+│ ──────────────                                                      │
+│ Copy library code INTO your executable                             │
+│                                                                      │
+│   your_code.o + libfoo.a                                           │
+│         │                                                           │
+│         ▼                                                           │
+│   ┌───────────────────────┐                                        │
+│   │     your_program      │                                        │
+│   │                       │                                        │
+│   │  ┌─────────────────┐  │                                        │
+│   │  │   Your code     │  │                                        │
+│   │  ├─────────────────┤  │                                        │
+│   │  │   libfoo code   │  │  ← COPIED INTO executable              │
+│   │  └─────────────────┘  │                                        │
+│   └───────────────────────┘                                        │
+│                                                                      │
+│   ✓ Self-contained (no dependencies at runtime)                    │
+│   ✓ Faster startup (no loading libraries)                         │
+│   ✗ Larger executable                                              │
+│   ✗ Can&#39;t update library without recompiling                      │
+│   ✗ Each program has its own copy                                 │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ DYNAMIC LINKING                                                     │
+│ ───────────────                                                     │
+│ Reference library code, load at runtime                            │
+│                                                                      │
+│   your_code.o + libfoo.so (reference only)                         │
+│         │                                                           │
+│         ▼                                                           │
+│   ┌───────────────────────┐       ┌─────────────────┐              │
+│   │     your_program      │       │   libfoo.so     │              │
+│   │                       │       │                 │              │
+│   │  ┌─────────────────┐  │       │  foo_function   │              │
+│   │  │   Your code     │  │       │  bar_function   │              │
+│   │  ├─────────────────┤  │       │  ...            │              │
+│   │  │  &#34;I need foo&#34;   │──┼──────►│                 │              │
+│   │  └─────────────────┘  │       └─────────────────┘              │
+│   └───────────────────────┘              ↑                          │
+│                                          │                          │
+│                              Loaded at runtime                      │
+│                                                                      │
+│   ✓ Smaller executable                                             │
+│   ✓ Library can be updated without recompiling                    │
+│   ✓ Multiple programs share one copy in memory                    │
+│   ✗ Requires library present at runtime                           │
+│   ✗ Slightly slower (indirection through GOT/PLT)                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">GOT and PLT: Dynamic Linking Magic
+    <div id="got-and-plt-dynamic-linking-magic" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#got-and-plt-dynamic-linking-magic" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Dynamic linking needs special machinery to work:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ WHY GOT AND PLT?                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ THE PROBLEM:                                                        │
+│                                                                      │
+│ When you compile your program, you don&#39;t know where the shared     │
+│ library will be loaded in memory!                                  │
+│                                                                      │
+│   Your program loaded at: 0x400000                                 │
+│   libc.so loaded at:      ??? (could be anywhere!)                 │
+│                                                                      │
+│ So how can we call printf() if we don&#39;t know its address?          │
+│                                                                      │
+│ THE SOLUTION: Indirection                                           │
+│                                                                      │
+│   Instead of:   call printf   (direct call, address unknown)       │
+│   We do:        call PLT[printf]  (indirect, address in table)     │
+│                                                                      │
+│ The PLT (Procedure Linkage Table) and GOT (Global Offset Table)    │
+│ work together to make this happen.                                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How GOT Works
+    <div id="how-got-works" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-got-works" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ GOT: GLOBAL OFFSET TABLE                                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ The GOT is a table of pointers to external data/functions:         │
+│                                                                      │
+│ ┌─────────────────────────────────────────────────────────────────┐│
+│ │ GOT (in your executable&#39;s data section)                          ││
+│ ├──────────┬──────────────────────────────────────────────────────┤│
+│ │ Entry 0  │ 0x00007fff12340000  ← address of printf              ││
+│ │ Entry 1  │ 0x00007fff12340100  ← address of malloc              ││
+│ │ Entry 2  │ 0x00007fff12350000  ← address of errno (variable)    ││
+│ │ ...      │ ...                                                   ││
+│ └──────────┴──────────────────────────────────────────────────────┘│
+│                                                                      │
+│ When your code needs a library symbol:                             │
+│                                                                      │
+│   // Accessing external variable                                   │
+│   mov rax, [GOT + errno_offset]  ; Load address from GOT          │
+│   mov eax, [rax]                 ; Load actual value              │
+│                                                                      │
+│ The dynamic linker fills in GOT entries at load time!              │
+│                                                                      │
+│   1. OS loads your program                                         │
+│   2. OS loads shared libraries                                     │
+│   3. Dynamic linker runs                                           │
+│   4. Dynamic linker fills GOT with actual addresses                │
+│   5. Your program starts running                                   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How PLT Works
+    <div id="how-plt-works" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-plt-works" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ PLT: PROCEDURE LINKAGE TABLE                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ PLT is for calling functions (not data access).                    │
+│ It adds lazy binding - resolve address on FIRST call.              │
+│                                                                      │
+│ Your code:                                                          │
+│   call printf@PLT      ; Don&#39;t call printf directly                │
+│                                                                      │
+│ PLT entry for printf:                                              │
+│ ┌─────────────────────────────────────────────────────────────────┐│
+│ │ printf@PLT:                                                      ││
+│ │     jmp [GOT[printf]]    ; Jump to address in GOT               ││
+│ │     push printf_index    ; If GOT not filled, fall through      ││
+│ │     jmp resolver         ; Call dynamic linker to resolve       ││
+│ └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+│ FIRST CALL:                                                         │
+│ ─────────────                                                       │
+│   1. call printf@PLT                                               │
+│   2. jmp [GOT[printf]] → GOT contains address of &#34;push&#34; below!    │
+│   3. push printf_index                                             │
+│   4. jmp resolver                                                  │
+│   5. Resolver finds printf in libc.so                              │
+│   6. Resolver updates GOT[printf] with real address                │
+│   7. Resolver jumps to real printf                                 │
+│                                                                      │
+│ SECOND CALL (and beyond):                                          │
+│ ─────────────                                                       │
+│   1. call printf@PLT                                               │
+│   2. jmp [GOT[printf]] → GOT now has REAL address!                │
+│   3. Directly executes printf (fast!)                              │
+│                                                                      │
+│ This is &#34;lazy binding&#34; - only resolve symbols when first used.    │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 6: Executable File Formats
+    <div id="part-6-executable-file-formats" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-6-executable-file-formats" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Different Platforms, Different Formats
+    <div id="different-platforms-different-formats" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#different-platforms-different-formats" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Each operating system has its own executable format:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ EXECUTABLE FORMATS BY PLATFORM                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ PLATFORM           FORMAT          FILE EXTENSION                   │
+│ ─────────────      ──────────      ────────────────                 │
+│ Linux/BSD          ELF             (none) or .so                   │
+│ macOS/iOS          Mach-O          (none) or .dylib                │
+│ Windows            PE/COFF         .exe or .dll                    │
+│ Web Browser        WebAssembly     .wasm                           │
+│                                                                      │
+│ Each format has:                                                    │
+│   • Different header structure                                     │
+│   • Different section names                                        │
+│   • Different relocation types                                     │
+│   • Different dynamic linking mechanism                            │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">ELF (Linux/BSD)
+    <div id="elf-linuxbsd" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#elf-linuxbsd" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ ELF FORMAT                                                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ ELF = Executable and Linkable Format                               │
+│ Used on: Linux, BSD, PlayStation, many embedded systems            │
+│                                                                      │
+│ ┌─────────────────────────────────────────────────────────────────┐│
+│ │ ELF HEADER                                                       ││
+│ │ • Magic: 0x7F &#39;E&#39; &#39;L&#39; &#39;F&#39;                                       ││
+│ │ • Class: 32-bit or 64-bit                                       ││
+│ │ • Endianness: little or big                                     ││
+│ │ • OS/ABI: Linux, FreeBSD, etc.                                  ││
+│ │ • Entry point address                                           ││
+│ │ • Program header offset                                         ││
+│ │ • Section header offset                                         ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ PROGRAM HEADERS (for loading)                                    ││
+│ │ • PT_LOAD: segments to load into memory                         ││
+│ │ • PT_DYNAMIC: dynamic linking info                              ││
+│ │ • PT_INTERP: path to dynamic linker                             ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ SECTIONS                                                         ││
+│ │ • .text: executable code                                        ││
+│ │ • .rodata: read-only data                                       ││
+│ │ • .data: initialized read-write data                            ││
+│ │ • .bss: uninitialized data (zeroed)                             ││
+│ │ • .symtab: symbol table                                         ││
+│ │ • .strtab: string table                                         ││
+│ │ • .rela.text: relocations for code                              ││
+│ │ • .dynamic: dynamic linking info                                ││
+│ │ • .got: global offset table                                     ││
+│ │ • .plt: procedure linkage table                                 ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ SECTION HEADERS (for linking/debugging)                          ││
+│ └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Mach-O (macOS/iOS)
+    <div id="mach-o-macosios" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#mach-o-macosios" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ MACH-O FORMAT                                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ Mach-O = Mach Object (from NeXT/Mach kernel)                       │
+│ Used on: macOS, iOS, watchOS, tvOS                                 │
+│                                                                      │
+│ ┌─────────────────────────────────────────────────────────────────┐│
+│ │ MACH HEADER                                                      ││
+│ │ • Magic: 0xFEEDFACE (32-bit) or 0xFEEDFACF (64-bit)             ││
+│ │ • CPU type: x86_64, ARM64                                       ││
+│ │ • File type: executable, dylib, bundle                          ││
+│ │ • Number of load commands                                       ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ LOAD COMMANDS                                                    ││
+│ │ • LC_SEGMENT_64: define memory segments                         ││
+│ │ • LC_MAIN: entry point                                          ││
+│ │ • LC_LOAD_DYLIB: libraries to load                              ││
+│ │ • LC_SYMTAB: symbol table info                                  ││
+│ │ • LC_DYSYMTAB: dynamic symbol table                             ││
+│ │ • LC_CODE_SIGNATURE: code signing                               ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ SEGMENTS                                                         ││
+│ │ • __PAGEZERO: null page (catches null pointers)                 ││
+│ │ • __TEXT: code and read-only data                               ││
+│ │   └── __text section (code)                                     ││
+│ │   └── __cstring section (C strings)                             ││
+│ │ • __DATA: read-write data                                       ││
+│ │   └── __data section                                            ││
+│ │   └── __bss section                                             ││
+│ │ • __LINKEDIT: linking information                               ││
+│ └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+│ UNIQUE TO MACOS:                                                    │
+│ • Code signing is REQUIRED                                         │
+│ • Universal binaries (multiple architectures in one file)         │
+│ • Two-level namespace (library name + symbol name)                 │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">PE/COFF (Windows)
+    <div id="pecoff-windows" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#pecoff-windows" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ PE/COFF FORMAT                                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ PE = Portable Executable                                            │
+│ COFF = Common Object File Format                                   │
+│ Used on: Windows                                                    │
+│                                                                      │
+│ ┌─────────────────────────────────────────────────────────────────┐│
+│ │ DOS HEADER (for backwards compatibility!)                        ││
+│ │ • Magic: &#34;MZ&#34;                                                    ││
+│ │ • &#34;This program cannot be run in DOS mode&#34;                      ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ PE SIGNATURE: &#34;PE\0\0&#34;                                           ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ COFF HEADER                                                      ││
+│ │ • Machine type: x86, x64, ARM                                   ││
+│ │ • Number of sections                                            ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ OPTIONAL HEADER (not actually optional!)                         ││
+│ │ • Entry point                                                    ││
+│ │ • Image base address                                            ││
+│ │ • Section alignment                                             ││
+│ │ • Subsystem: console, GUI, driver                               ││
+│ │ • Data directories: imports, exports, resources                 ││
+│ ├─────────────────────────────────────────────────────────────────┤│
+│ │ SECTIONS                                                         ││
+│ │ • .text: code                                                    ││
+│ │ • .rdata: read-only data                                        ││
+│ │ • .data: data                                                    ││
+│ │ • .idata: import table                                          ││
+│ │ • .edata: export table                                          ││
+│ │ • .rsrc: resources (icons, dialogs)                             ││
+│ └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+│ UNIQUE TO WINDOWS:                                                  │
+│ • Import libraries (.lib) for DLL linking                         │
+│ • Resources embedded in executable                                 │
+│ • SEH (Structured Exception Handling)                              │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 7: Why Zig Has Its Own Linker
+    <div id="part-7-why-zig-has-its-own-linker" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-7-why-zig-has-its-own-linker" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Traditional Approach vs Zig Approach
+    <div id="traditional-approach-vs-zig-approach" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#traditional-approach-vs-zig-approach" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ TRADITIONAL COMPILERS                                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   Compiler outputs object files, then calls external linker:       │
+│                                                                      │
+│   source.c → gcc → source.o ─┐                                     │
+│                               ├──→ ld (system linker) → executable │
+│   other.c → gcc → other.o  ──┘                                     │
+│                                                                      │
+│   Problems:                                                         │
+│   • Need platform-specific linker installed                        │
+│   • Cross-compilation requires cross-linker                        │
+│   • Less control over output                                       │
+│   • Harder to do incremental linking                               │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ZIG&#39;S APPROACH                                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   Zig has its own linker built-in:                                 │
+│                                                                      │
+│   source.zig ─┐                                                     │
+│               ├──→ zig (compiler + linker) → executable            │
+│   other.zig ──┘                                                     │
+│                                                                      │
+│   Benefits:                                                         │
+│   • Cross-compile to ANY target from ANY host                     │
+│   • No external tools needed                                       │
+│   • Incremental linking for fast rebuilds                         │
+│   • Reproducible builds                                            │
+│   • Full control over output                                       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Zig&rsquo;s Four Linkers
+    <div id="zigs-four-linkers" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zigs-four-linkers" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Zig implements linkers for all major platforms:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ ZIG&#39;S LINKER IMPLEMENTATIONS                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. ELF LINKER (src/link/Elf.zig)                                   │
+│    • ~159,000 bytes of code                                        │
+│    • Targets: Linux, FreeBSD, NetBSD, many embedded                │
+│    • Features: dynamic linking, DWARF debug info                   │
+│                                                                      │
+│ 2. MACH-O LINKER (src/link/MachO.zig)                              │
+│    • ~196,000 bytes of code                                        │
+│    • Targets: macOS, iOS, watchOS, tvOS                            │
+│    • Features: code signing, universal binaries                    │
+│                                                                      │
+│ 3. COFF LINKER (src/link/Coff.zig)                                 │
+│    • ~94,000 bytes of code                                         │
+│    • Targets: Windows                                               │
+│    • Features: import libraries, resources                         │
+│                                                                      │
+│ 4. WASM LINKER (src/link/Wasm.zig)                                 │
+│    • Targets: Web browsers, WASI                                   │
+│    • Features: custom sections, WASI imports                       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Incremental Linking
+    <div id="incremental-linking" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#incremental-linking" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>One of Zig&rsquo;s killer features:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ INCREMENTAL LINKING                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ TRADITIONAL LINKING:                                                │
+│                                                                      │
+│   Change one function → Relink entire program                      │
+│                                                                      │
+│   file1.o ─┐                                                        │
+│   file2.o ─┼──→ linker → executable (full rebuild)                │
+│   file3.o ─┘                                                        │
+│              ↑                                                      │
+│         Time: seconds to minutes                                   │
+│                                                                      │
+│ ─────────────────────────────────────────────────────────────────── │
+│                                                                      │
+│ INCREMENTAL LINKING:                                                │
+│                                                                      │
+│   Change one function → Update ONLY that function                  │
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │ EXECUTABLE (with padding for growth)                         │  │
+│   │                                                              │  │
+│   │ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐            │  │
+│   │ │  func1  │ │  func2  │ │  func3  │ │ (empty) │            │  │
+│   │ └─────────┘ └─────────┘ └─────────┘ └─────────┘            │  │
+│   │                  ↑                                           │  │
+│   │                  │                                           │  │
+│   │             Patch in place!                                  │  │
+│   └─────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│   How it works:                                                     │
+│   1. Leave padding after each function                             │
+│   2. When function changes:                                        │
+│      a. If new size &lt;= old size + padding: patch in place         │
+│      b. If new size &gt; old: allocate new space, redirect calls     │
+│                                                                      │
+│   Time: milliseconds!                                               │
+│                                                                      │
+│   This is why `zig build` is so fast during development.           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 8: The Linking Process Step by Step
+    <div id="part-8-the-linking-process-step-by-step" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-8-the-linking-process-step-by-step" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Complete Linking Pipeline
+    <div id="complete-linking-pipeline" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#complete-linking-pipeline" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ THE LINKING PROCESS                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ STEP 1: GATHER INPUTS                                               │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐              │
+│   │ main.o  │  │ utils.o │  │ libc.a  │  │libm.so  │              │
+│   └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘              │
+│        │            │            │            │                     │
+│        └────────────┴─────┬──────┴────────────┘                    │
+│                           ▼                                         │
+│                     ┌──────────┐                                    │
+│                     │  LINKER  │                                    │
+│                     └────┬─────┘                                    │
+│                          │                                          │
+│                                                                      │
+│ STEP 2: BUILD GLOBAL SYMBOL TABLE                                  │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   Scan all inputs, collect all symbols:                            │
+│                                                                      │
+│   ┌──────────────┬────────────────┬─────────────────────────────┐  │
+│   │ Symbol       │ Defined In     │ Address (TBD)               │  │
+│   ├──────────────┼────────────────┼─────────────────────────────┤  │
+│   │ main         │ main.o         │ ???                         │  │
+│   │ helper       │ utils.o        │ ???                         │  │
+│   │ printf       │ libc.so        │ ??? (dynamic)               │  │
+│   │ sqrt         │ libm.so        │ ??? (dynamic)               │  │
+│   └──────────────┴────────────────┴─────────────────────────────┘  │
+│                                                                      │
+│                                                                      │
+│ STEP 3: RESOLVE UNDEFINED SYMBOLS                                  │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   main.o needs &#34;helper&#34;  → Found in utils.o ✓                      │
+│   main.o needs &#34;printf&#34;  → Found in libc.so ✓                      │
+│   utils.o needs &#34;sqrt&#34;   → Found in libm.so ✓                      │
+│                                                                      │
+│   If any symbol not found: ERROR!                                  │
+│                                                                      │
+│                                                                      │
+│ STEP 4: MERGE SECTIONS                                             │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   Combine all .text sections:                                      │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │ main.o:.text  │ utils.o:.text  │ (from static libs)         │  │
+│   └─────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│   Combine all .data sections:                                      │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │ main.o:.data  │ utils.o:.data  │ (from static libs)         │  │
+│   └─────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│                                                                      │
+│ STEP 5: ASSIGN ADDRESSES                                           │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   ┌────────────────────────────────────────────┐                   │
+│   │ Address      │ Content                     │                   │
+│   ├──────────────┼─────────────────────────────┤                   │
+│   │ 0x400000     │ ELF header                  │                   │
+│   │ 0x401000     │ .text (code)                │                   │
+│   │ 0x401000     │   main                      │                   │
+│   │ 0x401100     │   helper                    │                   │
+│   │ 0x402000     │ .rodata (constants)         │                   │
+│   │ 0x403000     │ .data (variables)           │                   │
+│   │ 0x404000     │ .bss (zero-init)            │                   │
+│   └──────────────┴─────────────────────────────┘                   │
+│                                                                      │
+│                                                                      │
+│ STEP 6: APPLY RELOCATIONS                                          │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   For each relocation entry:                                       │
+│   1. Look up target symbol&#39;s address                               │
+│   2. Calculate value (absolute or relative)                        │
+│   3. Write to specified offset                                     │
+│                                                                      │
+│   Before: call 0x00000000   ; placeholder                          │
+│   After:  call 0x00000100   ; offset to helper                     │
+│                                                                      │
+│                                                                      │
+│ STEP 7: GENERATE DYNAMIC LINKING INFO                              │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   If using shared libraries:                                       │
+│   • Create GOT entries for external data                          │
+│   • Create PLT entries for external functions                     │
+│   • Create .dynamic section with library dependencies             │
+│                                                                      │
+│                                                                      │
+│ STEP 8: WRITE OUTPUT FILE                                          │
+│ ─────────────────────────────────────────────────                   │
+│                                                                      │
+│   • Write file header                                              │
+│   • Write program headers (for loading)                            │
+│   • Write all sections                                             │
+│   • Write section headers (for debugging)                          │
+│   • Add code signature (macOS)                                     │
+│                                                                      │
+│                          ▼                                          │
+│                  ┌──────────────┐                                   │
+│                  │  executable  │                                   │
+│                  └──────────────┘                                   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 9: Debug Information
+    <div id="part-9-debug-information" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-9-debug-information" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">What is Debug Info?
+    <div id="what-is-debug-info" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-is-debug-info" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Debug info connects machine code back to source code:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ DEBUG INFORMATION                                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ When you run a debugger (gdb, lldb):                               │
+│                                                                      │
+│   (gdb) break main.zig:42    ← Set breakpoint at LINE 42           │
+│   (gdb) print my_variable    ← Show VALUE of variable              │
+│   (gdb) backtrace            ← Show FUNCTION CALL STACK            │
+│                                                                      │
+│ How does the debugger know:                                        │
+│   • Which address corresponds to line 42?                          │
+│   • Where is my_variable stored?                                   │
+│   • What are the function names in the call stack?                 │
+│                                                                      │
+│ Answer: DEBUG INFORMATION embedded in the executable               │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">DWARF Debug Format
+    <div id="dwarf-debug-format" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#dwarf-debug-format" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Most Unix-like systems use DWARF:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ DWARF DEBUG SECTIONS                                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ .debug_info                                                         │
+│ ─────────────────────────                                           │
+│ Describes program structure:                                        │
+│   • Functions: name, parameters, return type                       │
+│   • Variables: name, type, location                                │
+│   • Types: structs, enums, pointers                                │
+│                                                                      │
+│ .debug_line                                                         │
+│ ─────────────────────────                                           │
+│ Maps addresses to source locations:                                │
+│   • Address 0x401000 → main.zig, line 5, column 1                  │
+│   • Address 0x401010 → main.zig, line 6, column 5                  │
+│   • ...                                                             │
+│                                                                      │
+│ .debug_abbrev                                                       │
+│ ─────────────────────────                                           │
+│ Abbreviation codes for compact encoding                            │
+│                                                                      │
+│ .debug_str                                                          │
+│ ─────────────────────────                                           │
+│ String table for names                                              │
+│                                                                      │
+│ The linker must:                                                    │
+│   • Merge debug sections from all object files                     │
+│   • Update addresses in debug info after relocation                │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 10: The Complete Picture
+    <div id="part-10-the-complete-picture" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-10-the-complete-picture" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Full Compilation Pipeline
+    <div id="full-compilation-pipeline" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#full-compilation-pipeline" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ FROM SOURCE TO EXECUTABLE                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                      main.zig                                │  │
+│   │                                                              │  │
+│   │   const std = @import(&#34;std&#34;);                               │  │
+│   │   pub fn main() void {                                      │  │
+│   │       std.debug.print(&#34;Hello!\n&#34;, .{});                    │  │
+│   │   }                                                          │  │
+│   └────────────────────────┬────────────────────────────────────┘  │
+│                            │                                        │
+│   ─────────────────────────┼────────────────────────────────────── │
+│   FRONTEND                 │                                        │
+│   ─────────────────────────┼────────────────────────────────────── │
+│                            ▼                                        │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐           │
+│   │  Tokenizer  │ →  │   Parser    │ →  │   AstGen    │           │
+│   │             │    │   (AST)     │    │   (ZIR)     │           │
+│   └─────────────┘    └─────────────┘    └──────┬──────┘           │
+│                                                 │                   │
+│                                                 ▼                   │
+│                                          ┌─────────────┐           │
+│                                          │    Sema     │           │
+│                                          │   (AIR)     │           │
+│                                          └──────┬──────┘           │
+│                                                 │                   │
+│   ─────────────────────────────────────────────┼──────────────────  │
+│   BACKEND                                       │                   │
+│   ─────────────────────────────────────────────┼──────────────────  │
+│                                                 ▼                   │
+│                                          ┌─────────────┐           │
+│                                          │   Codegen   │           │
+│                                          │   (machine  │           │
+│                                          │    code)    │           │
+│                                          └──────┬──────┘           │
+│                                                 │                   │
+│   ─────────────────────────────────────────────┼──────────────────  │
+│   LINKER                                        │                   │
+│   ─────────────────────────────────────────────┼──────────────────  │
+│                                                 ▼                   │
+│   ┌───────────────────────────────────────────────────────────────┐│
+│   │                         LINKER                                 ││
+│   │                                                                ││
+│   │  1. Collect object code                                       ││
+│   │  2. Resolve symbols                                           ││
+│   │  3. Merge sections                                            ││
+│   │  4. Assign addresses                                          ││
+│   │  5. Apply relocations                                         ││
+│   │  6. Generate PLT/GOT (if dynamic)                             ││
+│   │  7. Write executable                                          ││
+│   └────────────────────────────┬──────────────────────────────────┘│
+│                                │                                    │
+│                                ▼                                    │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                       EXECUTABLE                             │  │
+│   │                                                              │  │
+│   │  $ ./main                                                   │  │
+│   │  Hello!                                                      │  │
+│   │                                                              │  │
+│   └─────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Summary: What We Learned
+    <div id="summary-what-we-learned" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#summary-what-we-learned" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────────────┐
+│ KEY POINTS                                                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│ 1. LINKING COMBINES PIECES                                          │
+│    • Object files have holes (undefined references)                │
+│    • Linker fills holes with actual addresses                      │
+│    • Result is a complete, runnable program                        │
+│                                                                      │
+│ 2. SYMBOLS ARE NAMES                                                │
+│    • Functions and variables have symbolic names                   │
+│    • Linker matches &#34;undefined&#34; to &#34;defined&#34; symbols               │
+│    • Unresolved symbols cause linker errors                        │
+│                                                                      │
+│ 3. RELOCATIONS FIX ADDRESSES                                        │
+│    • Object files don&#39;t know final addresses                       │
+│    • Relocations say &#34;fill in address of X here&#34;                   │
+│    • Different types: absolute, PC-relative, GOT                   │
+│                                                                      │
+│ 4. STATIC vs DYNAMIC                                                │
+│    • Static: copy library code into executable                     │
+│    • Dynamic: reference library, load at runtime                   │
+│    • GOT/PLT enable dynamic linking                                │
+│                                                                      │
+│ 5. MULTIPLE FORMATS                                                 │
+│    • ELF (Linux), Mach-O (macOS), PE (Windows)                    │
+│    • Different structures, same concepts                           │
+│                                                                      │
+│ 6. ZIG HAS ITS OWN LINKERS                                         │
+│    • Enables cross-compilation                                     │
+│    • Enables incremental linking                                   │
+│    • No external dependencies                                      │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Conclusion
+    <div id="conclusion" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#conclusion" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The linker is the final piece of the compilation puzzle. It takes all the separate object files - each with their own code, data, and symbolic references - and weaves them together into a single executable.</p>
+<p>Zig&rsquo;s custom linkers provide:</p>
+<ul>
+<li><strong>Cross-compilation</strong> without external tools</li>
+<li><strong>Incremental linking</strong> for fast development cycles</li>
+<li><strong>Reproducible builds</strong> with deterministic output</li>
+<li><strong>Full control</strong> over the linking process</li>
+</ul>
+<p>This completes our journey through the Zig compiler! From tokenization through parsing, AST generation, semantic analysis, code generation, and finally linking - we&rsquo;ve seen how source code becomes an executable program.</p>
+<hr>
+<p><strong>Previous</strong>: <a
+  href="./06-air-codegen.md">Part 6: AIR and Code Generation</a></p>
+<p><strong>Series Index</strong>:</p>
+<ol>
+<li><a
+  href="./01-bootstrap-process.md">Bootstrap Process</a></li>
+<li><a
+  href="./02-tokenizer.md">Tokenizer</a></li>
+<li><a
+  href="./03-parser-ast.md">Parser and AST</a></li>
+<li><a
+  href="./04-zir-generation.md">ZIR Generation</a></li>
+<li><a
+  href="./05-sema.md">Semantic Analysis</a></li>
+<li><a
+  href="./06-air-codegen.md">AIR and Code Generation</a></li>
+<li><strong>Linking</strong> (this article)</li>
+</ol>
+<hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<ul>
+<li><a
+  href="https://www.iecc.com/linker/"
+    target="_blank"
+  >Linkers and Loaders</a> by John R. Levine</li>
+<li><a
+  href="https://refspecs.linuxfoundation.org/elf/elf.pdf"
+    target="_blank"
+  >ELF Specification</a></li>
+<li><a
+  href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/MachOTopics/"
+    target="_blank"
+  >Mach-O File Format</a></li>
+<li><a
+  href="https://docs.microsoft.com/en-us/windows/win32/debug/pe-format"
+    target="_blank"
+  >PE/COFF Specification</a></li>
+<li><a
+  href="https://andrewkelley.me"
+    target="_blank"
+  >How the Zig Linker Works</a> (Andrew Kelley&rsquo;s blog)</li>
+</ul>
+
+          
+          
+          
+        </div>
+        
+        
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_drafts/07-linking.md"
+          data-oid-likes="likes_drafts/07-linking.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+            <a
+              class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/06-air-codegen/">
+              <span class="leading-6">
+                Zig Compiler Internals Part 6: AIR and Code Generation&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+              </span>
+            </a>
+            
+              <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time>
+              </span>
+            
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Yohai
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:1313/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>
