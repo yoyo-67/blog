@@ -33,11 +33,23 @@ theme = 'blowfish'
     lineNumbersInTable = true
     style = "dracula"
 
+[module]
+  [[module.mounts]]
+    source = "content"
+    target = "content"
+  [[module.mounts]]
+    source = "draft"
+    target = "content/drafts"
+
 [menu]
   [[menu.main]]
     name = "Posts"
     pageRef = "posts"
     weight = 10
+  [[menu.main]]
+    name = "Drafts"
+    pageRef = "drafts"
+    weight = 15
   [[menu.main]]
     name = "Tags"
     pageRef = "tags"
