@@ -1,5 +1,6 @@
 ---
 title: "Building a Mini Zig Compiler: From Source to C"
+date: 2025-12-17
 ---
 
 # Building a Mini Zig Compiler: From Source to C

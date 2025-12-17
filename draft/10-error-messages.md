@@ -1,5 +1,6 @@
 ---
 title: "Part 10: Error Messages - The User Interface of a Compiler"
+date: 2025-12-17
 ---
 
 # Part 10: Error Messages - The User Interface of a Compiler

@@ -1,5 +1,6 @@
 ---
 title: "Zig Compiler Internals Part 5: Semantic Analysis"
+date: 2025-12-17
 ---
 
 # Zig Compiler Internals Part 5: Semantic Analysis

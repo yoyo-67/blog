@@ -1,5 +1,6 @@
 ---
 title: "Part 11: Comptime - Compile-Time Execution Deep Dive"
+date: 2025-12-17
 ---
 
 # Part 11: Comptime - Compile-Time Execution Deep Dive

@@ -1,5 +1,6 @@
 ---
 title: "Appendix: Zig Patterns and Methods Reference"
+date: 2025-12-17
 ---
 
 # Appendix: Zig Patterns and Methods Reference

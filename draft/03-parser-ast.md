@@ -1,5 +1,6 @@
 ---
 title: "Zig Compiler Internals Part 3: Parser and AST"
+date: 2025-12-17
 ---
 
 # Zig Compiler Internals Part 3: Parser and AST

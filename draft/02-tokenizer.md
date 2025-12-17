@@ -1,5 +1,6 @@
 ---
 title: "Zig Compiler Internals Part 2: The Tokenizer"
+date: 2025-12-17
 ---
 
 # Zig Compiler Internals Part 2: The Tokenizer

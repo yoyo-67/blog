@@ -1,5 +1,6 @@
 ---
 title: "Part 12: The Standard Library - Don't Reinvent the Wheel"
+date: 2025-12-17
 ---
 
 # Part 12: The Standard Library - Don't Reinvent the Wheel

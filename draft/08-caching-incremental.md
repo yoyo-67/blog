@@ -1,5 +1,6 @@
 ---
 title: "Part 8: Caching and Incremental Compilation"
+date: 2025-12-17
 ---
 
 # Part 8: Caching and Incremental Compilation

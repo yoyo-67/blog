@@ -1,5 +1,6 @@
 ---
 title: "Zig Compiler Internals Part 7: Linking"
+date: 2025-12-17
 ---
 
 # Zig Compiler Internals Part 7: Linking

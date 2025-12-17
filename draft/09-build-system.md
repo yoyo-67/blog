@@ -1,5 +1,6 @@
 ---
 title: "Part 9: The Build System (build.zig)"
+date: 2025-12-17
 ---
 
 # Part 9: The Build System (build.zig)

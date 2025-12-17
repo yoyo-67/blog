@@ -1,5 +1,6 @@
 ---
 title: "Zig Compiler Internals Part 1: The Bootstrap Process"
+date: 2025-12-17
 ---
 
 # Zig Compiler Internals Part 1: The Bootstrap Process
