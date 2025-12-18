@@ -7,4 +7,5 @@ pub const Type = enum {
     integer,
     plus,
     eof,
+    invalid,
 };

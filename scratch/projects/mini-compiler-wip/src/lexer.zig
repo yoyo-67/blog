@@ -70,6 +70,7 @@ fn skipWhiteSpace(self: *Lexer) void {
 fn nextToken(self: *Lexer) Token {
     self.skipWhiteSpace();
     const startPos = self.pos;
+
     if (self.pos == self.source.len) {
         return Token{
             .type = .eof,
@@ -77,18 +78,28 @@ fn nextToken(self: *Lexer) Token {
         };
     }
     const c = self.peek();
-    self.advance();
 
     if (isDigit(c)) {
-        return .{
-            .lexeme = self.source[startPos..self.pos],
-            .type = .integer,
-        };
+        return self.scanNumber();
     }
 
-    return Token{
-        .lexeme = "+",
-        .type = .plus,
+    self.advance();
+
+    switch (c) {
+        '+' => return .{ .lexeme = self.source[startPos..self.pos], .type = .plus },
+        else => return .{ .lexeme = "", .type = .invalid },
+    }
+}
+
+fn scanNumber(self: *Lexer) Token {
+    const startPos = self.pos;
+    while (isDigit(self.peek())) {
+        self.advance();
+    }
+
+    return .{
+        .lexeme = self.source[startPos..self.pos],
+        .type = .integer,
     };
 }
 
@@ -109,7 +120,7 @@ test "start lexering" {
 test "tokens" {
     const allocator = std.testing.allocator;
     const source =
-        \\1 + 3
+        \\12 + 312 + 3
     ;
 
     var lexer = Lexer.init(source);
@@ -118,7 +129,7 @@ test "tokens" {
 
     const token1 = tokens[0];
     try expect(token1.type, .integer);
-    try expectString(token1.lexeme, "1");
+    try expectString(token1.lexeme, "12");
 
     const token2 = tokens[1];
     try expect(token2.type, .plus);
@@ -126,5 +137,5 @@ test "tokens" {
 
     const token3 = tokens[2];
     try expect(token3.type, .integer);
-    try expectString(token3.lexeme, "3");
+    try expectString(token3.lexeme, "312");
 }
