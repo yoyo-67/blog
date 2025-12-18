@@ -2,6 +2,7 @@ const std = @import("std");
 const mem = std.mem;
 
 const expect = std.testing.expectEqual;
+const expectString = std.testing.expectEqualStrings;
 
 pub const Lexer = @This();
 
@@ -43,8 +44,8 @@ pub fn tokenize(self: *Lexer, allocator: mem.Allocator) ![]const Token {
 }
 
 fn nextToken(self: *Lexer) Token {
-    const startPos = self.pos;
     self.skipWhiteSpace();
+    const startPos = self.pos;
     if (self.pos == self.source.len) {
         return Token{
             .type = .eof,
@@ -100,15 +101,12 @@ fn peek(self: *Lexer) u8 {
 }
 
 test "start lexering" {
-    const allocator = std.testing.allocator;
-    _ = allocator; // autofix
-
     const source: [:0]const u8 =
         \\Hello World
     ;
 
     const lexer = Lexer.init(source);
-    try expect(lexer.source, "Hello World");
+    try expectString(lexer.source, "Hello World");
     try expect(lexer.pos, 0);
     try expect(lexer.line, 1);
     try expect(lexer.column, 1);
@@ -122,16 +120,17 @@ test "tokens" {
 
     var lexer = Lexer.init(source);
     const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
 
     const token1 = tokens[0];
     try expect(token1.type, .integer);
-    try expect(token1.lexeme, "1");
+    try expectString(token1.lexeme, "1");
 
     const token2 = tokens[1];
     try expect(token2.type, .plus);
-    try expect(token2.lexeme, "+");
+    try expectString(token2.lexeme, "+");
 
     const token3 = tokens[2];
     try expect(token3.type, .integer);
-    try expect(token3.lexeme, "2");
+    try expectString(token3.lexeme, "3");
 }
