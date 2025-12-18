@@ -18,6 +18,9 @@
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/01-target-choice/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen-llvm/01-intro-llvm/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/06-complete/01-integration/</loc>
   </url>
   <url>
@@ -37,6 +40,9 @@
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/02-type-mapping/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen-llvm/02-llvm-ir-basics/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/06-complete/02-walkthrough/</loc>
@@ -60,6 +66,9 @@
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/03-gen-constants/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen-llvm/03-type-mapping/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/06-complete/03-test-suite/</loc>
   </url>
   <url>
@@ -79,6 +88,9 @@
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/04-gen-binary/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen-llvm/04-gen-functions/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/06-complete/04-extensions/</loc>
@@ -102,6 +114,9 @@
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/05-gen-variables/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen-llvm/05-gen-instructions/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/</loc>
   </url>
   <url>
@@ -120,6 +135,9 @@
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/06-gen-functions/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen-llvm/06-building-running/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/06-complete/</loc>
   </url>
   <url>
@@ -136,6 +154,9 @@
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/07-gen-return/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen-llvm/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/08-putting-together/</loc>
@@ -178,6 +199,10 @@
   </url>
   <url>
     <loc>http://localhost:1313/drafts/15-static-vs-dynamic/</loc>
+    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/16-lsp/</loc>
     <lastmod>2025-12-18T00:00:00+00:00</lastmod>
   </url>
   <url>

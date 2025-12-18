@@ -15,21 +15,19 @@
 
   
   
-    <title>Drafts &middot; Yohai&#39;s Blog</title>
-    <meta name="title" content="Drafts &middot; Yohai&#39;s Blog">
+    <title>Section 5b: LLVM Backend &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Section 5b: LLVM Backend &middot; Yohai&#39;s Blog">
   
 
   
   
-    <meta name="description" content="Work in progress posts">
   
   
   
-  
-  <link rel="canonical" href="http://localhost:1313/drafts/">
+  <link rel="canonical" href="http://localhost:1313/compiler-tutorial/05-codegen-llvm/">
   
     
-      <link rel="alternate" type="application/rss+xml" href="/drafts/index.xml" title="Yohai's Blog" />
+      <link rel="alternate" type="application/rss+xml" href="/compiler-tutorial/05-codegen-llvm/index.xml" title="Yohai's Blog" />
   
 
   
@@ -39,17 +37,19 @@
   
 
   
-  <meta property="og:url" content="http://localhost:1313/drafts/">
+  <meta property="og:url" content="http://localhost:1313/compiler-tutorial/05-codegen-llvm/">
   <meta property="og:site_name" content="Yohai&#39;s Blog">
-  <meta property="og:title" content="Drafts">
-  <meta property="og:description" content="Work in progress posts">
+  <meta property="og:title" content="Section 5b: LLVM Backend">
+  <meta property="og:description" content="Section 5b: LLVM Code Generation # An alternative backend that generates LLVM IR instead of C.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ LLVM BACKEND PIPELINE │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ AIR (Typed IR) │ │ │ │ │ ▼ │ │ ┌─────────────────┐ │ │ │ LLVM Codegen │ Generate LLVM IR │ │ └────────┬────────┘ │ │ │ │ │ ▼ │ │ ┌─────────────────┐ │ │ │ output.ll │ LLVM IR text format │ │ └────────┬────────┘ │ │ │ │ │ ├──────────────────────┐ │ │ ▼ ▼ │ │ ┌─────────────────┐ ┌─────────────────┐ │ │ │ lli │ │ llc │ │ │ │ (interpreter) │ │ (compiler) │ │ │ └─────────────────┘ └────────┬────────┘ │ │ │ │ │ ▼ │ │ ┌─────────────────┐ │ │ │ executable │ │ │ └─────────────────┘ │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why LLVM? # LLVM provides:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Drafts">
-  <meta name="twitter:description" content="Work in progress posts">
+  <meta name="twitter:title" content="Section 5b: LLVM Backend">
+  <meta name="twitter:description" content="Section 5b: LLVM Code Generation # An alternative backend that generates LLVM IR instead of C.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ LLVM BACKEND PIPELINE │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ AIR (Typed IR) │ │ │ │ │ ▼ │ │ ┌─────────────────┐ │ │ │ LLVM Codegen │ Generate LLVM IR │ │ └────────┬────────┘ │ │ │ │ │ ▼ │ │ ┌─────────────────┐ │ │ │ output.ll │ LLVM IR text format │ │ └────────┬────────┘ │ │ │ │ │ ├──────────────────────┐ │ │ ▼ ▼ │ │ ┌─────────────────┐ ┌─────────────────┐ │ │ │ lli │ │ llc │ │ │ │ (interpreter) │ │ (compiler) │ │ │ └─────────────────┘ └────────┬────────┘ │ │ │ │ │ ▼ │ │ ┌─────────────────┐ │ │ │ executable │ │ │ └─────────────────┘ │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why LLVM? # LLVM provides:">
 
   
   
@@ -197,27 +197,27 @@
   [{
     "@context": "https://schema.org",
     "@type": "Article",
-    "articleSection": "Drafts",
-    "name": "Drafts",
-    "headline": "Drafts",
-    "description": "Work in progress posts",
+    "articleSection": "Build Your Own Compiler",
+    "name": "Section 5b: LLVM Backend",
+    "headline": "Section 5b: LLVM Backend",
     
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eSection 5b: LLVM Code Generation\n    \u003cdiv id=\u0022section-5b-llvm-code-generation\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#section-5b-llvm-code-generation\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eAn alternative backend that generates LLVM IR instead of C.\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌──────────────────────────────────────────────────────────────────────────────┐\n│                        LLVM BACKEND PIPELINE                                 │\n├──────────────────────────────────────────────────────────────────────────────┤\n│                                                                              │\n│   AIR (Typed IR)                                                             │\n│       │                                                                      │\n│       ▼                                                                      │\n│   ┌─────────────────┐                                                       │\n│   │  LLVM Codegen   │  Generate LLVM IR                                     │\n│   └────────┬────────┘                                                       │\n│            │                                                                 │\n│            ▼                                                                 │\n│   ┌─────────────────┐                                                       │\n│   │   output.ll     │  LLVM IR text format                                  │\n│   └────────┬────────┘                                                       │\n│            │                                                                 │\n│            ├──────────────────────┐                                         │\n│            ▼                      ▼                                         │\n│   ┌─────────────────┐    ┌─────────────────┐                                │\n│   │      lli        │    │      llc        │                                │\n│   │  (interpreter)  │    │   (compiler)    │                                │\n│   └─────────────────┘    └────────┬────────┘                                │\n│                                   │                                         │\n│                                   ▼                                         │\n│                          ┌─────────────────┐                                │\n│                          │   executable    │                                │\n│                          └─────────────────┘                                │\n│                                                                              │\n└──────────────────────────────────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eWhy LLVM?\n    \u003cdiv id=\u0022why-llvm\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#why-llvm\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eLLVM provides:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/drafts/",
+    "url" : "http://localhost:1313/compiler-tutorial/05-codegen-llvm/",
     "author" : {
       "@type": "Person",
       "name": "Yohai"
     },
-    "copyrightYear": "2025",
-    "dateCreated": "2025-12-18T00:00:00\u002b00:00",
-    "datePublished": "2025-12-18T00:00:00\u002b00:00",
     
-    "dateModified": "2025-12-18T00:00:00\u002b00:00",
+    
+    
+    
+    
     
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "0"
+    "wordCount": "253"
   }]
   </script>
 
@@ -539,7 +539,7 @@
   
   <header>
     
-    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Drafts</h1>
+    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Section 5b: LLVM Backend</h1>
     <div class="mt-1 mb-2 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
       
 
@@ -583,8 +583,8 @@
         type="text/javascript"
         src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
         integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
-        data-oid="views_drafts/_index.md"
-        data-oid-likes="likes_drafts/_index.md"></script>
+        data-oid="views_compiler-tutorial/05-codegen-llvm/_index.md"
+        data-oid-likes="likes_compiler-tutorial/05-codegen-llvm/_index.md"></script>
     
   </header>
 
@@ -595,6 +595,147 @@
     
     <div class="min-w-0 min-h-0 max-w-prose">
       
+<h1 class="relative group">Section 5b: LLVM Code Generation
+    <div id="section-5b-llvm-code-generation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#section-5b-llvm-code-generation" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p>An alternative backend that generates LLVM IR instead of C.</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                        LLVM BACKEND PIPELINE                                 │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AIR (Typed IR)                                                             │
+│       │                                                                      │
+│       ▼                                                                      │
+│   ┌─────────────────┐                                                       │
+│   │  LLVM Codegen   │  Generate LLVM IR                                     │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │   output.ll     │  LLVM IR text format                                  │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ├──────────────────────┐                                         │
+│            ▼                      ▼                                         │
+│   ┌─────────────────┐    ┌─────────────────┐                                │
+│   │      lli        │    │      llc        │                                │
+│   │  (interpreter)  │    │   (compiler)    │                                │
+│   └─────────────────┘    └────────┬────────┘                                │
+│                                   │                                         │
+│                                   ▼                                         │
+│                          ┌─────────────────┐                                │
+│                          │   executable    │                                │
+│                          └─────────────────┘                                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Why LLVM?
+    <div id="why-llvm" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-llvm" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>LLVM provides:</p>
+<ul>
+<li><strong>Industrial-strength optimization</strong> - Decades of optimization passes</li>
+<li><strong>Multiple targets</strong> - x86, ARM, RISC-V, WebAssembly from one IR</li>
+<li><strong>Debugging support</strong> - DWARF debug info generation</li>
+<li><strong>Ecosystem</strong> - Clang, Rust, Swift all use LLVM</li>
+</ul>
+<hr>
+
+<h2 class="relative group">Lessons in This Section
+    <div id="lessons-in-this-section" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#lessons-in-this-section" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Lesson</th>
+          <th>Topic</th>
+          <th>What You&rsquo;ll Learn</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><a
+  href="01-intro-llvm/">1. Introduction</a></td>
+          <td>What is LLVM?</td>
+          <td>Overview and architecture</td>
+      </tr>
+      <tr>
+          <td><a
+  href="02-llvm-ir-basics/">2. IR Basics</a></td>
+          <td>LLVM IR</td>
+          <td>Modules, functions, instructions</td>
+      </tr>
+      <tr>
+          <td><a
+  href="03-type-mapping/">3. Types</a></td>
+          <td>Type mapping</td>
+          <td>Our types → LLVM types</td>
+      </tr>
+      <tr>
+          <td><a
+  href="04-gen-functions/">4. Functions</a></td>
+          <td>Generate functions</td>
+          <td>LLVM function definitions</td>
+      </tr>
+      <tr>
+          <td><a
+  href="05-gen-instructions/">5. Instructions</a></td>
+          <td>Generate code</td>
+          <td>Constants, arithmetic, returns</td>
+      </tr>
+      <tr>
+          <td><a
+  href="06-building-running/">6. Build &amp; Run</a></td>
+          <td>Execute</td>
+          <td>Using lli and llc</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+
+<h2 class="relative group">Prerequisites
+    <div id="prerequisites" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#prerequisites" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Complete the main tutorial through Section 4 (Sema) first. This section provides an alternative to Section 5 (C Codegen).</p>
+<hr>
+
+<h2 class="relative group">Start Here
+    <div id="start-here" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#start-here" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Begin with <a
+  href="01-intro-llvm/">Lesson 1: Introduction to LLVM</a> →</p>
+
     </div>
   </section>
 
@@ -612,7 +753,7 @@
           
             
               <h2 class="mt-12 text-2xl font-bold text-neutral-700 first:mt-8 dark:text-neutral-300">
-                2025
+                0001
               </h2>
             
             
@@ -672,11 +813,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/09-build-system/"
+          href="/compiler-tutorial/05-codegen-llvm/06-building-running/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 9: The Build System (build.zig)
+          5b.6: Building and Running
           
         </h2>
       </a>
@@ -730,7 +871,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>4884 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">23 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1190 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">6 mins</span>
     
 
     
@@ -810,11 +951,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/08-caching-incremental/"
+          href="/compiler-tutorial/05-codegen-llvm/05-gen-instructions/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 8: Caching and Incremental Compilation
+          5b.5: Generating Instructions
           
         </h2>
       </a>
@@ -868,7 +1009,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>3607 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">17 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>784 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -948,11 +1089,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/12-standard-library/"
+          href="/compiler-tutorial/05-codegen-llvm/04-gen-functions/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 12: The Standard Library - Don't Reinvent the Wheel
+          5b.4: Generating Functions
           
         </h2>
       </a>
@@ -1006,7 +1147,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>8592 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">41 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>656 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1086,11 +1227,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/11-comptime/"
+          href="/compiler-tutorial/05-codegen-llvm/03-type-mapping/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 11: Comptime - Compile-Time Execution Deep Dive
+          5b.3: Type Mapping
           
         </h2>
       </a>
@@ -1144,7 +1285,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>3670 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">18 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>563 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     
@@ -1224,11 +1365,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/10-error-messages/"
+          href="/compiler-tutorial/05-codegen-llvm/02-llvm-ir-basics/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Part 10: Error Messages - The User Interface of a Compiler
+          5b.2: LLVM IR Basics
           
         </h2>
       </a>
@@ -1282,7 +1423,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>3744 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">18 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1126 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">6 mins</span>
     
 
     
@@ -1362,11 +1503,11 @@
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/drafts/13-mini-compiler/"
+          href="/compiler-tutorial/05-codegen-llvm/01-intro-llvm/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          Building a Mini Zig Compiler: From Source to C
+          5b.1: Introduction to LLVM
           
         </h2>
       </a>
@@ -1420,145 +1561,7 @@
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5060 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">24 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/drafts/appendix-zig-patterns/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          Appendix: Zig Patterns and Methods Reference
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>4625 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">22 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>824 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1589,31 +1592,7 @@
     
   
   
-  <ul class="flex flex-row mt-8 justify-center">
-      <li>
-        <a
-          href="/drafts/"
-          class="mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-          rel="prev"
-          >&larr;</a
-        >
-      </li>
-    <li>
-          <a
-            href="/drafts/"
-            class=" mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-            >1</a
-          >
-        </li><li>
-          <a
-            href="/drafts/page/2/"
-            class="
-              bg-primary-200 dark:bg-primary-400 dark:text-neutral-800
-             mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-            >2</a
-          >
-        </li>
-  </ul>
+  
 
         
 
