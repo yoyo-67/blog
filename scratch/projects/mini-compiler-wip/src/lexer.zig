@@ -4,23 +4,16 @@ const mem = std.mem;
 const expect = std.testing.expectEqual;
 const expectString = std.testing.expectEqualStrings;
 
+const Token = @import("token.zig");
+
 pub const Lexer = @This();
-
-const Token = struct {
-    type: TokenType,
-    lexeme: []const u8,
-
-    const TokenType = enum {
-        integer,
-        plus,
-        eof,
-    };
-};
 
 source: []const u8,
 pos: usize,
 line: usize,
 column: usize,
+
+// Public methods
 
 pub fn init(source: []const u8) Lexer {
     return Lexer{
@@ -43,6 +36,37 @@ pub fn tokenize(self: *Lexer, allocator: mem.Allocator) ![]const Token {
     return tokens.toOwnedSlice(allocator);
 }
 
+// Private helpers - low level
+
+fn checkIsAtEnd(self: *Lexer) bool {
+    return self.pos == self.source.len;
+}
+
+fn peek(self: *Lexer) u8 {
+    if (self.checkIsAtEnd()) return 0;
+    return self.source[self.pos];
+}
+
+fn advance(self: *Lexer) void {
+    self.pos += 1;
+}
+
+fn isDigit(c: u8) bool {
+    return c >= '0' and c <= '9';
+}
+
+// Private helpers - higher level
+
+fn skipWhiteSpace(self: *Lexer) void {
+    while (true) {
+        if (self.peek() == ' ') {
+            self.advance();
+        } else {
+            break;
+        }
+    }
+}
+
 fn nextToken(self: *Lexer) Token {
     self.skipWhiteSpace();
     const startPos = self.pos;
@@ -52,14 +76,9 @@ fn nextToken(self: *Lexer) Token {
             .lexeme = "",
         };
     }
-    // get the char
     const c = self.peek();
-    //
-    // increment the pos
     self.advance();
 
-    // if c.type
-    //
     if (isDigit(c)) {
         return .{
             .lexeme = self.source[startPos..self.pos],
@@ -73,32 +92,7 @@ fn nextToken(self: *Lexer) Token {
     };
 }
 
-fn skipWhiteSpace(self: *Lexer) void {
-    while (true) {
-        if (self.peek() == ' ') {
-            self.advance();
-        } else {
-            break;
-        }
-    }
-}
-
-fn isDigit(c: u8) bool {
-    return c >= '0' and c <= '9';
-}
-
-fn checkIsAtEnd(self: *Lexer) bool {
-    return self.pos == self.source.len;
-}
-
-fn advance(self: *Lexer) void {
-    self.pos += 1;
-}
-
-fn peek(self: *Lexer) u8 {
-    if (self.checkIsAtEnd()) return 0;
-    return self.source[self.pos];
-}
+// Tests
 
 test "start lexering" {
     const source: [:0]const u8 =
