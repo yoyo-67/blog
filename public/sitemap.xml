@@ -9,6 +9,18 @@
     <loc>http://localhost:1313/compiler-tutorial/02-parser/01-ast-nodes/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/01-ir-instructions/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/01-type-system/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/01-target-choice/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/06-complete/01-integration/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/</loc>
   </url>
   <url>
@@ -16,6 +28,18 @@
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/02-parser/02-atoms/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/02-flatten-expr/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/02-type-of-expr/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/02-type-mapping/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/06-complete/02-walkthrough/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/02-parser/</loc>
@@ -27,10 +51,40 @@
     <loc>http://localhost:1313/compiler-tutorial/02-parser/03-grouping/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/03-flatten-nested/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/03-symbol-table/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/03-gen-constants/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/06-complete/03-test-suite/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/04-numbers/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/02-parser/04-unary/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/04-name-references/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/04-resolve-names/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/04-gen-binary/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/06-complete/04-extensions/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/05-strings/</loc>
@@ -39,10 +93,34 @@
     <loc>http://localhost:1313/compiler-tutorial/02-parser/05-binary-simple/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/05-param-references/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/05-type-check/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/05-gen-variables/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/06-identifiers/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/02-parser/06-precedence/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/06-function-ir/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/06-air-output/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/06-gen-functions/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/06-complete/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/07-keywords/</loc>
@@ -51,7 +129,56 @@
     <loc>http://localhost:1313/compiler-tutorial/02-parser/07-precedence-impl/</loc>
   </url>
   <url>
+    <loc>http://localhost:1313/compiler-tutorial/03-zir/07-putting-together/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/07-error-handling/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/07-gen-return/</loc>
+  </url>
+  <url>
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/08-putting-together/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/08-statements/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/04-sema/08-putting-together/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/08-gen-calls/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/09-blocks/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/09-gen-program/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/10-functions/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/05-codegen/10-putting-together/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/11-putting-together/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/</loc>
+    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/</loc>
+    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/14-bytecode/</loc>
+    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/15-static-vs-dynamic/</loc>
+    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
   </url>
   <url>
     <loc>http://localhost:1313/drafts/appendix-zig-patterns/</loc>
@@ -59,10 +186,6 @@
   </url>
   <url>
     <loc>http://localhost:1313/drafts/13-mini-compiler/</loc>
-    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
-  </url>
-  <url>
-    <loc>http://localhost:1313/drafts/</loc>
     <lastmod>2025-12-17T00:00:00+00:00</lastmod>
   </url>
   <url>
@@ -83,10 +206,6 @@
   </url>
   <url>
     <loc>http://localhost:1313/drafts/09-build-system/</loc>
-    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
-  </url>
-  <url>
-    <loc>http://localhost:1313/</loc>
     <lastmod>2025-12-17T00:00:00+00:00</lastmod>
   </url>
   <url>

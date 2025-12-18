@@ -15,8 +15,8 @@
 
   
   
-    <title>Section 5: Codegen &middot; Yohai&#39;s Blog</title>
-    <meta name="title" content="Section 5: Codegen &middot; Yohai&#39;s Blog">
+    <title>Section 6: Complete &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Section 6: Complete &middot; Yohai&#39;s Blog">
   
 
   
@@ -24,10 +24,10 @@
   
   
   
-  <link rel="canonical" href="http://localhost:1313/compiler-tutorial/05-codegen/">
+  <link rel="canonical" href="http://localhost:1313/compiler-tutorial/06-complete/">
   
     
-      <link rel="alternate" type="application/rss+xml" href="/compiler-tutorial/05-codegen/index.xml" title="Yohai's Blog" />
+      <link rel="alternate" type="application/rss+xml" href="/compiler-tutorial/06-complete/index.xml" title="Yohai's Blog" />
   
 
   
@@ -37,19 +37,19 @@
   
 
   
-  <meta property="og:url" content="http://localhost:1313/compiler-tutorial/05-codegen/">
+  <meta property="og:url" content="http://localhost:1313/compiler-tutorial/06-complete/">
   <meta property="og:site_name" content="Yohai&#39;s Blog">
-  <meta property="og:title" content="Section 5: Codegen">
-  <meta property="og:description" content="Section 5: Code Generation # Transform AIR into executable output.
-┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT CODEGEN DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ AIR: Output (C code): │ │ │ │ %0 = param_get(0) int32_t p0 = ...; │ │ %1 = param_get(1) int32_t p1 = ...; │ │ %2 = add_i32(%0, %1) int32_t t2 = p0 &#43; p1; │ │ %3 = ret(%2) return t2; │ │ │ │ We&#39;ll generate C code - it&#39;s readable and compiles everywhere! │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why Generate C? # We could generate:">
+  <meta property="og:title" content="Section 6: Complete">
+  <meta property="og:description" content="Section 6: Complete Compiler # Wire everything together into a working compiler.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ THE COMPLETE PIPELINE │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Source Code │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ LEXER │ → Tokens │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ PARSER │ → AST │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ ZIR │ → Untyped IR │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ SEMA │ → Typed IR (AIR) &#43; Errors │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ CODEGEN │ → C Code │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ CC │ → Executable │ │ └─────────┘ │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ What You’ve Built # A complete compiler in ~1000 lines that:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 
   
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Section 5: Codegen">
-  <meta name="twitter:description" content="Section 5: Code Generation # Transform AIR into executable output.
-┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT CODEGEN DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ AIR: Output (C code): │ │ │ │ %0 = param_get(0) int32_t p0 = ...; │ │ %1 = param_get(1) int32_t p1 = ...; │ │ %2 = add_i32(%0, %1) int32_t t2 = p0 &#43; p1; │ │ %3 = ret(%2) return t2; │ │ │ │ We&#39;ll generate C code - it&#39;s readable and compiles everywhere! │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why Generate C? # We could generate:">
+  <meta name="twitter:title" content="Section 6: Complete">
+  <meta name="twitter:description" content="Section 6: Complete Compiler # Wire everything together into a working compiler.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ THE COMPLETE PIPELINE │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Source Code │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ LEXER │ → Tokens │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ PARSER │ → AST │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ ZIR │ → Untyped IR │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ SEMA │ → Typed IR (AIR) &#43; Errors │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ CODEGEN │ → C Code │ │ └────┬────┘ │ │ │ │ │ ▼ │ │ ┌─────────┐ │ │ │ CC │ → Executable │ │ └─────────┘ │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ What You’ve Built # A complete compiler in ~1000 lines that:">
 
   
   
@@ -198,12 +198,12 @@
     "@context": "https://schema.org",
     "@type": "Article",
     "articleSection": "Build Your Own Compiler",
-    "name": "Section 5: Codegen",
-    "headline": "Section 5: Codegen",
+    "name": "Section 6: Complete",
+    "headline": "Section 6: Complete",
     
-    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eSection 5: Code Generation\n    \u003cdiv id=\u0022section-5-code-generation\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#section-5-code-generation\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eTransform AIR into executable output.\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌──────────────────────────────────────────────────────────────────────────────┐\n│                         WHAT CODEGEN DOES                                    │\n├──────────────────────────────────────────────────────────────────────────────┤\n│                                                                              │\n│   AIR:                            Output (C code):                          │\n│                                                                              │\n│   %0 = param_get(0)               int32_t p0 = ...;                         │\n│   %1 = param_get(1)               int32_t p1 = ...;                         │\n│   %2 = add_i32(%0, %1)            int32_t t2 = p0 \u002b p1;                     │\n│   %3 = ret(%2)                    return t2;                                │\n│                                                                              │\n│   We\u0026#39;ll generate C code - it\u0026#39;s readable and compiles everywhere!            │\n│                                                                              │\n└──────────────────────────────────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eWhy Generate C?\n    \u003cdiv id=\u0022why-generate-c\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#why-generate-c\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eWe could generate:\u003c\/p\u003e",
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eSection 6: Complete Compiler\n    \u003cdiv id=\u0022section-6-complete-compiler\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#section-6-complete-compiler\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eWire everything together into a working compiler.\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌──────────────────────────────────────────────────────────────────────────────┐\n│                        THE COMPLETE PIPELINE                                 │\n├──────────────────────────────────────────────────────────────────────────────┤\n│                                                                              │\n│   Source Code                                                                │\n│       │                                                                      │\n│       ▼                                                                      │\n│   ┌─────────┐                                                               │\n│   │  LEXER  │  → Tokens                                                     │\n│   └────┬────┘                                                               │\n│        │                                                                     │\n│        ▼                                                                     │\n│   ┌─────────┐                                                               │\n│   │ PARSER  │  → AST                                                        │\n│   └────┬────┘                                                               │\n│        │                                                                     │\n│        ▼                                                                     │\n│   ┌─────────┐                                                               │\n│   │   ZIR   │  → Untyped IR                                                 │\n│   └────┬────┘                                                               │\n│        │                                                                     │\n│        ▼                                                                     │\n│   ┌─────────┐                                                               │\n│   │  SEMA   │  → Typed IR (AIR) \u002b Errors                                   │\n│   └────┬────┘                                                               │\n│        │                                                                     │\n│        ▼                                                                     │\n│   ┌─────────┐                                                               │\n│   │ CODEGEN │  → C Code                                                     │\n│   └────┬────┘                                                               │\n│        │                                                                     │\n│        ▼                                                                     │\n│   ┌─────────┐                                                               │\n│   │   CC    │  → Executable                                                 │\n│   └─────────┘                                                               │\n│                                                                              │\n└──────────────────────────────────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eWhat You\u0026rsquo;ve Built\n    \u003cdiv id=\u0022what-youve-built\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#what-youve-built\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eA complete compiler in ~1000 lines that:\u003c\/p\u003e",
     "inLanguage": "en-us",
-    "url" : "http://localhost:1313/compiler-tutorial/05-codegen/",
+    "url" : "http://localhost:1313/compiler-tutorial/06-complete/",
     "author" : {
       "@type": "Person",
       "name": "Yohai"
@@ -217,7 +217,7 @@
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "421"
+    "wordCount": "311"
   }]
   </script>
 
@@ -539,7 +539,7 @@
   
   <header>
     
-    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Section 5: Codegen</h1>
+    <h1 class="mt-5 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Section 6: Complete</h1>
     <div class="mt-1 mb-2 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
       
 
@@ -583,8 +583,8 @@
         type="text/javascript"
         src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
         integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
-        data-oid="views_compiler-tutorial/05-codegen/_index.md"
-        data-oid-likes="likes_compiler-tutorial/05-codegen/_index.md"></script>
+        data-oid="views_compiler-tutorial/06-complete/_index.md"
+        data-oid-likes="likes_compiler-tutorial/06-complete/_index.md"></script>
     
   </header>
 
@@ -595,83 +595,74 @@
     
     <div class="min-w-0 min-h-0 max-w-prose">
       
-<h1 class="relative group">Section 5: Code Generation
-    <div id="section-5-code-generation" class="anchor"></div>
+<h1 class="relative group">Section 6: Complete Compiler
+    <div id="section-6-complete-compiler" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#section-5-code-generation" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#section-6-complete-compiler" aria-label="Anchor">#</a>
     </span>
     
 </h1>
-<p>Transform AIR into executable output.</p>
+<p>Wire everything together into a working compiler.</p>
 <pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
-│                         WHAT CODEGEN DOES                                    │
+│                        THE COMPLETE PIPELINE                                 │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   AIR:                            Output (C code):                          │
-│                                                                              │
-│   %0 = param_get(0)               int32_t p0 = ...;                         │
-│   %1 = param_get(1)               int32_t p1 = ...;                         │
-│   %2 = add_i32(%0, %1)            int32_t t2 = p0 + p1;                     │
-│   %3 = ret(%2)                    return t2;                                │
-│                                                                              │
-│   We&#39;ll generate C code - it&#39;s readable and compiles everywhere!            │
+│   Source Code                                                                │
+│       │                                                                      │
+│       ▼                                                                      │
+│   ┌─────────┐                                                               │
+│   │  LEXER  │  → Tokens                                                     │
+│   └────┬────┘                                                               │
+│        │                                                                     │
+│        ▼                                                                     │
+│   ┌─────────┐                                                               │
+│   │ PARSER  │  → AST                                                        │
+│   └────┬────┘                                                               │
+│        │                                                                     │
+│        ▼                                                                     │
+│   ┌─────────┐                                                               │
+│   │   ZIR   │  → Untyped IR                                                 │
+│   └────┬────┘                                                               │
+│        │                                                                     │
+│        ▼                                                                     │
+│   ┌─────────┐                                                               │
+│   │  SEMA   │  → Typed IR (AIR) + Errors                                   │
+│   └────┬────┘                                                               │
+│        │                                                                     │
+│        ▼                                                                     │
+│   ┌─────────┐                                                               │
+│   │ CODEGEN │  → C Code                                                     │
+│   └────┬────┘                                                               │
+│        │                                                                     │
+│        ▼                                                                     │
+│   ┌─────────┐                                                               │
+│   │   CC    │  → Executable                                                 │
+│   └─────────┘                                                               │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 </code></pre><hr>
 
-<h2 class="relative group">Why Generate C?
-    <div id="why-generate-c" class="anchor"></div>
+<h2 class="relative group">What You&rsquo;ve Built
+    <div id="what-youve-built" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-generate-c" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-youve-built" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>We could generate:</p>
+<p>A complete compiler in ~1000 lines that:</p>
 <ul>
-<li><strong>Machine code</strong> (x86, ARM) - complex, platform-specific</li>
-<li><strong>LLVM IR</strong> - powerful but adds dependency</li>
-<li><strong>Bytecode</strong> - needs a VM</li>
-<li><strong>C code</strong> - simple, portable, readable!</li>
+<li>Lexes source code into tokens</li>
+<li>Parses tokens into an AST</li>
+<li>Generates untyped IR (ZIR)</li>
+<li>Performs semantic analysis (Sema) producing typed IR (AIR)</li>
+<li>Generates C code</li>
+<li>Compiles to native executables</li>
 </ul>
-<p>C is perfect for learning: you can see exactly what your compiler produces.</p>
 <hr>
-
-<h2 class="relative group">The Output
-    <div id="the-output" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-output" aria-label="Anchor">#</a>
-    </span>
-    
-</h2>
-<pre tabindex="0"><code>fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
-</code></pre><p>Becomes:</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp">
-</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
-</span></span><span class="line"><span class="cl"><span class="kt">int32_t</span> <span class="nf">add</span><span class="p">(</span><span class="kt">int32_t</span> <span class="n">p0</span><span class="p">,</span> <span class="kt">int32_t</span> <span class="n">p1</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="kt">int32_t</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">+</span> <span class="n">p1</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">t0</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span></code></pre></td></tr></table>
-</div>
-</div><hr>
 
 <h2 class="relative group">Lessons in This Section
     <div id="lessons-in-this-section" class="anchor"></div>
@@ -687,158 +678,77 @@
       <tr>
           <th>Lesson</th>
           <th>Topic</th>
-          <th>What You&rsquo;ll Add</th>
+          <th>What You&rsquo;ll Do</th>
       </tr>
   </thead>
   <tbody>
       <tr>
           <td><a
-  href="01-target-choice/">1. Target Choice</a></td>
-          <td>Output format</td>
-          <td>Why C? Alternatives</td>
+  href="01-integration/">1. Integration</a></td>
+          <td>Wire stages</td>
+          <td>Connect all components</td>
       </tr>
       <tr>
           <td><a
-  href="02-type-mapping/">2. Type Mapping</a></td>
-          <td>Types</td>
-          <td>i32 → int32_t</td>
+  href="02-walkthrough/">2. Walkthrough</a></td>
+          <td>Example</td>
+          <td>Trace a program through</td>
       </tr>
       <tr>
           <td><a
-  href="03-gen-constants/">3. Constants</a></td>
-          <td>Literals</td>
-          <td><code>int32_t t0 = 42;</code></td>
+  href="03-test-suite/">3. Test Suite</a></td>
+          <td>Testing</td>
+          <td>Comprehensive tests</td>
       </tr>
       <tr>
           <td><a
-  href="04-gen-binary/">4. Binary Ops</a></td>
-          <td>Arithmetic</td>
-          <td><code>t2 = t0 + t1;</code></td>
-      </tr>
-      <tr>
-          <td><a
-  href="05-gen-variables/">5. Variables</a></td>
-          <td>Locals</td>
-          <td>Local variable storage</td>
-      </tr>
-      <tr>
-          <td><a
-  href="06-gen-functions/">6. Functions</a></td>
-          <td>Signatures</td>
-          <td>Function declarations</td>
-      </tr>
-      <tr>
-          <td><a
-  href="07-gen-return/">7. Return</a></td>
-          <td>Returns</td>
-          <td><code>return t0;</code></td>
-      </tr>
-      <tr>
-          <td><a
-  href="08-gen-calls/">8. Calls</a></td>
-          <td>Calling</td>
-          <td><code>foo(x, y)</code></td>
-      </tr>
-      <tr>
-          <td><a
-  href="09-gen-program/">9. Program</a></td>
-          <td>Structure</td>
-          <td>Headers, main</td>
-      </tr>
-      <tr>
-          <td><a
-  href="10-putting-together/">10. Complete</a></td>
-          <td>Integration</td>
-          <td>Full code generator</td>
+  href="04-extensions/">4. Extensions</a></td>
+          <td>Next steps</td>
+          <td>Ideas for expanding</td>
       </tr>
   </tbody>
 </table>
 <hr>
 
-<h2 class="relative group">What You&rsquo;ll Build
-    <div id="what-youll-build" class="anchor"></div>
+<h2 class="relative group">Lines of Code
+    <div id="lines-of-code" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-youll-build" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#lines-of-code" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>By the end of this section, you can transform:</p>
+<p>Approximate counts by stage:</p>
+<pre tabindex="0"><code>Lexer:      ~100-150 lines
+Parser:     ~150-200 lines
+ZIR Gen:    ~80-120 lines
+Sema:       ~150-200 lines
+Codegen:    ~100-150 lines
+─────────────────────────
+Total:      ~600-800 lines
+</code></pre><p>Plus tests and utilities, easily under 1000 lines.</p>
+<hr>
+
+<h2 class="relative group">What You Can Compile
+    <div id="what-you-can-compile" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-you-can-compile" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
 <pre tabindex="0"><code>fn add(a: i32, b: i32) i32 {
     return a + b;
 }
 
 fn main() i32 {
-    return 0;
+    const x: i32 = 5;
+    const y: i32 = 3;
+    const sum: i32 = x + y;
+    return sum;
 }
-</code></pre><p>Into:</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp">
-</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdbool.h&gt;</span><span class="cp">
-</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
-</span></span><span class="line"><span class="cl"><span class="kt">int32_t</span> <span class="nf">add</span><span class="p">(</span><span class="kt">int32_t</span> <span class="n">p0</span><span class="p">,</span> <span class="kt">int32_t</span> <span class="n">p1</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="kt">int32_t</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">+</span> <span class="n">p1</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">t0</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="kt">int32_t</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span></code></pre></td></tr></table>
-</div>
-</div><p>Which compiles with any C compiler:</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cc output.c -o program
-</span></span><span class="line"><span class="cl">./program
-</span></span></code></pre></td></tr></table>
-</div>
-</div><hr>
-
-<h2 class="relative group">Code Generation Strategy
-    <div id="code-generation-strategy" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#code-generation-strategy" aria-label="Anchor">#</a>
-    </span>
-    
-</h2>
-<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
-│                     CODEGEN STRATEGY                                         │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   For each AIR instruction, emit corresponding C code:                      │
-│                                                                              │
-│   const_i32(42)         →  int32_t tN = 42;                                │
-│   param_get(0)          →  int32_t tN = p0;                                │
-│   local_get(slot)       →  int32_t tN = local_slot;                        │
-│   local_set(slot, val)  →  local_slot = tN;                                │
-│   add_i32(a, b)         →  int32_t tN = tA + tB;                           │
-│   ret(val)              →  return tN;                                       │
-│                                                                              │
-│   Each instruction result becomes a temporary variable: t0, t1, t2, ...    │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
 </code></pre><hr>
 
 <h2 class="relative group">Start Here
@@ -851,7 +761,7 @@ fn main() i32 {
     
 </h2>
 <p>Begin with <a
-  href="01-target-choice/">Lesson 1: Target Choice</a> →</p>
+  href="01-integration/">Lesson 1: Integration</a> →</p>
 
     </div>
   </section>
@@ -930,11 +840,11 @@ fn main() i32 {
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/05-codegen/10-putting-together/"
+          href="/compiler-tutorial/06-complete/04-extensions/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          5.10: Complete Codegen
+          6.4: Extensions
           
         </h2>
       </a>
@@ -988,7 +898,7 @@ fn main() i32 {
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>777 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>731 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1068,11 +978,11 @@ fn main() i32 {
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/05-codegen/09-gen-program/"
+          href="/compiler-tutorial/06-complete/03-test-suite/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          5.9: Program
+          6.3: Test Suite
           
         </h2>
       </a>
@@ -1126,7 +1036,7 @@ fn main() i32 {
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>497 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>827 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1206,11 +1116,11 @@ fn main() i32 {
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/05-codegen/08-gen-calls/"
+          href="/compiler-tutorial/06-complete/02-walkthrough/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          5.8: Calls
+          6.2: Walkthrough
           
         </h2>
       </a>
@@ -1264,7 +1174,7 @@ fn main() i32 {
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>455 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>719 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
     
 
     
@@ -1344,287 +1254,11 @@ fn main() i32 {
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/05-codegen/07-gen-return/"
+          href="/compiler-tutorial/06-complete/01-integration/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          5.7: Return
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>363 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">2 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/05-codegen/06-gen-functions/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          5.6: Functions
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>458 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/05-codegen/05-gen-variables/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          5.5: Variables
+          6.1: Integration
           
         </h2>
       </a>
@@ -1679,558 +1313,6 @@ fn main() i32 {
     
     
       <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>580 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/05-codegen/04-gen-binary/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          5.4: Binary Operations
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>527 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/05-codegen/03-gen-constants/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          5.3: Constants
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>378 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">2 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/05-codegen/02-type-mapping/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          5.2: Type Mapping
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>336 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">2 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/05-codegen/01-target-choice/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          5.1: Target Choice
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>586 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
     
 
     

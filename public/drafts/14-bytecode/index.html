@@ -1,0 +1,2685 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Zig Compiler Internals Part 14: Understanding Bytecode &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Zig Compiler Internals Part 14: Understanding Bytecode &middot; Yohai&#39;s Blog">
+  
+
+  
+  
+  
+  
+  
+  <link rel="canonical" href="http://localhost:1313/drafts/14-bytecode/">
+  
+
+  
+  
+    <meta name="author" content="Yohai">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:1313/drafts/14-bytecode/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Zig Compiler Internals Part 14: Understanding Bytecode">
+  <meta property="og:description" content="Zig Compiler Internals Part 14: Understanding Bytecode # What is bytecode and why do so many language implementations use it?
+Introduction # You’ve likely heard the term “bytecode” in discussions about Java, Python, WebAssembly, or the Lua scripting language. But what exactly is bytecode, and why do so many language implementations choose this approach?">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="drafts">
+    <meta property="article:published_time" content="2025-12-18T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-18T00:00:00+00:00">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Zig Compiler Internals Part 14: Understanding Bytecode">
+  <meta name="twitter:description" content="Zig Compiler Internals Part 14: Understanding Bytecode # What is bytecode and why do so many language implementations use it?
+Introduction # You’ve likely heard the term “bytecode” in discussions about Java, Python, WebAssembly, or the Lua scripting language. But what exactly is bytecode, and why do so many language implementations choose this approach?">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Drafts",
+    "name": "Zig Compiler Internals Part 14: Understanding Bytecode",
+    "headline": "Zig Compiler Internals Part 14: Understanding Bytecode",
+    
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eZig Compiler Internals Part 14: Understanding Bytecode\n    \u003cdiv id=\u0022zig-compiler-internals-part-14-understanding-bytecode\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#zig-compiler-internals-part-14-understanding-bytecode\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003e\u003cem\u003eWhat is bytecode and why do so many language implementations use it?\u003c\/em\u003e\u003c\/p\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eIntroduction\n    \u003cdiv id=\u0022introduction\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#introduction\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eYou\u0026rsquo;ve likely heard the term \u0026ldquo;bytecode\u0026rdquo; in discussions about Java, Python, WebAssembly, or the Lua scripting language. But what exactly is bytecode, and why do so many language implementations choose this approach?\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:1313/drafts/14-bytecode/",
+    "author" : {
+      "@type": "Person",
+      "name": "Yohai"
+    },
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-18T00:00:00\u002b00:00",
+    "datePublished": "2025-12-18T00:00:00\u002b00:00",
+    
+    "dateModified": "2025-12-18T00:00:00\u002b00:00",
+    
+    
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "5805"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          Yohai&rsquo;s Blog
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/drafts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Drafts"
+  title="Drafts">
+  
+  
+    <p class="text-base font-medium">
+      Drafts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/drafts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Drafts"
+    title="Drafts">
+    
+    
+      <p class="text-bg font-bg">
+        Drafts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >Yohai&#39;s Blog</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/"
+      >Drafts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/14-bytecode/"
+      >Zig Compiler Internals Part 14: Understanding Bytecode</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Zig Compiler Internals Part 14: Understanding Bytecode
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2025-12-18T00:00:00&#43;00:00">December 18, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>5805 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">28 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Yohai
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-what-is-bytecode">Part 1: What is Bytecode?</a>
+      <ul>
+        <li><a href="#key-characteristics-of-bytecode">Key Characteristics of Bytecode</a></li>
+        <li><a href="#bytecode-vs-machine-code">Bytecode vs. Machine Code</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-why-bytecode-exists">Part 2: Why Bytecode Exists</a>
+      <ul>
+        <li><a href="#problem-1-portability">Problem 1: Portability</a></li>
+        <li><a href="#problem-2-interpretation-performance">Problem 2: Interpretation Performance</a></li>
+        <li><a href="#problem-3-distribution-size">Problem 3: Distribution Size</a></li>
+        <li><a href="#problem-4-security-and-sandboxing">Problem 4: Security and Sandboxing</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-stack-based-vs-register-based-vms">Part 3: Stack-Based vs Register-Based VMs</a>
+      <ul>
+        <li><a href="#stack-based-virtual-machines">Stack-Based Virtual Machines</a></li>
+        <li><a href="#register-based-virtual-machines">Register-Based Virtual Machines</a></li>
+        <li><a href="#comparison">Comparison</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-anatomy-of-a-bytecode-instruction">Part 4: Anatomy of a Bytecode Instruction</a>
+      <ul>
+        <li><a href="#instruction-components">Instruction Components</a></li>
+        <li><a href="#opcode-encoding-strategies">Opcode Encoding Strategies</a></li>
+        <li><a href="#example-a-simple-instruction-set">Example: A Simple Instruction Set</a></li>
+        <li><a href="#encoding-constants">Encoding Constants</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-famous-bytecode-systems">Part 5: Famous Bytecode Systems</a>
+      <ul>
+        <li><a href="#java-virtual-machine-jvm">Java Virtual Machine (JVM)</a></li>
+        <li><a href="#python-bytecode">Python Bytecode</a></li>
+        <li><a href="#webassembly-wasm">WebAssembly (WASM)</a></li>
+        <li><a href="#lua-virtual-machine">Lua Virtual Machine</a></li>
+        <li><a href="#comparison-table">Comparison Table</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-bytecode-in-zigs-context">Part 6: Bytecode in Zig&rsquo;s Context</a>
+      <ul>
+        <li><a href="#zigs-compilation-model">Zig&rsquo;s Compilation Model</a></li>
+        <li><a href="#compile-time-execution">Compile-Time Execution</a></li>
+        <li><a href="#air-as-high-level-bytecode">AIR as &ldquo;High-Level Bytecode&rdquo;</a></li>
+        <li><a href="#when-might-zig-use-bytecode">When Might Zig Use Bytecode?</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-designing-your-own-bytecode">Part 7: Designing Your Own Bytecode</a>
+      <ul>
+        <li><a href="#the-language">The Language</a></li>
+        <li><a href="#instruction-set-design">Instruction Set Design</a></li>
+        <li><a href="#compilation-example">Compilation Example</a></li>
+        <li><a href="#complete-program-bytecode">Complete Program Bytecode</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-bytecode-execution">Part 8: Bytecode Execution</a>
+      <ul>
+        <li><a href="#the-interpreter-loop">The Interpreter Loop</a></li>
+        <li><a href="#dispatch-strategies">Dispatch Strategies</a></li>
+        <li><a href="#jit-compilation-basics">JIT Compilation Basics</a></li>
+        <li><a href="#performance-considerations">Performance Considerations</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-complete-example">Part 9: Complete Example</a>
+      <ul>
+        <li><a href="#source-expression">Source Expression</a></li>
+        <li><a href="#step-1-parsing-to-ast">Step 1: Parsing to AST</a></li>
+        <li><a href="#step-2-bytecode-generation">Step 2: Bytecode Generation</a></li>
+        <li><a href="#step-3-execution-trace">Step 3: Execution Trace</a></li>
+        <li><a href="#step-4-interpreter-code">Step 4: Interpreter Code</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
+      <ul>
+        <li><a href="#when-to-use-bytecode">When to Use Bytecode</a></li>
+        <li><a href="#summary-diagram">Summary Diagram</a></li>
+        <li><a href="#key-takeaways">Key Takeaways</a></li>
+      </ul>
+    </li>
+    <li><a href="#further-reading">Further Reading</a>
+      <ul>
+        <li><a href="#books">Books</a></li>
+        <li><a href="#papers-and-articles">Papers and Articles</a></li>
+        <li><a href="#source-code-to-study">Source Code to Study</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#navigation">Navigation</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-what-is-bytecode">Part 1: What is Bytecode?</a>
+      <ul>
+        <li><a href="#key-characteristics-of-bytecode">Key Characteristics of Bytecode</a></li>
+        <li><a href="#bytecode-vs-machine-code">Bytecode vs. Machine Code</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-why-bytecode-exists">Part 2: Why Bytecode Exists</a>
+      <ul>
+        <li><a href="#problem-1-portability">Problem 1: Portability</a></li>
+        <li><a href="#problem-2-interpretation-performance">Problem 2: Interpretation Performance</a></li>
+        <li><a href="#problem-3-distribution-size">Problem 3: Distribution Size</a></li>
+        <li><a href="#problem-4-security-and-sandboxing">Problem 4: Security and Sandboxing</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-stack-based-vs-register-based-vms">Part 3: Stack-Based vs Register-Based VMs</a>
+      <ul>
+        <li><a href="#stack-based-virtual-machines">Stack-Based Virtual Machines</a></li>
+        <li><a href="#register-based-virtual-machines">Register-Based Virtual Machines</a></li>
+        <li><a href="#comparison">Comparison</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-anatomy-of-a-bytecode-instruction">Part 4: Anatomy of a Bytecode Instruction</a>
+      <ul>
+        <li><a href="#instruction-components">Instruction Components</a></li>
+        <li><a href="#opcode-encoding-strategies">Opcode Encoding Strategies</a></li>
+        <li><a href="#example-a-simple-instruction-set">Example: A Simple Instruction Set</a></li>
+        <li><a href="#encoding-constants">Encoding Constants</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-famous-bytecode-systems">Part 5: Famous Bytecode Systems</a>
+      <ul>
+        <li><a href="#java-virtual-machine-jvm">Java Virtual Machine (JVM)</a></li>
+        <li><a href="#python-bytecode">Python Bytecode</a></li>
+        <li><a href="#webassembly-wasm">WebAssembly (WASM)</a></li>
+        <li><a href="#lua-virtual-machine">Lua Virtual Machine</a></li>
+        <li><a href="#comparison-table">Comparison Table</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-bytecode-in-zigs-context">Part 6: Bytecode in Zig&rsquo;s Context</a>
+      <ul>
+        <li><a href="#zigs-compilation-model">Zig&rsquo;s Compilation Model</a></li>
+        <li><a href="#compile-time-execution">Compile-Time Execution</a></li>
+        <li><a href="#air-as-high-level-bytecode">AIR as &ldquo;High-Level Bytecode&rdquo;</a></li>
+        <li><a href="#when-might-zig-use-bytecode">When Might Zig Use Bytecode?</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-designing-your-own-bytecode">Part 7: Designing Your Own Bytecode</a>
+      <ul>
+        <li><a href="#the-language">The Language</a></li>
+        <li><a href="#instruction-set-design">Instruction Set Design</a></li>
+        <li><a href="#compilation-example">Compilation Example</a></li>
+        <li><a href="#complete-program-bytecode">Complete Program Bytecode</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-bytecode-execution">Part 8: Bytecode Execution</a>
+      <ul>
+        <li><a href="#the-interpreter-loop">The Interpreter Loop</a></li>
+        <li><a href="#dispatch-strategies">Dispatch Strategies</a></li>
+        <li><a href="#jit-compilation-basics">JIT Compilation Basics</a></li>
+        <li><a href="#performance-considerations">Performance Considerations</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-complete-example">Part 9: Complete Example</a>
+      <ul>
+        <li><a href="#source-expression">Source Expression</a></li>
+        <li><a href="#step-1-parsing-to-ast">Step 1: Parsing to AST</a></li>
+        <li><a href="#step-2-bytecode-generation">Step 2: Bytecode Generation</a></li>
+        <li><a href="#step-3-execution-trace">Step 3: Execution Trace</a></li>
+        <li><a href="#step-4-interpreter-code">Step 4: Interpreter Code</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
+      <ul>
+        <li><a href="#when-to-use-bytecode">When to Use Bytecode</a></li>
+        <li><a href="#summary-diagram">Summary Diagram</a></li>
+        <li><a href="#key-takeaways">Key Takeaways</a></li>
+      </ul>
+    </li>
+    <li><a href="#further-reading">Further Reading</a>
+      <ul>
+        <li><a href="#books">Books</a></li>
+        <li><a href="#papers-and-articles">Papers and Articles</a></li>
+        <li><a href="#source-code-to-study">Source Code to Study</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#navigation">Navigation</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+
+        <div class="article-content max-w-prose mb-20">
+          
+<h1 class="relative group">Zig Compiler Internals Part 14: Understanding Bytecode
+    <div id="zig-compiler-internals-part-14-understanding-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zig-compiler-internals-part-14-understanding-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p><em>What is bytecode and why do so many language implementations use it?</em></p>
+<hr>
+
+<h2 class="relative group">Introduction
+    <div id="introduction" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#introduction" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>You&rsquo;ve likely heard the term &ldquo;bytecode&rdquo; in discussions about Java, Python, WebAssembly, or the Lua scripting language. But what exactly is bytecode, and why do so many language implementations choose this approach?</p>
+<p>In this article, we&rsquo;ll explore:</p>
+<ul>
+<li>What bytecode is and how it differs from source code and machine code</li>
+<li>Why bytecode exists and what problems it solves</li>
+<li>The two major VM architectures: stack-based and register-based</li>
+<li>How bytecode instructions are designed and encoded</li>
+<li>Famous bytecode systems and how they compare</li>
+<li>How Zig&rsquo;s approach relates to bytecode concepts</li>
+<li>How to design and execute your own simple bytecode</li>
+</ul>
+<p>Understanding bytecode gives you insight into how interpreted languages work, why they make certain trade-offs, and how compilation can happen in stages.</p>
+<hr>
+
+<h2 class="relative group">Part 1: What is Bytecode?
+    <div id="part-1-what-is-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-1-what-is-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Bytecode sits between human-readable source code and CPU-specific machine code:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    THE COMPILATION SPECTRUM                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   SOURCE CODE          BYTECODE              MACHINE CODE                    │
+│   ─────────────        ────────              ────────────                    │
+│   Human-readable       Portable binary       CPU-specific                    │
+│   Text format          Compact encoding      Native instructions             │
+│   Easy to edit         Platform-independent  Maximum performance             │
+│                                                                              │
+│   ┌───────────┐       ┌───────────┐        ┌───────────┐                    │
+│   │ x = 1 + 2 │  ──&gt;  │ PUSH 1    │  ──&gt;   │ mov $1,%r1│                    │
+│   │           │       │ PUSH 2    │        │ mov $2,%r2│                    │
+│   │           │       │ ADD       │        │ add %r2,%r1                    │
+│   │           │       │ STORE x   │        │ mov %r1,x │                    │
+│   └───────────┘       └───────────┘        └───────────┘                    │
+│                                                                              │
+│   High-level           Intermediate          Low-level                       │
+│   Abstraction          Representation        Native                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Key Characteristics of Bytecode
+    <div id="key-characteristics-of-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#key-characteristics-of-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p><strong>1. Binary Format</strong>
+Unlike source code (text), bytecode is encoded in binary. Each instruction is typically one or more bytes, hence the name &ldquo;bytecode.&rdquo;</p>
+<p><strong>2. Portable</strong>
+Bytecode doesn&rsquo;t target a specific CPU architecture. The same <code>.class</code> file (Java) or <code>.pyc</code> file (Python) runs on any platform with the appropriate virtual machine.</p>
+<p><strong>3. Compact</strong>
+Bytecode is much smaller than source code. Comments, whitespace, and verbose syntax are eliminated. Variable names become indices.</p>
+<p><strong>4. Structured</strong>
+Bytecode has a regular, easy-to-parse format. A virtual machine can decode and execute it much faster than parsing source code repeatedly.</p>
+
+<h3 class="relative group">Bytecode vs. Machine Code
+    <div id="bytecode-vs-machine-code" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#bytecode-vs-machine-code" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    BYTECODE vs MACHINE CODE                                  │
+├────────────────────────────────┬─────────────────────────────────────────────┤
+│          BYTECODE              │            MACHINE CODE                     │
+├────────────────────────────────┼─────────────────────────────────────────────┤
+│ Runs on virtual machine        │ Runs directly on CPU                        │
+│ Platform independent           │ Platform specific (x86, ARM, etc.)          │
+│ Needs interpreter or JIT       │ Executes natively                           │
+│ Higher-level operations        │ Low-level CPU operations                    │
+│ Designed for simplicity        │ Designed for hardware efficiency            │
+│ Easy to instrument/debug       │ Hard to analyze at runtime                  │
+└────────────────────────────────┴─────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 2: Why Bytecode Exists
+    <div id="part-2-why-bytecode-exists" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-2-why-bytecode-exists" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Why not compile directly to machine code, or just interpret source code? Bytecode solves several problems:</p>
+
+<h3 class="relative group">Problem 1: Portability
+    <div id="problem-1-portability" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#problem-1-portability" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    THE PORTABILITY PROBLEM                                   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Without Bytecode:                                                          │
+│   ─────────────────                                                          │
+│                                                                              │
+│   Source ──&gt; x86 Binary      (for Windows/Linux x86)                         │
+│          ──&gt; ARM Binary      (for Mac M1/M2)                                 │
+│          ──&gt; RISC-V Binary   (for embedded)                                  │
+│          ──&gt; WASM            (for browsers)                                  │
+│                                                                              │
+│   Need N different compilers for N platforms!                                │
+│                                                                              │
+│   With Bytecode:                                                             │
+│   ──────────────                                                             │
+│                                                                              │
+│   Source ──&gt; Bytecode ──&gt; VM(x86)                                            │
+│                       ──&gt; VM(ARM)                                            │
+│                       ──&gt; VM(RISC-V)                                         │
+│                       ──&gt; VM(WASM)                                           │
+│                                                                              │
+│   One compiler, N virtual machine implementations!                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><p>Java famously pioneered this with &ldquo;write once, run anywhere&rdquo; - compile once to bytecode, run on any JVM.</p>
+
+<h3 class="relative group">Problem 2: Interpretation Performance
+    <div id="problem-2-interpretation-performance" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#problem-2-interpretation-performance" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Interpreting source code directly is slow:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    SOURCE INTERPRETATION vs BYTECODE                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Interpreting Source (every execution):                                     │
+│   ──────────────────────────────────────                                     │
+│   1. Read characters from file                                               │
+│   2. Tokenize (identify keywords, numbers, operators)                        │
+│   3. Parse (build syntax tree)                                               │
+│   4. Execute operations                                                      │
+│                                                                              │
+│   This happens EVERY time the code runs!                                     │
+│                                                                              │
+│   Interpreting Bytecode:                                                     │
+│   ──────────────────────                                                     │
+│   1. Read bytecode instruction (1-3 bytes)                                   │
+│   2. Decode opcode                                                           │
+│   3. Execute operation                                                       │
+│                                                                              │
+│   Much simpler! No parsing, no tokenizing.                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Problem 3: Distribution Size
+    <div id="problem-3-distribution-size" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#problem-3-distribution-size" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Bytecode is typically 5-10x smaller than source code:</p>
+<pre tabindex="0"><code>Source:    function calculateTax(income, rate) { return income * rate; }
+Bytecode:  05 00 01 02 03 04  (hypothetical: 6 bytes)
+</code></pre>
+<h3 class="relative group">Problem 4: Security and Sandboxing
+    <div id="problem-4-security-and-sandboxing" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#problem-4-security-and-sandboxing" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>A virtual machine can enforce security policies:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    VM SANDBOXING                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Bytecode Program                                                           │
+│        │                                                                     │
+│        ▼                                                                     │
+│   ┌─────────────────────────────────────────┐                               │
+│   │           VIRTUAL MACHINE               │                               │
+│   │  ┌─────────────────────────────────┐   │                               │
+│   │  │    Security Policy Enforcer     │   │                               │
+│   │  │  • Memory access bounds         │   │                               │
+│   │  │  • No direct file system        │   │                               │
+│   │  │  • No network without permission│   │                               │
+│   │  │  • CPU time limits              │   │                               │
+│   │  └─────────────────────────────────┘   │                               │
+│   └─────────────────────────────────────────┘                               │
+│        │                                                                     │
+│        ▼                                                                     │
+│   Operating System (protected from malicious code)                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 3: Stack-Based vs Register-Based VMs
+    <div id="part-3-stack-based-vs-register-based-vms" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-3-stack-based-vs-register-based-vms" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>There are two major architectural approaches to virtual machines:</p>
+
+<h3 class="relative group">Stack-Based Virtual Machines
+    <div id="stack-based-virtual-machines" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#stack-based-virtual-machines" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Stack machines use an implicit operand stack. Operations pop values, compute, and push results:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STACK-BASED VM                                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Expression: 3 + 5 * 2                                                      │
+│                                                                              │
+│   Bytecode:        Stack State:                                              │
+│   ─────────        ────────────                                              │
+│                                                                              │
+│   PUSH 3           [ 3 ]                                                     │
+│   PUSH 5           [ 3, 5 ]                                                  │
+│   PUSH 2           [ 3, 5, 2 ]                                               │
+│   MUL              [ 3, 10 ]      (5 * 2 = 10)                               │
+│   ADD              [ 13 ]         (3 + 10 = 13)                              │
+│                                                                              │
+│   Instructions don&#39;t name operands - they&#39;re implicit on the stack!          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><p><strong>Examples</strong>: JVM (Java), CPython, CLR (.NET), WebAssembly</p>
+<p><strong>Advantages</strong>:</p>
+<ul>
+<li>Simple instruction encoding (no operand addresses)</li>
+<li>Easy to generate bytecode from expressions</li>
+<li>Small code size</li>
+</ul>
+<p><strong>Disadvantages</strong>:</p>
+<ul>
+<li>More instructions needed (explicit push/pop)</li>
+<li>Stack manipulation overhead</li>
+<li>Harder to optimize</li>
+</ul>
+
+<h3 class="relative group">Register-Based Virtual Machines
+    <div id="register-based-virtual-machines" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#register-based-virtual-machines" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Register machines explicitly name source and destination registers:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    REGISTER-BASED VM                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Expression: 3 + 5 * 2                                                      │
+│                                                                              │
+│   Bytecode:              Registers:                                          │
+│   ─────────              ──────────                                          │
+│                                                                              │
+│   LOAD R0, 3             R0=3                                                │
+│   LOAD R1, 5             R0=3, R1=5                                          │
+│   LOAD R2, 2             R0=3, R1=5, R2=2                                    │
+│   MUL R1, R1, R2         R0=3, R1=10, R2=2    (R1 = 5 * 2)                   │
+│   ADD R0, R0, R1         R0=13, R1=10, R2=2   (R0 = 3 + 10)                  │
+│                                                                              │
+│   Instructions explicitly name their operands!                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><p><strong>Examples</strong>: Lua 5.0+, Dalvik (Android), LuaJIT</p>
+<p><strong>Advantages</strong>:</p>
+<ul>
+<li>Fewer instructions (combine operations)</li>
+<li>Easier to optimize (register allocation visible)</li>
+<li>Better for JIT compilation</li>
+</ul>
+<p><strong>Disadvantages</strong>:</p>
+<ul>
+<li>Larger instruction size (must encode register numbers)</li>
+<li>More complex instruction format</li>
+</ul>
+
+<h3 class="relative group">Comparison
+    <div id="comparison" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#comparison" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STACK vs REGISTER COMPARISON                              │
+├───────────────────┬──────────────────────┬───────────────────────────────────┤
+│    Aspect         │   Stack-Based        │   Register-Based                  │
+├───────────────────┼──────────────────────┼───────────────────────────────────┤
+│ Instruction Size  │ Small (1-3 bytes)    │ Larger (2-4 bytes)                │
+│ Instruction Count │ More instructions    │ Fewer instructions                │
+│ Code Size         │ Often smaller        │ Often larger                      │
+│ Execution Speed   │ More memory traffic  │ Less memory traffic               │
+│ Implementation    │ Simpler              │ More complex                      │
+│ Optimization      │ Harder               │ Easier                            │
+│ Code Generation   │ Simpler              │ Requires register allocation      │
+└───────────────────┴──────────────────────┴───────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 4: Anatomy of a Bytecode Instruction
+    <div id="part-4-anatomy-of-a-bytecode-instruction" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-4-anatomy-of-a-bytecode-instruction" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Let&rsquo;s examine how bytecode instructions are structured:</p>
+
+<h3 class="relative group">Instruction Components
+    <div id="instruction-components" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#instruction-components" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    INSTRUCTION ANATOMY                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ┌────────────────────────────────────────────────────────────┐            │
+│   │  OPCODE  │  OPERAND 1  │  OPERAND 2  │  OPERAND 3  │ ...  │            │
+│   └────────────────────────────────────────────────────────────┘            │
+│   │          │                                                              │
+│   │          └── What to operate on (registers, constants, etc.)            │
+│   │                                                                         │
+│   └── What operation to perform (ADD, LOAD, JUMP, etc.)                     │
+│                                                                              │
+│   Example: ADD R0, R1, R2  (R0 = R1 + R2)                                   │
+│                                                                              │
+│   ┌──────────┬──────────┬──────────┬──────────┐                             │
+│   │   0x01   │   0x00   │   0x01   │   0x02   │                             │
+│   │  (ADD)   │   (R0)   │   (R1)   │   (R2)   │                             │
+│   └──────────┴──────────┴──────────┴──────────┘                             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Opcode Encoding Strategies
+    <div id="opcode-encoding-strategies" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#opcode-encoding-strategies" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p><strong>Fixed-Width Instructions</strong>:
+Every instruction is the same size (e.g., 4 bytes)</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│   Fixed-Width (32-bit instructions):                                         │
+│                                                                              │
+│   ┌────────┬────────┬────────┬────────┐                                     │
+│   │ opcode │  arg1  │  arg2  │  arg3  │  = 4 bytes always                   │
+│   │ 8 bits │ 8 bits │ 8 bits │ 8 bits │                                     │
+│   └────────┴────────┴────────┴────────┘                                     │
+│                                                                              │
+│   Pros: Simple decoding, predictable fetch                                   │
+│   Cons: Wastes space for simple instructions                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><p><strong>Variable-Width Instructions</strong>:
+Instructions can be different sizes</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│   Variable-Width:                                                            │
+│                                                                              │
+│   NOP:      ┌────────┐                                                      │
+│             │  0x00  │  = 1 byte                                            │
+│             └────────┘                                                      │
+│                                                                              │
+│   PUSH 42:  ┌────────┬────────┐                                             │
+│             │  0x01  │   42   │  = 2 bytes                                  │
+│             └────────┴────────┘                                             │
+│                                                                              │
+│   CALL fn:  ┌────────┬────────┬────────┬────────┬────────┐                  │
+│             │  0x02  │      function address (32-bit)    │  = 5 bytes       │
+│             └────────┴────────┴────────┴────────┴────────┘                  │
+│                                                                              │
+│   Pros: Compact code                                                         │
+│   Cons: More complex decoding                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Example: A Simple Instruction Set
+    <div id="example-a-simple-instruction-set" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#example-a-simple-instruction-set" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Here&rsquo;s a minimal bytecode instruction set:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    SIMPLE INSTRUCTION SET                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Opcode  │ Name     │ Operands     │ Description                           │
+│   ────────┼──────────┼──────────────┼────────────────────────────────────   │
+│   0x00    │ NOP      │ none         │ Do nothing                            │
+│   0x01    │ PUSH     │ value (i32)  │ Push constant onto stack              │
+│   0x02    │ POP      │ none         │ Remove top of stack                   │
+│   0x03    │ ADD      │ none         │ Pop two, push sum                     │
+│   0x04    │ SUB      │ none         │ Pop two, push difference              │
+│   0x05    │ MUL      │ none         │ Pop two, push product                 │
+│   0x06    │ DIV      │ none         │ Pop two, push quotient                │
+│   0x07    │ NEG      │ none         │ Negate top of stack                   │
+│   0x08    │ LOAD     │ slot (u8)    │ Push local variable                   │
+│   0x09    │ STORE    │ slot (u8)    │ Pop and store to local                │
+│   0x0A    │ JUMP     │ offset (i16) │ Unconditional jump                    │
+│   0x0B    │ JUMPZ    │ offset (i16) │ Jump if top is zero                   │
+│   0x0C    │ CALL     │ addr (u32)   │ Call function                         │
+│   0x0D    │ RET      │ none         │ Return from function                  │
+│   0x0E    │ PRINT    │ none         │ Print top of stack                    │
+│   0x0F    │ HALT     │ none         │ Stop execution                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Encoding Constants
+    <div id="encoding-constants" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#encoding-constants" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Large constants need special handling:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    CONSTANT ENCODING                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Small constants (inline):                                                  │
+│   ────────────────────────                                                   │
+│   PUSH_SMALL 42    →  ┌──────────┬──────────┐                               │
+│                       │   0x01   │    42    │  2 bytes                      │
+│                       └──────────┴──────────┘                               │
+│                                                                              │
+│   Large constants (from constant pool):                                      │
+│   ─────────────────────────────────────                                      │
+│   Constant Pool: [3.14159, &#34;hello&#34;, 1000000]                                 │
+│                   idx 0    idx 1    idx 2                                    │
+│                                                                              │
+│   LOAD_CONST 2    →  ┌──────────┬──────────┐                                │
+│                      │   0x10   │    2     │  Load 1000000                  │
+│                      └──────────┴──────────┘                                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 5: Famous Bytecode Systems
+    <div id="part-5-famous-bytecode-systems" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-5-famous-bytecode-systems" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Let&rsquo;s examine some well-known bytecode implementations:</p>
+
+<h3 class="relative group">Java Virtual Machine (JVM)
+    <div id="java-virtual-machine-jvm" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#java-virtual-machine-jvm" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    JAVA VIRTUAL MACHINE                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Architecture: Stack-based                                                  │
+│   Instruction Size: 1-3 bytes (variable)                                     │
+│   Opcodes: ~200 instructions                                                 │
+│                                                                              │
+│   Java Source:                     Bytecode:                                 │
+│   ────────────                     ─────────                                 │
+│   int add(int a, int b) {          iload_0      // Push a                   │
+│       return a + b;                 iload_1      // Push b                   │
+│   }                                 iadd         // Add them                 │
+│                                     ireturn      // Return result            │
+│                                                                              │
+│   View with: javap -c MyClass.class                                          │
+│                                                                              │
+│   Key Features:                                                              │
+│   • Type-specific instructions (iadd, fadd, dadd)                            │
+│   • Constant pool for strings/numbers                                        │
+│   • JIT compilation (HotSpot, GraalVM)                                       │
+│   • Bytecode verification for security                                       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Python Bytecode
+    <div id="python-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#python-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    PYTHON BYTECODE                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Architecture: Stack-based                                                  │
+│   Instruction Size: 2 bytes (wordcode in Python 3.6+)                        │
+│   Opcodes: ~120 instructions                                                 │
+│                                                                              │
+│   Python Source:                   Bytecode:                                 │
+│   ──────────────                   ─────────                                 │
+│   def add(a, b):                   LOAD_FAST 0 (a)                           │
+│       return a + b                 LOAD_FAST 1 (b)                           │
+│                                    BINARY_ADD                                │
+│                                    RETURN_VALUE                              │
+│                                                                              │
+│   View with: import dis; dis.dis(add)                                        │
+│                                                                              │
+│   Key Features:                                                              │
+│   • Dynamic typing (one ADD for all types)                                   │
+│   • Name-based lookup (LOAD_NAME, LOAD_GLOBAL)                               │
+│   • Compiled to .pyc files                                                   │
+│   • No JIT in CPython (but PyPy has one)                                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">WebAssembly (WASM)
+    <div id="webassembly-wasm" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#webassembly-wasm" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    WEBASSEMBLY                                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Architecture: Stack-based                                                  │
+│   Instruction Size: Variable (LEB128 encoding)                               │
+│   Design: Low-level, type-safe, sandboxed                                    │
+│                                                                              │
+│   WAT (text format):               Binary:                                   │
+│   ──────────────────               ───────                                   │
+│   (func $add                       0x20 0x00    ;; local.get 0              │
+│     (param $a i32)                 0x20 0x01    ;; local.get 1              │
+│     (param $b i32)                 0x6A         ;; i32.add                  │
+│     (result i32)                   0x0F         ;; return                   │
+│     local.get $a                                                             │
+│     local.get $b                                                             │
+│     i32.add)                                                                 │
+│                                                                              │
+│   Key Features:                                                              │
+│   • Designed for the web (runs in browsers)                                  │
+│   • Near-native speed                                                        │
+│   • Strong sandboxing                                                        │
+│   • Multiple source languages (C, C++, Rust, Zig)                            │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Lua Virtual Machine
+    <div id="lua-virtual-machine" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#lua-virtual-machine" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    LUA VM (5.0+)                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Architecture: Register-based                                               │
+│   Instruction Size: 32 bits (fixed)                                          │
+│   Registers: 256 virtual registers                                           │
+│                                                                              │
+│   Lua Source:                      Bytecode:                                 │
+│   ───────────                      ─────────                                 │
+│   local function add(a, b)         MOVE R2, R0        -- copy a             │
+│       return a + b                 ADD R2, R2, R1     -- R2 = a + b         │
+│   end                              RETURN R2, 2       -- return R2          │
+│                                                                              │
+│   Instruction Format (32 bits):                                              │
+│   ┌────────┬────────┬────────┬────────┐                                     │
+│   │ opcode │   A    │   B    │   C    │                                     │
+│   │ 6 bits │ 8 bits │ 9 bits │ 9 bits │                                     │
+│   └────────┴────────┴────────┴────────┘                                     │
+│                                                                              │
+│   Key Features:                                                              │
+│   • Switched from stack to registers in 5.0                                  │
+│   • Very fast interpreter                                                    │
+│   • Compact: entire VM is ~20K lines of C                                    │
+│   • LuaJIT: one of fastest dynamic language VMs                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Comparison Table
+    <div id="comparison-table" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#comparison-table" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    BYTECODE SYSTEMS COMPARISON                               │
+├──────────┬─────────┬───────────┬──────────┬────────────┬────────────────────┤
+│ System   │ Arch    │ Inst Size │ JIT?     │ Typed?     │ Use Case           │
+├──────────┼─────────┼───────────┼──────────┼────────────┼────────────────────┤
+│ JVM      │ Stack   │ 1-3 bytes │ Yes      │ Yes        │ Enterprise apps    │
+│ CPython  │ Stack   │ 2 bytes   │ No*      │ No         │ Scripting          │
+│ WASM     │ Stack   │ Variable  │ Yes      │ Yes        │ Web/portable       │
+│ Lua      │ Register│ 4 bytes   │ LuaJIT   │ No         │ Embedding          │
+│ CLR      │ Stack   │ Variable  │ Yes      │ Yes        │ .NET ecosystem     │
+│ Dalvik   │ Register│ 2-6 bytes │ ART      │ Yes        │ Android apps       │
+├──────────┴─────────┴───────────┴──────────┴────────────┴────────────────────┤
+│ * PyPy has JIT, CPython does not                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 6: Bytecode in Zig&rsquo;s Context
+    <div id="part-6-bytecode-in-zigs-context" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-6-bytecode-in-zigs-context" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>How does Zig relate to bytecode? Zig takes a different approach:</p>
+
+<h3 class="relative group">Zig&rsquo;s Compilation Model
+    <div id="zigs-compilation-model" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zigs-compilation-model" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG&#39;S APPROACH                                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Zig is an ahead-of-time (AOT) compiled language:                           │
+│                                                                              │
+│   Source → AST → ZIR → AIR → Machine Code                                    │
+│                                                                              │
+│   • No bytecode VM at runtime                                                │
+│   • Compiles directly to native code (or LLVM IR)                            │
+│   • No interpreter for end users                                             │
+│                                                                              │
+│   However, Zig DOES use bytecode internally...                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Compile-Time Execution
+    <div id="compile-time-execution" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#compile-time-execution" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Zig&rsquo;s compile-time execution (<code>comptime</code>) uses an internal bytecode interpreter:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG&#39;S COMPTIME INTERPRETER                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   const result = comptime blk: {                                             │
+│       var sum: i32 = 0;                                                      │
+│       for (0..10) |i| {                                                      │
+│           sum += @intCast(i);                                                │
+│       }                                                                      │
+│       break :blk sum;                                                        │
+│   };                                                                         │
+│                                                                              │
+│   This loop runs at COMPILE TIME, not runtime!                               │
+│                                                                              │
+│   How it works:                                                              │
+│   1. Zig compiles comptime blocks to internal bytecode                       │
+│   2. Interpreter executes the bytecode during compilation                    │
+│   3. Result is embedded as a constant in the binary                          │
+│                                                                              │
+│   The comptime bytecode is never shipped - it exists only during build.      │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">AIR as &ldquo;High-Level Bytecode&rdquo;
+    <div id="air-as-high-level-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#air-as-high-level-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>While not traditional bytecode, Zig&rsquo;s AIR shares some characteristics:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    AIR vs TRADITIONAL BYTECODE                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Traditional Bytecode:           Zig&#39;s AIR:                                 │
+│   ─────────────────────           ──────────                                 │
+│   • Executed by VM                • Translated to machine code               │
+│   • Portable binary               • Internal representation only             │
+│   • Shipped to users              • Never leaves compiler                    │
+│   • Stack or register ops         • SSA form                                 │
+│                                                                              │
+│   Similarities:                                                              │
+│   • Sequence of instructions                                                 │
+│   • Operations on typed values                                               │
+│   • Lower-level than source AST                                              │
+│   • Portable across targets (within compiler)                                │
+│                                                                              │
+│   Example AIR:                                                               │
+│   %0 = constant(3)                                                           │
+│   %1 = constant(5)                                                           │
+│   %2 = add(%0, %1)                                                           │
+│   %3 = ret(%2)                                                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">When Might Zig Use Bytecode?
+    <div id="when-might-zig-use-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-might-zig-use-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG + WASM                                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Zig CAN target WebAssembly:                                                │
+│                                                                              │
+│   $ zig build-exe -target wasm32-freestanding hello.zig                      │
+│                                                                              │
+│   Output: hello.wasm (WebAssembly bytecode!)                                 │
+│                                                                              │
+│   This creates bytecode that runs in browsers or WASI runtimes.              │
+│   So Zig programs CAN become bytecode - just not JVM/Python style.           │
+│                                                                              │
+│   The WASM output is still ahead-of-time compiled, just to a                 │
+│   portable bytecode format rather than x86/ARM machine code.                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 7: Designing Your Own Bytecode
+    <div id="part-7-designing-your-own-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-7-designing-your-own-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Let&rsquo;s design a simple bytecode for a calculator language:</p>
+
+<h3 class="relative group">The Language
+    <div id="the-language" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-language" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    CALCULATOR LANGUAGE                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Features:                                                                  │
+│   • Integer arithmetic (+, -, *, /)                                          │
+│   • Variables (single letters a-z)                                           │
+│   • Print statement                                                          │
+│                                                                              │
+│   Example program:                                                           │
+│   ──────────────                                                             │
+│   x = 10                                                                     │
+│   y = 3                                                                      │
+│   z = x + y * 2                                                              │
+│   print z                                                                    │
+│                                                                              │
+│   Output: 16                                                                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Instruction Set Design
+    <div id="instruction-set-design" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#instruction-set-design" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    CALCULATOR BYTECODE                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Opcode │ Mnemonic │ Operands │ Stack Effect │ Description                 │
+│   ───────┼──────────┼──────────┼──────────────┼───────────────────────────  │
+│   0x00   │ HALT     │ -        │ -            │ Stop execution              │
+│   0x01   │ PUSH     │ i32      │ → value      │ Push integer constant       │
+│   0x02   │ POP      │ -        │ value →      │ Discard top of stack        │
+│   0x03   │ ADD      │ -        │ a,b → a+b    │ Add top two values          │
+│   0x04   │ SUB      │ -        │ a,b → a-b    │ Subtract                    │
+│   0x05   │ MUL      │ -        │ a,b → a*b    │ Multiply                    │
+│   0x06   │ DIV      │ -        │ a,b → a/b    │ Divide                      │
+│   0x07   │ LOAD     │ u8       │ → value      │ Load variable               │
+│   0x08   │ STORE    │ u8       │ value →      │ Store to variable           │
+│   0x09   │ PRINT    │ -        │ value →      │ Print and pop               │
+│                                                                              │
+│   Encoding:                                                                  │
+│   • HALT, POP, ADD, SUB, MUL, DIV, PRINT: 1 byte                            │
+│   • PUSH: 5 bytes (1 opcode + 4 byte integer)                               │
+│   • LOAD, STORE: 2 bytes (1 opcode + 1 byte variable index)                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Compilation Example
+    <div id="compilation-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#compilation-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    COMPILING: z = x + y * 2                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AST:                                                                       │
+│           =                                                                  │
+│          / \                                                                 │
+│         z   +                                                                │
+│            / \                                                               │
+│           x   *                                                              │
+│              / \                                                             │
+│             y   2                                                            │
+│                                                                              │
+│   Bytecode Generation (post-order traversal for expressions):                │
+│   ─────────────────────────────────────────────────────────                  │
+│                                                                              │
+│   Address │ Bytes          │ Assembly                                        │
+│   ────────┼────────────────┼────────────────────────────────────────         │
+│   0x00    │ 07 17          │ LOAD 23 (x)   ; x is var slot 23               │
+│   0x02    │ 07 18          │ LOAD 24 (y)   ; y is var slot 24               │
+│   0x04    │ 01 02 00 00 00 │ PUSH 2                                          │
+│   0x09    │ 05             │ MUL           ; y * 2                           │
+│   0x0A    │ 03             │ ADD           ; x + (y * 2)                     │
+│   0x0B    │ 08 19          │ STORE 25 (z)  ; z = result                      │
+│                                                                              │
+│   Stack trace:                                                               │
+│   LOAD x  → [10]                                                             │
+│   LOAD y  → [10, 3]                                                          │
+│   PUSH 2  → [10, 3, 2]                                                       │
+│   MUL     → [10, 6]                                                          │
+│   ADD     → [16]                                                             │
+│   STORE z → []  (z = 16)                                                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Complete Program Bytecode
+    <div id="complete-program-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#complete-program-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    FULL PROGRAM BYTECODE                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Source:          Bytecode:                                                 │
+│   x = 10           PUSH 10; STORE 0                                          │
+│   y = 3            PUSH 3; STORE 1                                           │
+│   z = x + y * 2    LOAD 0; LOAD 1; PUSH 2; MUL; ADD; STORE 2                │
+│   print z          LOAD 2; PRINT                                             │
+│                    HALT                                                      │
+│                                                                              │
+│   Hex dump:                                                                  │
+│   01 0A 00 00 00   ; PUSH 10                                                 │
+│   08 00            ; STORE 0 (x)                                             │
+│   01 03 00 00 00   ; PUSH 3                                                  │
+│   08 01            ; STORE 1 (y)                                             │
+│   07 00            ; LOAD 0 (x)                                              │
+│   07 01            ; LOAD 1 (y)                                              │
+│   01 02 00 00 00   ; PUSH 2                                                  │
+│   05               ; MUL                                                     │
+│   03               ; ADD                                                     │
+│   08 02            ; STORE 2 (z)                                             │
+│   07 02            ; LOAD 2 (z)                                              │
+│   09               ; PRINT                                                   │
+│   00               ; HALT                                                    │
+│                                                                              │
+│   Total: 28 bytes                                                            │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 8: Bytecode Execution
+    <div id="part-8-bytecode-execution" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-8-bytecode-execution" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Now let&rsquo;s build an interpreter for our bytecode:</p>
+
+<h3 class="relative group">The Interpreter Loop
+    <div id="the-interpreter-loop" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-interpreter-loop" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    BASIC INTERPRETER LOOP                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   function execute(bytecode):                                                │
+│       ip = 0                    // instruction pointer                       │
+│       stack = []                // operand stack                             │
+│       vars = [0] * 26           // variables a-z                             │
+│                                                                              │
+│       while true:                                                            │
+│           opcode = bytecode[ip]                                              │
+│           ip = ip + 1                                                        │
+│                                                                              │
+│           switch opcode:                                                     │
+│               case HALT:                                                     │
+│                   return                                                     │
+│                                                                              │
+│               case PUSH:                                                     │
+│                   value = read_i32(bytecode, ip)                             │
+│                   ip = ip + 4                                                │
+│                   stack.push(value)                                          │
+│                                                                              │
+│               case ADD:                                                      │
+│                   b = stack.pop()                                            │
+│                   a = stack.pop()                                            │
+│                   stack.push(a + b)                                          │
+│                                                                              │
+│               case LOAD:                                                     │
+│                   slot = bytecode[ip]                                        │
+│                   ip = ip + 1                                                │
+│                   stack.push(vars[slot])                                     │
+│                                                                              │
+│               case STORE:                                                    │
+│                   slot = bytecode[ip]                                        │
+│                   ip = ip + 1                                                │
+│                   vars[slot] = stack.pop()                                   │
+│                                                                              │
+│               case PRINT:                                                    │
+│                   print(stack.pop())                                         │
+│                                                                              │
+│               // ... other cases                                             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Dispatch Strategies
+    <div id="dispatch-strategies" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#dispatch-strategies" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Different ways to implement the main loop:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    DISPATCH STRATEGIES                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. SWITCH DISPATCH (simplest)                                              │
+│   ─────────────────────────────                                              │
+│   while (running):                                                           │
+│       switch bytecode[ip++]:                                                 │
+│           case ADD: ...                                                      │
+│           case SUB: ...                                                      │
+│                                                                              │
+│   Pros: Simple, portable                                                     │
+│   Cons: Branch prediction suffers                                            │
+│                                                                              │
+│   2. COMPUTED GOTO / DIRECT THREADING                                        │
+│   ───────────────────────────────────                                        │
+│   // GCC extension                                                           │
+│   static void* dispatch[] = { &amp;&amp;op_add, &amp;&amp;op_sub, ... };                     │
+│   goto *dispatch[bytecode[ip++]];                                            │
+│   op_add:                                                                    │
+│       // handle add                                                          │
+│       goto *dispatch[bytecode[ip++]];                                        │
+│                                                                              │
+│   Pros: ~20-30% faster than switch                                           │
+│   Cons: GCC/Clang specific, harder to debug                                  │
+│                                                                              │
+│   3. TAIL CALL DISPATCH                                                      │
+│   ─────────────────────                                                      │
+│   typedef void (*Handler)(VM*);                                              │
+│   Handler handlers[] = { op_add, op_sub, ... };                              │
+│   void op_add(VM* vm) {                                                      │
+│       // handle add                                                          │
+│       return handlers[vm-&gt;bytecode[vm-&gt;ip++]](vm);                           │
+│   }                                                                          │
+│                                                                              │
+│   Pros: Clean code, good with tail call optimization                         │
+│   Cons: Requires TCO guarantee                                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">JIT Compilation Basics
+    <div id="jit-compilation-basics" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#jit-compilation-basics" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>For better performance, bytecode can be JIT-compiled to native code:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    JIT COMPILATION                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Interpretation:                                                            │
+│   ───────────────                                                            │
+│   Bytecode → Read → Decode → Execute → Read → Decode → Execute → ...        │
+│                                                                              │
+│   JIT Compilation:                                                           │
+│   ────────────────                                                           │
+│   Bytecode → Compile to native → Execute native code                         │
+│                                                                              │
+│   Example: Compiling ADD to x86-64                                           │
+│   ────────────────────────────────                                           │
+│                                                                              │
+│   Bytecode:     Native x86-64:                                               │
+│   ADD           pop rax           ; b                                        │
+│                 pop rbx           ; a                                        │
+│                 add rax, rbx      ; a + b                                    │
+│                 push rax          ; result                                   │
+│                                                                              │
+│   JIT Strategies:                                                            │
+│   ───────────────                                                            │
+│   • Method JIT: Compile entire functions                                     │
+│   • Tracing JIT: Compile hot loops                                           │
+│   • Tiered: Interpret first, JIT hot code                                    │
+│                                                                              │
+│   Examples:                                                                  │
+│   • HotSpot (Java): Tiered compilation                                       │
+│   • LuaJIT: Tracing JIT                                                      │
+│   • V8 (JavaScript): Multiple tiers (Ignition → Sparkplug → Turbofan)       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Performance Considerations
+    <div id="performance-considerations" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#performance-considerations" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    INTERPRETER PERFORMANCE                                   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Typical overhead vs native code:                                           │
+│   ────────────────────────────────                                           │
+│   • Switch-based interpreter: 10-50x slower                                  │
+│   • Direct threading: 5-30x slower                                           │
+│   • Basic JIT: 2-5x slower                                                   │
+│   • Optimizing JIT: 1-2x slower (sometimes matches native!)                 │
+│                                                                              │
+│   Optimization techniques:                                                   │
+│   ─────────────────────────                                                  │
+│   • Superinstructions: Combine common sequences                              │
+│     LOAD 0; LOAD 1; ADD → LOAD_LOAD_ADD 0, 1                                │
+│                                                                              │
+│   • Inline caching: Cache method lookups                                     │
+│                                                                              │
+│   • Stack caching: Keep top-of-stack in registers                           │
+│     Instead of push/pop to memory, use CPU registers                        │
+│                                                                              │
+│   • NaN boxing: Encode type and value in 64 bits                            │
+│     Avoids separate type checks                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 9: Complete Example
+    <div id="part-9-complete-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-9-complete-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Let&rsquo;s trace through a complete example from source to execution:</p>
+
+<h3 class="relative group">Source Expression
+    <div id="source-expression" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#source-expression" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    EXAMPLE: 3 + 5 * 2                                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Expression: 3 + 5 * 2                                                      │
+│   Expected result: 13 (multiplication first, then addition)                  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Step 1: Parsing to AST
+    <div id="step-1-parsing-to-ast" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-1-parsing-to-ast" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ABSTRACT SYNTAX TREE                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Tokens: [NUM(3), PLUS, NUM(5), STAR, NUM(2)]                               │
+│                                                                              │
+│   AST (respecting precedence):                                               │
+│                                                                              │
+│            +                                                                 │
+│           / \                                                                │
+│          3   *                                                               │
+│             / \                                                              │
+│            5   2                                                             │
+│                                                                              │
+│   In data structure form:                                                    │
+│   BinaryOp {                                                                 │
+│       op: ADD,                                                               │
+│       left: Number(3),                                                       │
+│       right: BinaryOp {                                                      │
+│           op: MUL,                                                           │
+│           left: Number(5),                                                   │
+│           right: Number(2)                                                   │
+│       }                                                                      │
+│   }                                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Step 2: Bytecode Generation
+    <div id="step-2-bytecode-generation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-2-bytecode-generation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    BYTECODE GENERATION                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   function generateExpr(node):                                               │
+│       if node is Number:                                                     │
+│           emit(PUSH, node.value)                                             │
+│       else if node is BinaryOp:                                              │
+│           generateExpr(node.left)   # Generate left operand                  │
+│           generateExpr(node.right)  # Generate right operand                 │
+│           if node.op == ADD: emit(ADD)                                       │
+│           if node.op == MUL: emit(MUL)                                       │
+│           # etc.                                                             │
+│                                                                              │
+│   Traversal order (post-order):                                              │
+│   1. Visit left child (3)      → PUSH 3                                     │
+│   2. Visit right child&#39;s left (5) → PUSH 5                                  │
+│   3. Visit right child&#39;s right (2) → PUSH 2                                 │
+│   4. Emit right child&#39;s op (*) → MUL                                        │
+│   5. Emit root op (+)         → ADD                                         │
+│                                                                              │
+│   Generated bytecode:                                                        │
+│   ┌────────────────────────────────────────┐                                │
+│   │ PUSH 3  │ PUSH 5  │ PUSH 2  │ MUL │ ADD │                               │
+│   └────────────────────────────────────────┘                                │
+│                                                                              │
+│   Hex: 01 03 00 00 00  01 05 00 00 00  01 02 00 00 00  05  03               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Step 3: Execution Trace
+    <div id="step-3-execution-trace" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-3-execution-trace" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    EXECUTION TRACE                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   IP │ Instruction │ Stack Before │ Action           │ Stack After          │
+│   ───┼─────────────┼──────────────┼──────────────────┼───────────────────   │
+│   0  │ PUSH 3      │ []           │ Push 3           │ [3]                  │
+│   5  │ PUSH 5      │ [3]          │ Push 5           │ [3, 5]               │
+│   10 │ PUSH 2      │ [3, 5]       │ Push 2           │ [3, 5, 2]            │
+│   15 │ MUL         │ [3, 5, 2]    │ Pop 2,5; Push 10 │ [3, 10]              │
+│   16 │ ADD         │ [3, 10]      │ Pop 10,3; Push 13│ [13]                 │
+│                                                                              │
+│   Result: 13 (top of stack)                                                  │
+│                                                                              │
+│   Visual stack evolution:                                                    │
+│                                                                              │
+│   PUSH 3    PUSH 5    PUSH 2    MUL       ADD                                │
+│                                                                              │
+│   ┌───┐                                                                      │
+│   │ 3 │                                                                      │
+│   └───┘     ┌───┐                                                            │
+│             │ 5 │                                                            │
+│   ┌───┐     ├───┤     ┌───┐                                                  │
+│   │ 3 │     │ 3 │     │ 2 │                                                  │
+│   └───┘     └───┘     ├───┤     ┌────┐     ┌────┐                            │
+│                       │ 5 │     │ 10 │     │ 13 │                            │
+│                       ├───┤     ├────┤     └────┘                            │
+│                       │ 3 │     │  3 │                                       │
+│                       └───┘     └────┘                                       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Step 4: Interpreter Code
+    <div id="step-4-interpreter-code" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-4-interpreter-code" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    INTERPRETER IMPLEMENTATION                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   // C implementation                                                        │
+│   int32_t execute(uint8_t* code, size_t len) {                              │
+│       int32_t stack[256];                                                    │
+│       int sp = 0;  // stack pointer                                          │
+│       int ip = 0;  // instruction pointer                                    │
+│                                                                              │
+│       while (ip &lt; len) {                                                     │
+│           uint8_t op = code[ip++];                                          │
+│                                                                              │
+│           switch (op) {                                                      │
+│               case OP_PUSH: {                                                │
+│                   int32_t val = *(int32_t*)&amp;code[ip];                       │
+│                   ip += 4;                                                   │
+│                   stack[sp++] = val;                                         │
+│                   break;                                                     │
+│               }                                                              │
+│               case OP_ADD: {                                                 │
+│                   int32_t b = stack[--sp];                                  │
+│                   int32_t a = stack[--sp];                                  │
+│                   stack[sp++] = a + b;                                       │
+│                   break;                                                     │
+│               }                                                              │
+│               case OP_MUL: {                                                 │
+│                   int32_t b = stack[--sp];                                  │
+│                   int32_t a = stack[--sp];                                  │
+│                   stack[sp++] = a * b;                                       │
+│                   break;                                                     │
+│               }                                                              │
+│               // ... other ops                                               │
+│           }                                                                  │
+│       }                                                                      │
+│                                                                              │
+│       return stack[0];  // result                                            │
+│   }                                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 10: The Big Picture
+    <div id="part-10-the-big-picture" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-10-the-big-picture" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">When to Use Bytecode
+    <div id="when-to-use-bytecode" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use-bytecode" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    WHEN TO USE BYTECODE                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   USE BYTECODE WHEN:                     USE NATIVE CODE WHEN:               │
+│   ─────────────────────                  ───────────────────────             │
+│   • Portability is critical              • Maximum performance needed        │
+│   • Sandboxing required                  • Target platform is known          │
+│   • Fast compile times matter            • No runtime overhead acceptable    │
+│   • Dynamic code loading                 • Embedded/resource constrained     │
+│   • Scripting/plugin systems             • Systems programming               │
+│                                                                              │
+│   Examples:                              Examples:                           │
+│   • Game scripting (Lua)                 • Operating systems (C, Rust)       │
+│   • Web apps (JavaScript/WASM)           • Game engines (C++)                │
+│   • Cross-platform apps (Java)           • Database engines (C)              │
+│   • Config languages (Python)            • Compilers (Zig, Rust)             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Summary Diagram
+    <div id="summary-diagram" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#summary-diagram" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    BYTECODE: THE COMPLETE PICTURE                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ┌─────────────┐                                                            │
+│   │   SOURCE    │  Human-readable code                                       │
+│   │    CODE     │  (x = 3 + 5)                                               │
+│   └──────┬──────┘                                                            │
+│          │                                                                   │
+│          ▼  Lexer + Parser                                                   │
+│   ┌─────────────┐                                                            │
+│   │    AST      │  Tree structure                                            │
+│   │             │  capturing meaning                                         │
+│   └──────┬──────┘                                                            │
+│          │                                                                   │
+│          ▼  Bytecode Compiler                                                │
+│   ┌─────────────┐                                                            │
+│   │  BYTECODE   │  Portable, compact                                         │
+│   │  (binary)   │  instruction sequence                                      │
+│   └──────┬──────┘                                                            │
+│          │                                                                   │
+│          ├─────────────────────────────┐                                     │
+│          ▼                             ▼                                     │
+│   ┌─────────────┐               ┌─────────────┐                              │
+│   │ INTERPRETER │               │    JIT      │                              │
+│   │ (decode +   │               │ (compile to │                              │
+│   │  execute)   │               │  native)    │                              │
+│   └──────┬──────┘               └──────┬──────┘                              │
+│          │                             │                                     │
+│          ▼                             ▼                                     │
+│   ┌─────────────────────────────────────────┐                                │
+│   │              EXECUTION                  │                                │
+│   │         (program runs!)                 │                                │
+│   └─────────────────────────────────────────┘                                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Key Takeaways
+    <div id="key-takeaways" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#key-takeaways" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    KEY TAKEAWAYS                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. BYTECODE IS AN INTERMEDIATE FORMAT                                      │
+│      Between source code and machine code, offering portability              │
+│      and fast loading while remaining platform-independent.                  │
+│                                                                              │
+│   2. TWO MAIN ARCHITECTURES                                                  │
+│      Stack-based (simpler, smaller code) vs Register-based                   │
+│      (fewer instructions, easier to optimize).                               │
+│                                                                              │
+│   3. EXECUTION OPTIONS                                                       │
+│      Interpret directly (simple but slow), JIT compile                       │
+│      (complex but fast), or hybrid tiered approach.                          │
+│                                                                              │
+│   4. DESIGN TRADE-OFFS                                                       │
+│      Fixed vs variable instruction size, number of opcodes,                  │
+│      constant encoding, all affect code size and speed.                      │
+│                                                                              │
+│   5. REAL-WORLD EXAMPLES                                                     │
+│      JVM, Python, WebAssembly, Lua all use bytecode with                     │
+│      different design choices for different goals.                           │
+│                                                                              │
+│   6. ZIG&#39;S APPROACH                                                          │
+│      Zig compiles to native code but uses bytecode internally                │
+│      for comptime execution. Can also target WASM.                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Books
+    <div id="books" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#books" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<ul>
+<li>
+<p><strong>&ldquo;Crafting Interpreters&rdquo;</strong> by Robert Nystrom
+Free online at craftinginterpreters.com. Excellent coverage of bytecode VMs.</p>
+</li>
+<li>
+<p><strong>&ldquo;Virtual Machines&rdquo;</strong> by Iain Craig
+Comprehensive academic treatment of VM design.</p>
+</li>
+<li>
+<p><strong>&ldquo;Engineering a Compiler&rdquo;</strong> by Cooper &amp; Torczon
+Chapter on intermediate representations covers bytecode concepts.</p>
+</li>
+</ul>
+
+<h3 class="relative group">Papers and Articles
+    <div id="papers-and-articles" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#papers-and-articles" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<ul>
+<li>
+<p><strong>&ldquo;The Implementation of Lua 5.0&rdquo;</strong> - Lua team&rsquo;s paper on their register-based VM design</p>
+</li>
+<li>
+<p><strong>&ldquo;The Java Virtual Machine Specification&rdquo;</strong> - Oracle&rsquo;s official JVM bytecode documentation</p>
+</li>
+<li>
+<p><strong>&ldquo;WebAssembly Specification&rdquo;</strong> - The official WASM spec at webassembly.github.io</p>
+</li>
+</ul>
+
+<h3 class="relative group">Source Code to Study
+    <div id="source-code-to-study" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#source-code-to-study" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    CODEBASES TO STUDY                                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Language       │ VM Type    │ Lines   │ Notable For                       │
+│   ───────────────┼────────────┼─────────┼──────────────────────────────────  │
+│   Lua            │ Register   │ ~25K    │ Tiny, well-documented             │
+│   CPython        │ Stack      │ ~500K   │ Most popular, good docs           │
+│   LuaJIT         │ Register   │ ~50K    │ Amazing JIT implementation        │
+│   mruby          │ Register   │ ~50K    │ Embeddable Ruby                   │
+│   QuickJS        │ Stack      │ ~60K    │ Tiny JavaScript engine            │
+│   wasm3          │ Stack      │ ~15K    │ Portable WASM interpreter         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Conclusion
+    <div id="conclusion" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#conclusion" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Bytecode represents a powerful middle ground in language implementation. By compiling source code to a platform-independent binary format, language designers gain:</p>
+<ul>
+<li><strong>Portability</strong>: One compilation, many platforms</li>
+<li><strong>Performance</strong>: Faster than interpreting source directly</li>
+<li><strong>Security</strong>: Sandboxed execution environment</li>
+<li><strong>Flexibility</strong>: Interpret, JIT compile, or both</li>
+</ul>
+<p>Understanding bytecode gives you insight into how languages like Java, Python, and JavaScript work under the hood. It also provides a foundation for understanding more advanced topics like JIT compilation and garbage collection.</p>
+<p>Whether you&rsquo;re building a scripting language, understanding existing VMs, or just curious about how code executes, bytecode concepts form an essential part of programming language knowledge.</p>
+<hr>
+
+<h2 class="relative group">Navigation
+    <div id="navigation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#navigation" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>← <a
+  href="../13-mini-compiler">Previous: Part 13 - Mini Compiler</a></p>
+<p><a
+  href="../">Back to Series Index</a></p>
+
+          
+          
+          
+        </div>
+        
+        
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_drafts/14-bytecode.md"
+          data-oid-likes="likes_drafts/14-bytecode.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+            <a
+              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/15-static-vs-dynamic/">
+              <span class="leading-6">
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Zig Compiler Internals Part 15: Static vs Dynamic Languages
+              </span>
+            </a>
+            
+              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-18T00:00:00&#43;00:00">December 18, 2025</time>
+              </span>
+            
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Yohai
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:1313/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>

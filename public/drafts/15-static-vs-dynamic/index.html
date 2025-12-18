@@ -1,0 +1,3017 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Zig Compiler Internals Part 15: Static vs Dynamic Languages &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Zig Compiler Internals Part 15: Static vs Dynamic Languages &middot; Yohai&#39;s Blog">
+  
+
+  
+  
+  
+  
+  
+  <link rel="canonical" href="http://localhost:1313/drafts/15-static-vs-dynamic/">
+  
+
+  
+  
+    <meta name="author" content="Yohai">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:1313/drafts/15-static-vs-dynamic/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Zig Compiler Internals Part 15: Static vs Dynamic Languages">
+  <meta property="og:description" content="Zig Compiler Internals Part 15: Static vs Dynamic Languages # How does type checking at compile time vs runtime change everything about compiler design?
+Introduction # One of the most fundamental decisions in programming language design is when to check types: at compile time or at runtime. This choice ripples through every aspect of compiler architecture, from parsing to code generation.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="drafts">
+    <meta property="article:published_time" content="2025-12-18T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-18T00:00:00+00:00">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Zig Compiler Internals Part 15: Static vs Dynamic Languages">
+  <meta name="twitter:description" content="Zig Compiler Internals Part 15: Static vs Dynamic Languages # How does type checking at compile time vs runtime change everything about compiler design?
+Introduction # One of the most fundamental decisions in programming language design is when to check types: at compile time or at runtime. This choice ripples through every aspect of compiler architecture, from parsing to code generation.">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Drafts",
+    "name": "Zig Compiler Internals Part 15: Static vs Dynamic Languages",
+    "headline": "Zig Compiler Internals Part 15: Static vs Dynamic Languages",
+    
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eZig Compiler Internals Part 15: Static vs Dynamic Languages\n    \u003cdiv id=\u0022zig-compiler-internals-part-15-static-vs-dynamic-languages\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#zig-compiler-internals-part-15-static-vs-dynamic-languages\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003e\u003cem\u003eHow does type checking at compile time vs runtime change everything about compiler design?\u003c\/em\u003e\u003c\/p\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eIntroduction\n    \u003cdiv id=\u0022introduction\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#introduction\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eOne of the most fundamental decisions in programming language design is when to check types: at compile time or at runtime. This choice ripples through every aspect of compiler architecture, from parsing to code generation.\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:1313/drafts/15-static-vs-dynamic/",
+    "author" : {
+      "@type": "Person",
+      "name": "Yohai"
+    },
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-18T00:00:00\u002b00:00",
+    "datePublished": "2025-12-18T00:00:00\u002b00:00",
+    
+    "dateModified": "2025-12-18T00:00:00\u002b00:00",
+    
+    
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "6977"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          Yohai&rsquo;s Blog
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/drafts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Drafts"
+  title="Drafts">
+  
+  
+    <p class="text-base font-medium">
+      Drafts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/drafts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Drafts"
+    title="Drafts">
+    
+    
+      <p class="text-bg font-bg">
+        Drafts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >Yohai&#39;s Blog</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/"
+      >Drafts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/15-static-vs-dynamic/"
+      >Zig Compiler Internals Part 15: Static vs Dynamic Languages</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Zig Compiler Internals Part 15: Static vs Dynamic Languages
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2025-12-18T00:00:00&#43;00:00">December 18, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>6977 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">33 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Yohai
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-what-makes-a-language-static-or-dynamic">Part 1: What Makes a Language Static or Dynamic?</a>
+      <ul>
+        <li><a href="#the-core-distinction">The Core Distinction</a></li>
+        <li><a href="#static-typing-example">Static Typing Example</a></li>
+        <li><a href="#dynamic-typing-example">Dynamic Typing Example</a></li>
+        <li><a href="#the-type-checking-spectrum">The Type Checking Spectrum</a></li>
+        <li><a href="#key-differences-summary">Key Differences Summary</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-compiler-architecture-differences">Part 2: Compiler Architecture Differences</a>
+      <ul>
+        <li><a href="#static-language-compiler-pipeline">Static Language Compiler Pipeline</a></li>
+        <li><a href="#dynamic-language-compiler-pipeline">Dynamic Language Compiler Pipeline</a></li>
+        <li><a href="#where-the-work-happens">Where the Work Happens</a></li>
+        <li><a href="#information-available-at-each-stage">Information Available at Each Stage</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-type-representation">Part 3: Type Representation</a>
+      <ul>
+        <li><a href="#static-language-types-erased">Static Language: Types Erased</a></li>
+        <li><a href="#dynamic-language-types-preserved">Dynamic Language: Types Preserved</a></li>
+        <li><a href="#tagged-values-alternative-representation">Tagged Values (Alternative Representation)</a></li>
+        <li><a href="#memory-comparison">Memory Comparison</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-type-checking-implementation">Part 4: Type Checking Implementation</a>
+      <ul>
+        <li><a href="#static-type-checking-zigs-sema">Static Type Checking (Zig&rsquo;s Sema)</a></li>
+        <li><a href="#type-checking-algorithm">Type Checking Algorithm</a></li>
+        <li><a href="#dynamic-type-dispatch">Dynamic Type Dispatch</a></li>
+        <li><a href="#error-detection-comparison">Error Detection Comparison</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-performance-implications">Part 5: Performance Implications</a>
+      <ul>
+        <li><a href="#the-performance-gap">The Performance Gap</a></li>
+        <li><a href="#sources-of-overhead">Sources of Overhead</a></li>
+        <li><a href="#jit-compilation-bridging-the-gap">JIT Compilation: Bridging the Gap</a></li>
+        <li><a href="#benchmark-reality">Benchmark Reality</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-the-gradual-typing-middle-ground">Part 6: The Gradual Typing Middle Ground</a>
+      <ul>
+        <li><a href="#gradual-typing-concept">Gradual Typing Concept</a></li>
+        <li><a href="#typescript-example">TypeScript Example</a></li>
+        <li><a href="#python-type-hints">Python Type Hints</a></li>
+        <li><a href="#how-gradual-typing-works-in-compilers">How Gradual Typing Works in Compilers</a></li>
+        <li><a href="#benefits-and-limitations">Benefits and Limitations</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-zigs-approach">Part 7: Zig&rsquo;s Approach</a>
+      <ul>
+        <li><a href="#zigs-type-system">Zig&rsquo;s Type System</a></li>
+        <li><a href="#comptime-static-typing-with-dynamic-flexibility">Comptime: Static Typing with Dynamic Flexibility</a></li>
+        <li><a href="#comptime-vs-dynamic-same-flexibility-different-time">Comptime vs Dynamic: Same Flexibility, Different Time</a></li>
+        <li><a href="#union-types-and-tagged-unions">Union Types and Tagged Unions</a></li>
+        <li><a href="#how-sema-implements-this">How Sema Implements This</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-implementing-a-type-checker">Part 8: Implementing a Type Checker</a>
+      <ul>
+        <li><a href="#type-representation">Type Representation</a></li>
+        <li><a href="#type-checker-implementation">Type Checker Implementation</a></li>
+        <li><a href="#type-coercion-rules">Type Coercion Rules</a></li>
+        <li><a href="#type-inference">Type Inference</a></li>
+        <li><a href="#complete-example">Complete Example</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-trade-offs-and-when-to-choose">Part 9: Trade-offs and When to Choose</a>
+      <ul>
+        <li><a href="#when-to-choose-static-typing">When to Choose Static Typing</a></li>
+        <li><a href="#when-to-choose-dynamic-typing">When to Choose Dynamic Typing</a></li>
+        <li><a href="#modern-trends">Modern Trends</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
+      <ul>
+        <li><a href="#summary-comparison">Summary Comparison</a></li>
+        <li><a href="#the-compiler-writers-perspective">The Compiler Writer&rsquo;s Perspective</a></li>
+        <li><a href="#key-takeaways">Key Takeaways</a></li>
+      </ul>
+    </li>
+    <li><a href="#further-reading">Further Reading</a>
+      <ul>
+        <li><a href="#books">Books</a></li>
+        <li><a href="#papers">Papers</a></li>
+        <li><a href="#type-systems-to-study">Type Systems to Study</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#navigation">Navigation</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#part-1-what-makes-a-language-static-or-dynamic">Part 1: What Makes a Language Static or Dynamic?</a>
+      <ul>
+        <li><a href="#the-core-distinction">The Core Distinction</a></li>
+        <li><a href="#static-typing-example">Static Typing Example</a></li>
+        <li><a href="#dynamic-typing-example">Dynamic Typing Example</a></li>
+        <li><a href="#the-type-checking-spectrum">The Type Checking Spectrum</a></li>
+        <li><a href="#key-differences-summary">Key Differences Summary</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-2-compiler-architecture-differences">Part 2: Compiler Architecture Differences</a>
+      <ul>
+        <li><a href="#static-language-compiler-pipeline">Static Language Compiler Pipeline</a></li>
+        <li><a href="#dynamic-language-compiler-pipeline">Dynamic Language Compiler Pipeline</a></li>
+        <li><a href="#where-the-work-happens">Where the Work Happens</a></li>
+        <li><a href="#information-available-at-each-stage">Information Available at Each Stage</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-3-type-representation">Part 3: Type Representation</a>
+      <ul>
+        <li><a href="#static-language-types-erased">Static Language: Types Erased</a></li>
+        <li><a href="#dynamic-language-types-preserved">Dynamic Language: Types Preserved</a></li>
+        <li><a href="#tagged-values-alternative-representation">Tagged Values (Alternative Representation)</a></li>
+        <li><a href="#memory-comparison">Memory Comparison</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-4-type-checking-implementation">Part 4: Type Checking Implementation</a>
+      <ul>
+        <li><a href="#static-type-checking-zigs-sema">Static Type Checking (Zig&rsquo;s Sema)</a></li>
+        <li><a href="#type-checking-algorithm">Type Checking Algorithm</a></li>
+        <li><a href="#dynamic-type-dispatch">Dynamic Type Dispatch</a></li>
+        <li><a href="#error-detection-comparison">Error Detection Comparison</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-5-performance-implications">Part 5: Performance Implications</a>
+      <ul>
+        <li><a href="#the-performance-gap">The Performance Gap</a></li>
+        <li><a href="#sources-of-overhead">Sources of Overhead</a></li>
+        <li><a href="#jit-compilation-bridging-the-gap">JIT Compilation: Bridging the Gap</a></li>
+        <li><a href="#benchmark-reality">Benchmark Reality</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-6-the-gradual-typing-middle-ground">Part 6: The Gradual Typing Middle Ground</a>
+      <ul>
+        <li><a href="#gradual-typing-concept">Gradual Typing Concept</a></li>
+        <li><a href="#typescript-example">TypeScript Example</a></li>
+        <li><a href="#python-type-hints">Python Type Hints</a></li>
+        <li><a href="#how-gradual-typing-works-in-compilers">How Gradual Typing Works in Compilers</a></li>
+        <li><a href="#benefits-and-limitations">Benefits and Limitations</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-7-zigs-approach">Part 7: Zig&rsquo;s Approach</a>
+      <ul>
+        <li><a href="#zigs-type-system">Zig&rsquo;s Type System</a></li>
+        <li><a href="#comptime-static-typing-with-dynamic-flexibility">Comptime: Static Typing with Dynamic Flexibility</a></li>
+        <li><a href="#comptime-vs-dynamic-same-flexibility-different-time">Comptime vs Dynamic: Same Flexibility, Different Time</a></li>
+        <li><a href="#union-types-and-tagged-unions">Union Types and Tagged Unions</a></li>
+        <li><a href="#how-sema-implements-this">How Sema Implements This</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-8-implementing-a-type-checker">Part 8: Implementing a Type Checker</a>
+      <ul>
+        <li><a href="#type-representation">Type Representation</a></li>
+        <li><a href="#type-checker-implementation">Type Checker Implementation</a></li>
+        <li><a href="#type-coercion-rules">Type Coercion Rules</a></li>
+        <li><a href="#type-inference">Type Inference</a></li>
+        <li><a href="#complete-example">Complete Example</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-9-trade-offs-and-when-to-choose">Part 9: Trade-offs and When to Choose</a>
+      <ul>
+        <li><a href="#when-to-choose-static-typing">When to Choose Static Typing</a></li>
+        <li><a href="#when-to-choose-dynamic-typing">When to Choose Dynamic Typing</a></li>
+        <li><a href="#modern-trends">Modern Trends</a></li>
+      </ul>
+    </li>
+    <li><a href="#part-10-the-big-picture">Part 10: The Big Picture</a>
+      <ul>
+        <li><a href="#summary-comparison">Summary Comparison</a></li>
+        <li><a href="#the-compiler-writers-perspective">The Compiler Writer&rsquo;s Perspective</a></li>
+        <li><a href="#key-takeaways">Key Takeaways</a></li>
+      </ul>
+    </li>
+    <li><a href="#further-reading">Further Reading</a>
+      <ul>
+        <li><a href="#books">Books</a></li>
+        <li><a href="#papers">Papers</a></li>
+        <li><a href="#type-systems-to-study">Type Systems to Study</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#navigation">Navigation</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+
+        <div class="article-content max-w-prose mb-20">
+          
+<h1 class="relative group">Zig Compiler Internals Part 15: Static vs Dynamic Languages
+    <div id="zig-compiler-internals-part-15-static-vs-dynamic-languages" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zig-compiler-internals-part-15-static-vs-dynamic-languages" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p><em>How does type checking at compile time vs runtime change everything about compiler design?</em></p>
+<hr>
+
+<h2 class="relative group">Introduction
+    <div id="introduction" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#introduction" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>One of the most fundamental decisions in programming language design is when to check types: at compile time or at runtime. This choice ripples through every aspect of compiler architecture, from parsing to code generation.</p>
+<p>In this article, we&rsquo;ll explore:</p>
+<ul>
+<li>What makes a language &ldquo;static&rdquo; or &ldquo;dynamic&rdquo; from a compiler perspective</li>
+<li>How compiler architectures differ between the two approaches</li>
+<li>How types are represented in memory at runtime</li>
+<li>The performance implications of each approach</li>
+<li>Gradual typing as a middle ground</li>
+<li>How Zig approaches static typing with comptime flexibility</li>
+</ul>
+<p>Understanding this distinction is essential for compiler writers, as it fundamentally shapes how you build every stage of your compiler.</p>
+<hr>
+
+<h2 class="relative group">Part 1: What Makes a Language Static or Dynamic?
+    <div id="part-1-what-makes-a-language-static-or-dynamic" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-1-what-makes-a-language-static-or-dynamic" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">The Core Distinction
+    <div id="the-core-distinction" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-core-distinction" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STATIC vs DYNAMIC: THE CORE QUESTION                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   When is the type of a value determined?                                    │
+│                                                                              │
+│   STATIC TYPING                      DYNAMIC TYPING                          │
+│   ──────────────                     ──────────────                          │
+│   Types checked at COMPILE TIME      Types checked at RUNTIME                │
+│   Before the program runs            While the program runs                  │
+│                                                                              │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                                                                     │   │
+│   │   COMPILE TIME                      RUNTIME                         │   │
+│   │        │                                │                           │   │
+│   │        ▼                                ▼                           │   │
+│   │   ┌─────────┐                      ┌─────────┐                      │   │
+│   │   │  Type   │                      │  Type   │                      │   │
+│   │   │ Checker │                      │ Checker │                      │   │
+│   │   └─────────┘                      └─────────┘                      │   │
+│   │        │                                │                           │   │
+│   │   Static Typing                    Dynamic Typing                   │   │
+│   │   (Zig, C, Rust)                   (Python, JS, Ruby)               │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Static Typing Example
+    <div id="static-typing-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#static-typing-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Zig - Statically Typed
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">fn</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">:</span><span class="w"> </span><span class="kt">i32</span><span class="p">)</span><span class="w"> </span><span class="kt">i32</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// This is caught at COMPILE TIME:
+</span></span></span><span class="line"><span class="cl"><span class="c1">// const result = add(&#34;hello&#34;, 5);  // Error: expected i32, got []const u8
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The compiler knows <code>a</code> and <code>b</code> must be <code>i32</code>. If you pass a string, you get a compile-time error before the program ever runs.</p>
+
+<h3 class="relative group">Dynamic Typing Example
+    <div id="dynamic-typing-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#dynamic-typing-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># Python - Dynamically Typed</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># This runs fine:</span>
+</span></span><span class="line"><span class="cl"><span class="n">result1</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>      <span class="c1"># 8</span>
+</span></span><span class="line"><span class="cl"><span class="n">result2</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="s2">&#34;hi&#34;</span><span class="p">,</span> <span class="s2">&#34;!&#34;</span><span class="p">)</span> <span class="c1"># &#34;hi!&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># This crashes at RUNTIME:</span>
+</span></span><span class="line"><span class="cl"><span class="n">result3</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="s2">&#34;hi&#34;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>   <span class="c1"># TypeError: can only concatenate str (not &#34;int&#34;) to str</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Python doesn&rsquo;t know the types of <code>a</code> and <code>b</code> until the function is called. Type errors become runtime exceptions.</p>
+
+<h3 class="relative group">The Type Checking Spectrum
+    <div id="the-type-checking-spectrum" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-type-checking-spectrum" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    THE TYPE CHECKING SPECTRUM                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ◄─────────────────────────────────────────────────────────────────────►   │
+│                                                                              │
+│   FULLY STATIC            GRADUAL              FULLY DYNAMIC                 │
+│                                                                              │
+│   ┌─────────┐         ┌─────────────┐         ┌─────────────┐               │
+│   │ Zig     │         │ TypeScript  │         │ Python      │               │
+│   │ C       │         │ Python+mypy │         │ JavaScript  │               │
+│   │ Rust    │         │ Dart        │         │ Ruby        │               │
+│   │ Java    │         │ C# dynamic  │         │ Lua         │               │
+│   │ Haskell │         │ Typed Racket│         │ Lisp        │               │
+│   └─────────┘         └─────────────┘         └─────────────┘               │
+│                                                                              │
+│   All types known       Mix of static         Types only known              │
+│   before runtime        and dynamic           at runtime                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Key Differences Summary
+    <div id="key-differences-summary" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#key-differences-summary" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STATIC vs DYNAMIC SUMMARY                                 │
+├────────────────────┬───────────────────────┬─────────────────────────────────┤
+│ Aspect             │ Static Typing         │ Dynamic Typing                  │
+├────────────────────┼───────────────────────┼─────────────────────────────────┤
+│ Type checking      │ Compile time          │ Runtime                         │
+│ Type errors        │ Compile errors        │ Runtime exceptions              │
+│ Variable types     │ Fixed at declaration  │ Can change anytime              │
+│ Type annotations   │ Required/inferred     │ Optional (often none)           │
+│ Type info at run   │ Erased                │ Preserved                       │
+│ Performance        │ Generally faster      │ Overhead from checks            │
+│ Flexibility        │ Less flexible         │ More flexible                   │
+│ IDE support        │ Better (types known)  │ Limited (types unknown)         │
+└────────────────────┴───────────────────────┴─────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 2: Compiler Architecture Differences
+    <div id="part-2-compiler-architecture-differences" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-2-compiler-architecture-differences" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The static vs dynamic choice fundamentally shapes compiler architecture:</p>
+
+<h3 class="relative group">Static Language Compiler Pipeline
+    <div id="static-language-compiler-pipeline" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#static-language-compiler-pipeline" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STATIC LANGUAGE COMPILER                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Source Code                                                                │
+│       │                                                                      │
+│       ▼                                                                      │
+│   ┌─────────────────┐                                                       │
+│   │     LEXER       │  Tokenize                                             │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │     PARSER      │  Build AST with type annotations                      │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │  TYPE CHECKER   │  ◄── HEAVY WORK HERE                                  │
+│   │     (Sema)      │  Resolve all types, check constraints                 │
+│   └────────┬────────┘  Catch errors BEFORE running                          │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │   TYPED IR      │  Types attached to every operation                    │
+│   │   (AIR/LLVM)    │  add_i32, mul_f64, etc.                               │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │    CODEGEN      │  Generate optimized machine code                      │
+│   │                 │  Types guide optimizations                            │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   Native Binary (no type info, no runtime checks)                            │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Dynamic Language Compiler Pipeline
+    <div id="dynamic-language-compiler-pipeline" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#dynamic-language-compiler-pipeline" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    DYNAMIC LANGUAGE COMPILER                                 │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Source Code                                                                │
+│       │                                                                      │
+│       ▼                                                                      │
+│   ┌─────────────────┐                                                       │
+│   │     LEXER       │  Tokenize                                             │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │     PARSER      │  Build AST (no type annotations)                      │
+│   └────────┬────────┘  Variables are just names                             │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │ BYTECODE GEN    │  ◄── LIGHTER THAN STATIC                              │
+│   │                 │  No type checking, just structure                     │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌─────────────────┐                                                       │
+│   │ UNTYPED IR      │  Generic operations                                   │
+│   │ (Bytecode)      │  ADD (works on any type)                              │
+│   └────────┬────────┘                                                       │
+│            │                                                                 │
+│            ▼                                                                 │
+│   ┌──────────────────────────────────────────────────────────────┐          │
+│   │                      RUNTIME                                 │          │
+│   │  ┌─────────────────┐                                        │          │
+│   │  │   INTERPRETER   │  Execute bytecode                      │          │
+│   │  │   or JIT        │  Check types at each operation         │          │
+│   │  └─────────────────┘                                        │          │
+│   │          │                                                   │          │
+│   │          ▼                                                   │          │
+│   │  ┌─────────────────┐                                        │          │
+│   │  │  TYPE DISPATCH  │  ◄── HEAVY WORK HERE                   │          │
+│   │  │                 │  What type is this value?              │          │
+│   │  │                 │  Which add() to call?                  │          │
+│   │  └─────────────────┘                                        │          │
+│   └──────────────────────────────────────────────────────────────┘          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Where the Work Happens
+    <div id="where-the-work-happens" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#where-the-work-happens" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    COMPILE TIME vs RUNTIME WORK                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   STATIC LANGUAGES                  DYNAMIC LANGUAGES                        │
+│   ────────────────                  ─────────────────                        │
+│                                                                              │
+│   Compile Time:                     Compile Time:                            │
+│   ┌───────────────────────┐        ┌───────────────────────┐                │
+│   │ ████████████████████ │ Heavy  │ ██████               │ Light           │
+│   │ • Parse               │        │ • Parse              │                 │
+│   │ • Type check          │        │ • Generate bytecode  │                 │
+│   │ • Optimize            │        │                      │                 │
+│   │ • Generate native     │        │                      │                 │
+│   └───────────────────────┘        └───────────────────────┘                │
+│                                                                              │
+│   Runtime:                          Runtime:                                 │
+│   ┌───────────────────────┐        ┌───────────────────────┐                │
+│   │ ██                   │ Light  │ ████████████████████ │ Heavy           │
+│   │ • Execute native code│        │ • Interpret bytecode │                 │
+│   │                      │        │ • Type check each op │                 │
+│   │                      │        │ • Dynamic dispatch   │                 │
+│   │                      │        │ • Possible JIT       │                 │
+│   └───────────────────────┘        └───────────────────────┘                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Information Available at Each Stage
+    <div id="information-available-at-each-stage" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#information-available-at-each-stage" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    INFORMATION FLOW                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Static Compiler:                                                           │
+│   ────────────────                                                           │
+│   Parser → &#34;x is declared as i32&#34;                                            │
+│   Sema   → &#34;x + y is i32 + i32 = i32&#34;                                       │
+│   IR     → &#34;add_i32(%0, %1)&#34;                                                │
+│   Binary → (raw addition instruction, no type info)                          │
+│                                                                              │
+│   Dynamic Compiler:                                                          │
+│   ─────────────────                                                          │
+│   Parser → &#34;x is a variable&#34;                                                 │
+│   IR     → &#34;ADD(x, y)&#34;  (type unknown)                                      │
+│   Runtime→ &#34;x is currently 5 (int), y is currently 3 (int)&#34;                 │
+│          → &#34;call int_add(5, 3)&#34;                                             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 3: Type Representation
+    <div id="part-3-type-representation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-3-type-representation" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>How do static and dynamic languages represent values in memory?</p>
+
+<h3 class="relative group">Static Language: Types Erased
+    <div id="static-language-types-erased" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#static-language-types-erased" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>In static languages, type information exists only at compile time:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STATIC TYPE REPRESENTATION                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Zig Code:                                                                  │
+│   const x: i32 = 42;                                                         │
+│   const y: f64 = 3.14;                                                       │
+│                                                                              │
+│   Memory at Runtime:                                                         │
+│                                                                              │
+│   x (i32):                         y (f64):                                  │
+│   ┌────────────────────────┐      ┌────────────────────────────────────────┐│
+│   │ 0x0000002A (42)        │      │ 0x40091EB851EB851F (3.14)              ││
+│   └────────────────────────┘      └────────────────────────────────────────┘│
+│   4 bytes, raw value              8 bytes, raw value                        │
+│                                                                              │
+│   NO type tag!                    NO type tag!                               │
+│   Compiler KNOWS the type         At runtime, it&#39;s just bytes               │
+│                                                                              │
+│   This is why:                                                               │
+│   • You can&#39;t ask &#34;what type is x?&#34; at runtime                              │
+│   • Memory is compact (no overhead)                                          │
+│   • Operations are direct (no dispatch)                                      │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Dynamic Language: Types Preserved
+    <div id="dynamic-language-types-preserved" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#dynamic-language-types-preserved" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>In dynamic languages, every value carries type information:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    DYNAMIC TYPE REPRESENTATION                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Python Code:                                                               │
+│   x = 42                                                                     │
+│   y = 3.14                                                                   │
+│                                                                              │
+│   Memory at Runtime (simplified):                                            │
+│                                                                              │
+│   x (PyObject*):                                                             │
+│   ┌────────────────────────────────────────────────────────────────────┐    │
+│   │ ┌──────────────┬──────────────┬────────────────────────┐          │    │
+│   │ │ type_ptr ────┼────► int     │ ref_count: 1           │          │    │
+│   │ ├──────────────┴──────────────┼────────────────────────┤          │    │
+│   │ │              value: 42                               │          │    │
+│   │ └──────────────────────────────────────────────────────┘          │    │
+│   └────────────────────────────────────────────────────────────────────┘    │
+│   24+ bytes (type pointer + refcount + value + padding)                      │
+│                                                                              │
+│   y (PyObject*):                                                             │
+│   ┌────────────────────────────────────────────────────────────────────┐    │
+│   │ ┌──────────────┬──────────────┬────────────────────────┐          │    │
+│   │ │ type_ptr ────┼────► float   │ ref_count: 1           │          │    │
+│   │ ├──────────────┴──────────────┼────────────────────────┤          │    │
+│   │ │              value: 3.14                             │          │    │
+│   │ └──────────────────────────────────────────────────────┘          │    │
+│   └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│   Every value knows its type!                                                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Tagged Values (Alternative Representation)
+    <div id="tagged-values-alternative-representation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#tagged-values-alternative-representation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Some dynamic languages use &ldquo;tagged pointers&rdquo; or &ldquo;NaN boxing&rdquo;:</p>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TAGGED VALUE REPRESENTATION                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   NaN Boxing (used by LuaJIT, some JS engines):                              │
+│   ────────────────────────────────────────────                               │
+│   Encode type in the NaN bits of a 64-bit float                              │
+│                                                                              │
+│   ┌────────────────────────────────────────────────────────────────────┐    │
+│   │ 64 bits                                                            │    │
+│   │ ┌─────┬───────────────────────────────────────────────────────┐   │    │
+│   │ │ Tag │                    Payload                            │   │    │
+│   │ │ 16  │                    48 bits                            │   │    │
+│   │ └─────┴───────────────────────────────────────────────────────┘   │    │
+│   └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│   Tag values:                                                                │
+│   0x0000 = double (use all 64 bits as float)                                │
+│   0xFFF1 = integer (payload is 48-bit int)                                  │
+│   0xFFF2 = pointer (payload is object address)                              │
+│   0xFFF3 = boolean (payload is 0 or 1)                                      │
+│   0xFFF4 = nil                                                              │
+│                                                                              │
+│   Benefits:                                                                  │
+│   • Compact: only 8 bytes per value                                          │
+│   • No indirection for primitives                                            │
+│   • Type check is just bitmask                                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Memory Comparison
+    <div id="memory-comparison" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#memory-comparison" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    MEMORY OVERHEAD COMPARISON                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Storing an array of 1000 integers:                                         │
+│                                                                              │
+│   STATIC (Zig/C):                                                            │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │ [i32; 1000]                                                         │   │
+│   │ 4 bytes × 1000 = 4,000 bytes                                        │   │
+│   │ Contiguous, cache-friendly                                           │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   DYNAMIC (Python list):                                                     │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │ [PyObject*; 1000] → each points to:                                 │   │
+│   │   PyObject header (16 bytes) + int value (8 bytes)                  │   │
+│   │ 8 × 1000 (pointers) + 24 × 1000 (objects) = 32,000 bytes           │   │
+│   │ Plus: memory fragmentation, cache misses                             │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   8× more memory for the same data!                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 4: Type Checking Implementation
+    <div id="part-4-type-checking-implementation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-4-type-checking-implementation" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>How do compilers actually check types?</p>
+
+<h3 class="relative group">Static Type Checking (Zig&rsquo;s Sema)
+    <div id="static-type-checking-zigs-sema" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#static-type-checking-zigs-sema" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STATIC TYPE CHECKING                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Code:                                                                      │
+│   fn add(a: i32, b: i32) i32 {                                              │
+│       return a + b;                                                          │
+│   }                                                                          │
+│   const result = add(5, 3);                                                  │
+│                                                                              │
+│   Sema Process:                                                              │
+│   ─────────────                                                              │
+│                                                                              │
+│   1. Process function declaration:                                           │
+│      add: fn(i32, i32) i32                                                  │
+│      Store in symbol table                                                   │
+│                                                                              │
+│   2. Process function body:                                                  │
+│      a: i32, b: i32 (from params)                                           │
+│      a + b → i32 + i32 → i32 ✓                                             │
+│      return i32, expected i32 ✓                                             │
+│                                                                              │
+│   3. Process call site:                                                      │
+│      add(5, 3)                                                               │
+│      5 → i32 (literal inference)                                            │
+│      3 → i32 (literal inference)                                            │
+│      Check: fn(i32, i32) called with (i32, i32) ✓                          │
+│      Result type: i32                                                        │
+│                                                                              │
+│   All checks happen BEFORE any code runs!                                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Type Checking Algorithm
+    <div id="type-checking-algorithm" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#type-checking-algorithm" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPE CHECKING ALGORITHM                                   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   function typeCheck(expr, env):                                             │
+│       switch expr.kind:                                                      │
+│                                                                              │
+│           case NumberLiteral:                                                │
+│               return inferNumericType(expr.value)                            │
+│                                                                              │
+│           case Identifier:                                                   │
+│               type = env.lookup(expr.name)                                   │
+│               if type is null:                                               │
+│                   error(&#34;undefined: &#34; + expr.name)                           │
+│               return type                                                    │
+│                                                                              │
+│           case BinaryOp:                                                     │
+│               leftType = typeCheck(expr.left, env)                           │
+│               rightType = typeCheck(expr.right, env)                         │
+│               return checkBinaryOp(expr.op, leftType, rightType)             │
+│                                                                              │
+│           case FnCall:                                                       │
+│               fnType = typeCheck(expr.fn, env)                               │
+│               argTypes = [typeCheck(arg, env) for arg in expr.args]         │
+│               checkArgsMatch(fnType.params, argTypes)                        │
+│               return fnType.returnType                                       │
+│                                                                              │
+│           case VarDecl:                                                      │
+│               valueType = typeCheck(expr.value, env)                         │
+│               if expr.typeAnnotation:                                        │
+│                   checkCompatible(expr.typeAnnotation, valueType)            │
+│               env.define(expr.name, valueType)                               │
+│               return void                                                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Dynamic Type Dispatch
+    <div id="dynamic-type-dispatch" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#dynamic-type-dispatch" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    DYNAMIC TYPE DISPATCH                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Python Code:                                                               │
+│   x + y                                                                      │
+│                                                                              │
+│   Runtime Process:                                                           │
+│   ───────────────                                                            │
+│                                                                              │
+│   1. Get type of x: type(x) → &lt;class &#39;int&#39;&gt;                                 │
+│   2. Get type of y: type(y) → &lt;class &#39;str&#39;&gt;                                 │
+│   3. Look up __add__ method on int: int.__add__                             │
+│   4. Call int.__add__(x, y)                                                  │
+│   5. int.__add__ returns NotImplemented (can&#39;t add str)                      │
+│   6. Try reverse: str.__radd__(y, x)                                        │
+│   7. Also fails → raise TypeError                                            │
+│                                                                              │
+│   This happens for EVERY + operation at runtime!                             │
+│                                                                              │
+│   Pseudocode:                                                                │
+│   ───────────                                                                │
+│   function binary_add(x, y):                                                 │
+│       x_type = get_type(x)                                                   │
+│       add_method = lookup_method(x_type, &#34;__add__&#34;)                          │
+│       result = call(add_method, x, y)                                        │
+│       if result == NotImplemented:                                           │
+│           y_type = get_type(y)                                               │
+│           radd_method = lookup_method(y_type, &#34;__radd__&#34;)                    │
+│           result = call(radd_method, y, x)                                   │
+│       if result == NotImplemented:                                           │
+│           raise TypeError(...)                                               │
+│       return result                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Error Detection Comparison
+    <div id="error-detection-comparison" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#error-detection-comparison" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ERROR DETECTION                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   STATIC LANGUAGE (Zig):                                                     │
+│   ──────────────────────                                                     │
+│                                                                              │
+│   const x: i32 = &#34;hello&#34;;                                                    │
+│                                                                              │
+│   $ zig build                                                                │
+│   error: expected type &#39;i32&#39;, found &#39;[]const u8&#39;                            │
+│   const x: i32 = &#34;hello&#34;;                                                    │
+│                   ^~~~~~~                                                    │
+│                                                                              │
+│   Caught at compile time. Program never runs with the bug.                   │
+│                                                                              │
+│   ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│   DYNAMIC LANGUAGE (Python):                                                 │
+│   ──────────────────────────                                                 │
+│                                                                              │
+│   def process(data):                                                         │
+│       return data + 1                                                        │
+│                                                                              │
+│   # Somewhere else, months later...                                          │
+│   process(&#34;hello&#34;)                                                           │
+│                                                                              │
+│   $ python app.py                                                            │
+│   Traceback (most recent call last):                                         │
+│     File &#34;app.py&#34;, line 42, in process                                       │
+│       return data + 1                                                        │
+│   TypeError: can only concatenate str (not &#34;int&#34;) to str                     │
+│                                                                              │
+│   Caught at runtime, possibly in production!                                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 5: Performance Implications
+    <div id="part-5-performance-implications" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-5-performance-implications" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Why are statically typed languages generally faster?</p>
+
+<h3 class="relative group">The Performance Gap
+    <div id="the-performance-gap" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-performance-gap" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STATIC vs DYNAMIC PERFORMANCE                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Operation: Add two integers                                                │
+│                                                                              │
+│   STATIC (Zig/C):                   DYNAMIC (Python):                        │
+│   ────────────────                  ─────────────────                        │
+│                                                                              │
+│   mov eax, [a]    ; 1 cycle         LOAD_FAST &#39;a&#39;                           │
+│   add eax, [b]    ; 1 cycle           ↓                                     │
+│   mov [result], eax                 type_check(a)      ; is it int?         │
+│                                       ↓                                      │
+│   Total: ~2-3 cycles                LOAD_FAST &#39;b&#39;                           │
+│                                       ↓                                      │
+│                                     type_check(b)      ; is it int?         │
+│                                       ↓                                      │
+│                                     lookup __add__     ; find method        │
+│                                       ↓                                      │
+│                                     call int_add       ; finally add        │
+│                                       ↓                                      │
+│                                     create PyObject    ; box result         │
+│                                       ↓                                      │
+│                                     Total: ~100+ cycles                      │
+│                                                                              │
+│   50-100× difference for primitive operations!                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Sources of Overhead
+    <div id="sources-of-overhead" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#sources-of-overhead" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    DYNAMIC TYPING OVERHEAD                                   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. TYPE CHECKING                                                           │
+│      Every operation must check types                                        │
+│      if (typeof x === &#39;number&#39; &amp;&amp; typeof y === &#39;number&#39;)                    │
+│                                                                              │
+│   2. DYNAMIC DISPATCH                                                        │
+│      Method lookup through vtables or dictionaries                           │
+│      obj.__dict__[&#39;method_name&#39;]                                            │
+│                                                                              │
+│   3. BOXING/UNBOXING                                                         │
+│      Primitives wrapped in objects                                           │
+│      42 → PyLong object → extract 42 → compute → new PyLong                 │
+│                                                                              │
+│   4. MEMORY INDIRECTION                                                      │
+│      Everything is a pointer                                                 │
+│      Cache misses, pointer chasing                                           │
+│                                                                              │
+│   5. ALLOCATION                                                              │
+│      New objects for results                                                 │
+│      1 + 2 creates new integer object                                        │
+│                                                                              │
+│   6. GARBAGE COLLECTION                                                      │
+│      Track all those objects                                                 │
+│      Reference counting or tracing                                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">JIT Compilation: Bridging the Gap
+    <div id="jit-compilation-bridging-the-gap" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#jit-compilation-bridging-the-gap" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    JIT COMPILATION                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   JIT = Just-In-Time Compilation                                             │
+│   Compile hot code paths at runtime with observed type information           │
+│                                                                              │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                                                                     │   │
+│   │   First execution:     Observe types      JIT Compile               │   │
+│   │   ────────────────     ─────────────      ───────────               │   │
+│   │                                                                     │   │
+│   │   for i in range(n):   &#34;i is always int&#34;  mov eax, [i]             │   │
+│   │       x = i + 1        &#34;x is always int&#34;  add eax, 1               │   │
+│   │                                           mov [x], eax              │   │
+│   │                                                                     │   │
+│   │   Interpret slowly     Learn types        Run native code           │   │
+│   │   (100+ cycles/op)                        (~2 cycles/op)            │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   With guards for type changes:                                              │
+│   ─────────────────────────────                                              │
+│   if type(i) != int:                                                         │
+│       deoptimize()  // fall back to interpreter                             │
+│   // fast path here                                                          │
+│                                                                              │
+│   Examples: V8 (JavaScript), PyPy (Python), LuaJIT (Lua)                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Benchmark Reality
+    <div id="benchmark-reality" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#benchmark-reality" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPICAL PERFORMANCE RATIOS                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Task: Compute-intensive numeric work                                       │
+│                                                                              │
+│   Language        │ Relative Speed │ Notes                                   │
+│   ────────────────┼────────────────┼────────────────────────────────────────│
+│   C / Zig         │ 1.0×           │ Baseline (native, no overhead)         │
+│   Rust            │ 1.0-1.1×       │ Same as C with safety checks           │
+│   Java (JIT)      │ 1.0-2×         │ JIT can match native                   │
+│   JavaScript (V8) │ 1.5-5×         │ Good JIT, still has overhead           │
+│   PyPy            │ 5-10×          │ Python with JIT                        │
+│   Python (CPython)│ 50-100×        │ No JIT, pure interpretation            │
+│   Ruby            │ 30-50×         │ Similar to CPython                     │
+│                                                                              │
+│   Note: For I/O bound work, the gap is much smaller!                         │
+│   A slow language waiting for disk/network is still mostly waiting.         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 6: The Gradual Typing Middle Ground
+    <div id="part-6-the-gradual-typing-middle-ground" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-6-the-gradual-typing-middle-ground" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>What if you want the flexibility of dynamic typing with some static guarantees?</p>
+
+<h3 class="relative group">Gradual Typing Concept
+    <div id="gradual-typing-concept" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#gradual-typing-concept" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    GRADUAL TYPING                                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Gradual typing = Mix static and dynamic in the same program                │
+│                                                                              │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                                                                     │   │
+│   │   def process(data):          # Dynamic: no type annotation        │   │
+│   │       return data.strip()                                           │   │
+│   │                                                                     │   │
+│   │   def process_typed(data: str) -&gt; str:  # Static: annotated        │   │
+│   │       return data.strip()                                           │   │
+│   │                                                                     │   │
+│   │   # Mix freely:                                                     │   │
+│   │   result = process(get_data())           # No checking             │   │
+│   │   result = process_typed(get_data())     # Checked at boundary     │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   Key idea: Typed and untyped code can coexist                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">TypeScript Example
+    <div id="typescript-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#typescript-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPESCRIPT: GRADUAL TYPING FOR JS                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   TypeScript adds static types to JavaScript:                                │
+│                                                                              │
+│   // Fully typed                                                             │
+│   function add(a: number, b: number): number {                               │
+│       return a + b;                                                          │
+│   }                                                                          │
+│                                                                              │
+│   // Using &#39;any&#39; - escape hatch to dynamic                                   │
+│   function process(data: any): any {                                         │
+│       return data.whatever();  // No checking!                               │
+│   }                                                                          │
+│                                                                              │
+│   // Gradual migration:                                                      │
+│   // 1. Start with .js files (all dynamic)                                   │
+│   // 2. Rename to .ts                                                        │
+│   // 3. Add types incrementally                                              │
+│   // 4. Enable strict mode when ready                                        │
+│                                                                              │
+│   Compiler Pipeline:                                                         │
+│   ┌────────────┐     ┌────────────┐     ┌────────────┐                      │
+│   │ TypeScript │ ──► │   Type     │ ──► │ JavaScript │                      │
+│   │   Source   │     │  Checker   │     │   Output   │                      │
+│   └────────────┘     └────────────┘     └────────────┘                      │
+│                                                                              │
+│   Types are ERASED at runtime - JavaScript has no types!                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Python Type Hints
+    <div id="python-type-hints" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#python-type-hints" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    PYTHON TYPE HINTS                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Python 3.5+ supports type annotations:                                     │
+│                                                                              │
+│   from typing import List, Optional                                          │
+│                                                                              │
+│   def greet(name: str) -&gt; str:                                              │
+│       return f&#34;Hello, {name}&#34;                                                │
+│                                                                              │
+│   def process(items: List[int]) -&gt; Optional[int]:                           │
+│       if items:                                                              │
+│           return sum(items)                                                  │
+│       return None                                                            │
+│                                                                              │
+│   IMPORTANT: Python IGNORES these at runtime!                                │
+│   They&#39;re just hints for external tools.                                     │
+│                                                                              │
+│   External Type Checkers:                                                    │
+│   ┌────────────┐                                                            │
+│   │   mypy     │  Static analysis tool                                      │
+│   │   pyright  │  Microsoft&#39;s fast type checker                             │
+│   │   pyre     │  Facebook&#39;s type checker                                   │
+│   └────────────┘                                                            │
+│                                                                              │
+│   $ mypy program.py                                                          │
+│   program.py:10: error: Argument 1 to &#34;greet&#34; has incompatible type &#34;int&#34;   │
+│                                                                              │
+│   The Python interpreter still runs code with type errors!                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Gradual Typing Works in Compilers
+    <div id="how-gradual-typing-works-in-compilers" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-gradual-typing-works-in-compilers" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    GRADUAL TYPING IMPLEMENTATION                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Key concept: The &#34;any&#34; or &#34;unknown&#34; type                                   │
+│                                                                              │
+│   Type System:                                                               │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                                                                     │   │
+│   │   any ←───────────────────────────────────────────────────► any    │   │
+│   │    ↑                                                           ↑    │   │
+│   │    │  &#34;any&#34; is compatible with everything                      │    │   │
+│   │    │                                                           │    │   │
+│   │   int ───────────X───────────────────────X──────────────── string   │   │
+│   │    ↑             │                       │                     ↑    │   │
+│   │    │         (not compatible)        (not compatible)          │    │   │
+│   │    │                                                           │    │   │
+│   │   Typed code checks types normally                              │    │   │
+│   │   &#34;any&#34; acts as escape hatch                                   │    │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   Boundary checking:                                                         │
+│   ──────────────────                                                         │
+│                                                                              │
+│   function typed(x: number) { ... }                                         │
+│   function untyped(x) { typed(x); }  // Insert runtime check here!         │
+│                                                                              │
+│   Compiled to:                                                               │
+│   function untyped(x) {                                                      │
+│       if (typeof x !== &#39;number&#39;) throw TypeError(...);                      │
+│       typed(x);                                                              │
+│   }                                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Benefits and Limitations
+    <div id="benefits-and-limitations" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#benefits-and-limitations" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    GRADUAL TYPING TRADE-OFFS                                 │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   BENEFITS:                                                                  │
+│   ─────────                                                                  │
+│   ✓ Migrate existing codebases incrementally                                 │
+│   ✓ Add types where they help most (APIs, complex logic)                    │
+│   ✓ Keep flexibility where needed (scripting, prototyping)                  │
+│   ✓ Better IDE support in typed portions                                    │
+│   ✓ Documentation through types                                             │
+│                                                                              │
+│   LIMITATIONS:                                                               │
+│   ────────────                                                               │
+│   ✗ Partial guarantees - untyped code can break typed code                  │
+│   ✗ Runtime checks at boundaries add overhead                               │
+│   ✗ &#34;any&#34; can spread, undermining type safety                               │
+│   ✗ Can&#39;t optimize as well as fully static                                  │
+│   ✗ Two languages to understand (typed and untyped idioms)                  │
+│                                                                              │
+│   Best for:                                                                  │
+│   • Large existing dynamic codebases                                         │
+│   • Teams transitioning to types                                             │
+│   • Interop with untyped libraries                                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 7: Zig&rsquo;s Approach
+    <div id="part-7-zigs-approach" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-7-zigs-approach" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>How does Zig handle static typing, and what makes it special?</p>
+
+<h3 class="relative group">Zig&rsquo;s Type System
+    <div id="zigs-type-system" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#zigs-type-system" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG&#39;S STATIC TYPE SYSTEM                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Zig is FULLY statically typed:                                             │
+│   • Every variable has a known type at compile time                          │
+│   • No &#34;any&#34; or dynamic types                                                │
+│   • No runtime type information (in safe code)                               │
+│   • Types are erased in the final binary                                     │
+│                                                                              │
+│   // Every type is explicit or inferred at compile time                      │
+│   const x: i32 = 42;           // Explicit                                   │
+│   const y = @as(i32, 42);      // Explicit cast                              │
+│   const z = 42;                // Inferred as comptime_int                   │
+│                                                                              │
+│   // No implicit conversions that lose information                           │
+│   const a: i32 = 1000;                                                       │
+│   const b: i8 = a;             // ERROR: narrowing conversion                │
+│   const c: i8 = @intCast(a);   // OK: explicit, runtime checked             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Comptime: Static Typing with Dynamic Flexibility
+    <div id="comptime-static-typing-with-dynamic-flexibility" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#comptime-static-typing-with-dynamic-flexibility" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG&#39;S COMPTIME                                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Zig&#39;s comptime provides dynamic-like flexibility at compile time:          │
+│                                                                              │
+│   // Types as first-class values (at comptime)                               │
+│   fn Matrix(comptime T: type, comptime rows: usize, comptime cols: usize)    │
+│       type                                                                   │
+│   {                                                                          │
+│       return struct {                                                        │
+│           data: [rows][cols]T,                                               │
+│                                                                              │
+│           pub fn get(self: @This(), r: usize, c: usize) T {                 │
+│               return self.data[r][c];                                        │
+│           }                                                                  │
+│       };                                                                     │
+│   }                                                                          │
+│                                                                              │
+│   const Mat3x3 = Matrix(f32, 3, 3);  // Generate type at compile time       │
+│   var m: Mat3x3 = undefined;                                                 │
+│                                                                              │
+│   This is like:                                                              │
+│   • C++ templates                                                            │
+│   • Rust const generics                                                      │
+│   • But with a full interpreter at compile time!                            │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Comptime vs Dynamic: Same Flexibility, Different Time
+    <div id="comptime-vs-dynamic-same-flexibility-different-time" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#comptime-vs-dynamic-same-flexibility-different-time" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    COMPTIME vs DYNAMIC                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Python (Dynamic):                   Zig (Comptime):                        │
+│   ─────────────────                   ───────────────                        │
+│                                                                              │
+│   # Type decided at runtime           // Type decided at compile time        │
+│   def make_list(item_type):           fn makeArray(comptime T: type)         │
+│       if item_type == int:                type                               │
+│           return [0, 0, 0]            {                                      │
+│       else:                               return [3]T;                       │
+│           return [&#34;&#34;, &#34;&#34;, &#34;&#34;]         }                                      │
+│                                                                              │
+│   # Runs every execution              // Runs once during compilation        │
+│   lst = make_list(int)                const arr = makeArray(i32);            │
+│                                                                              │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                              │
+│   Same expressive power!                                                     │
+│   But Zig version:                                                           │
+│   • Generates specialized code per type                                      │
+│   • No runtime overhead                                                      │
+│   • Errors caught at compile time                                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Union Types and Tagged Unions
+    <div id="union-types-and-tagged-unions" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#union-types-and-tagged-unions" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG TAGGED UNIONS                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   For cases where you need runtime type dispatch:                            │
+│                                                                              │
+│   const Value = union(enum) {                                                │
+│       int: i64,                                                              │
+│       float: f64,                                                            │
+│       string: []const u8,                                                    │
+│       none,                                                                  │
+│   };                                                                         │
+│                                                                              │
+│   fn process(v: Value) void {                                                │
+│       switch (v) {                                                           │
+│           .int =&gt; |i| std.debug.print(&#34;int: {}\n&#34;, .{i}),                   │
+│           .float =&gt; |f| std.debug.print(&#34;float: {}\n&#34;, .{f}),               │
+│           .string =&gt; |s| std.debug.print(&#34;string: {s}\n&#34;, .{s}),            │
+│           .none =&gt; std.debug.print(&#34;none\n&#34;, .{}),                          │
+│       }                                                                      │
+│   }                                                                          │
+│                                                                              │
+│   This is like dynamic typing, but:                                          │
+│   • Explicit (you choose when to use it)                                    │
+│   • Exhaustive (compiler checks all cases)                                   │
+│   • Efficient (single byte tag, no pointer indirection)                     │
+│   • Type-safe (can&#39;t access wrong variant)                                  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Sema Implements This
+    <div id="how-sema-implements-this" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-sema-implements-this" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    ZIG&#39;S SEMA TYPE CHECKING                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Zig&#39;s Sema (semantic analyzer) does the heavy lifting:                     │
+│                                                                              │
+│   ZIR Input:                        Sema Processing:                         │
+│   ──────────                        ────────────────                         │
+│                                                                              │
+│   %0 = int(42)                      → Type: comptime_int                    │
+│   %1 = decl(&#34;x&#34;, %0, i32)           → Coerce comptime_int to i32           │
+│                                       → Validate: 42 fits in i32 ✓          │
+│                                       → Type of x: i32                      │
+│                                                                              │
+│   %2 = decl_ref(&#34;x&#34;)                → Lookup x in scope: found             │
+│                                       → Type: i32                           │
+│                                                                              │
+│   %3 = decl_ref(&#34;y&#34;)                → Lookup y in scope: NOT FOUND         │
+│                                       → ERROR: undefined identifier &#39;y&#39;     │
+│                                                                              │
+│   %4 = add(%2, %0)                  → Types: i32 + comptime_int            │
+│                                       → Coerce comptime_int to i32         │
+│                                       → Result type: i32                    │
+│                                                                              │
+│   AIR Output:                                                                │
+│   ───────────                                                                │
+│   %0 = const_i32(42)                                                        │
+│   %1 = local_set(0, %0)             // x at slot 0                          │
+│   %2 = local_get(0)                                                         │
+│   %3 = const_i32(42)                                                        │
+│   %4 = add_i32(%2, %3)                                                      │
+│                                                                              │
+│   Every operation now has a concrete type!                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 8: Implementing a Type Checker
+    <div id="part-8-implementing-a-type-checker" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-8-implementing-a-type-checker" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Let&rsquo;s build a simple type checker to understand the concepts:</p>
+
+<h3 class="relative group">Type Representation
+    <div id="type-representation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#type-representation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPE DATA STRUCTURES                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   // Core type representation                                                │
+│   Type = union {                                                             │
+│       Primitive: enum { I32, I64, F32, F64, Bool, Void },                   │
+│       Pointer: *Type,                                                        │
+│       Array: struct { element: *Type, len: usize },                         │
+│       Function: struct { params: []Type, ret: *Type },                      │
+│       Struct: struct { name: string, fields: []Field },                     │
+│       Unknown,  // For type inference                                        │
+│       Error,    // Propagate type errors                                     │
+│   }                                                                          │
+│                                                                              │
+│   Field = struct {                                                           │
+│       name: string,                                                          │
+│       type: Type,                                                            │
+│   }                                                                          │
+│                                                                              │
+│   // Symbol table entry                                                      │
+│   Symbol = struct {                                                          │
+│       name: string,                                                          │
+│       type: Type,                                                            │
+│       kind: enum { Variable, Function, Type },                              │
+│   }                                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Type Checker Implementation
+    <div id="type-checker-implementation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#type-checker-implementation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPE CHECKER CORE                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   struct TypeChecker {                                                       │
+│       symbols: SymbolTable,                                                  │
+│       errors: []Error,                                                       │
+│                                                                              │
+│       fn check(self, expr: *Expr) Type {                                    │
+│           switch (expr.*) {                                                  │
+│                                                                              │
+│               .IntLiteral =&gt; {                                               │
+│                   return .{ .Primitive = .I32 };                            │
+│               },                                                             │
+│                                                                              │
+│               .Identifier =&gt; |name| {                                        │
+│                   if (self.symbols.lookup(name)) |sym| {                    │
+│                       return sym.type;                                       │
+│                   } else {                                                   │
+│                       self.errors.append(.{                                 │
+│                           .msg = &#34;undefined: &#34; ++ name                      │
+│                       });                                                    │
+│                       return .Error;                                         │
+│                   }                                                          │
+│               },                                                             │
+│                                                                              │
+│               .BinaryOp =&gt; |op| {                                           │
+│                   const left_type = self.check(op.left);                    │
+│                   const right_type = self.check(op.right);                  │
+│                   return self.checkBinaryOp(op.kind, left_type, right_type);│
+│               },                                                             │
+│                                                                              │
+│               .FnCall =&gt; |call| {                                           │
+│                   const fn_type = self.check(call.func);                    │
+│                   // ... check arguments match parameters                   │
+│                   return fn_type.Function.ret.*;                            │
+│               },                                                             │
+│           }                                                                  │
+│       }                                                                      │
+│   }                                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Type Coercion Rules
+    <div id="type-coercion-rules" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#type-coercion-rules" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPE COERCION                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   fn coerce(from: Type, to: Type) ?Type {                                   │
+│       // Same type - always ok                                               │
+│       if (from == to) return to;                                            │
+│                                                                              │
+│       // Comptime int can become any integer type                           │
+│       if (from == .ComptimeInt and to.isInteger()) {                        │
+│           return to;                                                         │
+│       }                                                                      │
+│                                                                              │
+│       // Pointer to array coerces to slice                                   │
+│       if (from == .Pointer and from.child == .Array and                     │
+│           to == .Slice and to.child == from.child.element) {                │
+│           return to;                                                         │
+│       }                                                                      │
+│                                                                              │
+│       // Integer widening (i8 -&gt; i16 -&gt; i32 -&gt; i64)                         │
+│       if (from.isInteger() and to.isInteger() and                           │
+│           to.bitSize() &gt;= from.bitSize() and                                │
+│           to.isSigned() == from.isSigned()) {                               │
+│           return to;                                                         │
+│       }                                                                      │
+│                                                                              │
+│       // No valid coercion                                                   │
+│       return null;                                                           │
+│   }                                                                          │
+│                                                                              │
+│   // In type checker:                                                        │
+│   if (coerce(actual_type, expected_type) == null) {                         │
+│       error(&#34;type mismatch: expected {}, got {}&#34;, expected, actual);        │
+│   }                                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Type Inference
+    <div id="type-inference" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#type-inference" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPE INFERENCE                                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Type inference = figuring out types without explicit annotations           │
+│                                                                              │
+│   // Zig example:                                                            │
+│   const x = 42;           // x: comptime_int (inferred)                      │
+│   const y: i32 = x;       // Coerce comptime_int -&gt; i32                     │
+│   const z = y + 1;        // z: i32 (propagated from y)                     │
+│                                                                              │
+│   Algorithm (Hindley-Milner simplified):                                     │
+│   ──────────────────────────────────────                                     │
+│                                                                              │
+│   1. Assign type variables to unknown types                                  │
+│      let x = e   →   x: T1, e: T2, constraint: T1 = T2                      │
+│                                                                              │
+│   2. Generate constraints from expressions                                   │
+│      e1 + e2     →   e1: T3, e2: T4, constraint: T3 = T4 = numeric         │
+│                                                                              │
+│   3. Unify constraints                                                       │
+│      T1 = i32, T2 = i32   →   solved!                                       │
+│      T1 = i32, T1 = str   →   error: conflicting types                      │
+│                                                                              │
+│   4. Substitute solutions                                                    │
+│      Replace all T1 with i32 in the AST                                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Complete Example
+    <div id="complete-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#complete-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPE CHECKING EXAMPLE                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Source:                                                                    │
+│   fn add(a: i32, b: i32) i32 {                                              │
+│       return a + b;                                                          │
+│   }                                                                          │
+│   const result = add(1, 2);                                                  │
+│                                                                              │
+│   Type Checking Steps:                                                       │
+│   ────────────────────                                                       │
+│                                                                              │
+│   1. Process function declaration:                                           │
+│      symbols[&#34;add&#34;] = Function { params: [i32, i32], ret: i32 }             │
+│                                                                              │
+│   2. Enter function scope:                                                   │
+│      symbols[&#34;a&#34;] = Variable { type: i32 }                                  │
+│      symbols[&#34;b&#34;] = Variable { type: i32 }                                  │
+│                                                                              │
+│   3. Check: a + b                                                            │
+│      type(a) = i32                                                           │
+│      type(b) = i32                                                           │
+│      i32 + i32 = i32 ✓                                                      │
+│                                                                              │
+│   4. Check: return a + b                                                     │
+│      return type = i32                                                       │
+│      expected return = i32 ✓                                                │
+│                                                                              │
+│   5. Exit function scope                                                     │
+│                                                                              │
+│   6. Check: add(1, 2)                                                        │
+│      type(add) = Function { params: [i32, i32], ret: i32 }                  │
+│      type(1) = comptime_int, coerce to i32 ✓                                │
+│      type(2) = comptime_int, coerce to i32 ✓                                │
+│      result type = i32                                                       │
+│                                                                              │
+│   7. Check: const result = add(1, 2)                                         │
+│      symbols[&#34;result&#34;] = Variable { type: i32 }                             │
+│                                                                              │
+│   All types resolved!                                                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 9: Trade-offs and When to Choose
+    <div id="part-9-trade-offs-and-when-to-choose" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-9-trade-offs-and-when-to-choose" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">When to Choose Static Typing
+    <div id="when-to-choose-static-typing" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-choose-static-typing" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    CHOOSE STATIC TYPING WHEN                                 │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ✓ Performance is critical                                                  │
+│     Systems programming, game engines, databases                             │
+│                                                                              │
+│   ✓ Large codebase with many developers                                      │
+│     Types as documentation, refactoring safety                               │
+│                                                                              │
+│   ✓ Long-running production systems                                          │
+│     Catch bugs at compile time, not 3 AM                                    │
+│                                                                              │
+│   ✓ API boundaries matter                                                    │
+│     Clear contracts between components                                       │
+│                                                                              │
+│   ✓ IDE support is important                                                 │
+│     Autocomplete, refactoring, navigation                                    │
+│                                                                              │
+│   Examples: Operating systems, compilers, game engines,                      │
+│             databases, financial systems, embedded                           │
+│                                                                              │
+│   Languages: Zig, Rust, C, C++, Go, Java, C#                                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">When to Choose Dynamic Typing
+    <div id="when-to-choose-dynamic-typing" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-choose-dynamic-typing" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    CHOOSE DYNAMIC TYPING WHEN                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ✓ Rapid prototyping                                                        │
+│     Explore ideas quickly without type ceremony                              │
+│                                                                              │
+│   ✓ Scripting and automation                                                 │
+│     One-off scripts, glue code                                               │
+│                                                                              │
+│   ✓ Highly dynamic data                                                      │
+│     JSON APIs, configuration, user-defined schemas                           │
+│                                                                              │
+│   ✓ Interactive development                                                  │
+│     REPLs, notebooks, live coding                                            │
+│                                                                              │
+│   ✓ Metaprogramming                                                          │
+│     Modifying code at runtime, DSLs                                          │
+│                                                                              │
+│   ✓ Small scripts with few contributors                                      │
+│     Overhead of types not worth it                                           │
+│                                                                              │
+│   Examples: Data science, web scripting, shell automation,                   │
+│             configuration, testing, rapid prototyping                        │
+│                                                                              │
+│   Languages: Python, JavaScript, Ruby, Lua, Lisp                            │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Modern Trends
+    <div id="modern-trends" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#modern-trends" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    INDUSTRY TRENDS                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   The industry is moving toward MORE static typing:                          │
+│                                                                              │
+│   JavaScript → TypeScript                                                    │
+│   • Microsoft created TypeScript                                             │
+│   • Now used by majority of large JS projects                                │
+│   • Angular, React, Vue all support it                                       │
+│                                                                              │
+│   Python → Type Hints + mypy                                                 │
+│   • PEP 484 added type hints in Python 3.5                                  │
+│   • Major libraries adding type annotations                                  │
+│   • Google, Facebook, Microsoft use type checkers                           │
+│                                                                              │
+│   Ruby → Sorbet (Stripe&#39;s type checker)                                     │
+│   • Stripe typed their entire Ruby codebase                                  │
+│   • RBS standard for Ruby types                                              │
+│                                                                              │
+│   Why?                                                                       │
+│   • Large codebases are hard to maintain without types                       │
+│   • Refactoring dynamic code is scary                                        │
+│   • Types catch bugs that tests miss                                         │
+│   • IDE support dramatically improves productivity                           │
+│                                                                              │
+│   The sweet spot: gradual typing for existing code,                          │
+│   full static typing for new projects.                                       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Part 10: The Big Picture
+    <div id="part-10-the-big-picture" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-10-the-big-picture" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Summary Comparison
+    <div id="summary-comparison" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#summary-comparison" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    STATIC vs DYNAMIC: COMPLETE COMPARISON                    │
+├─────────────────────┬────────────────────────┬───────────────────────────────┤
+│ Aspect              │ Static Typing          │ Dynamic Typing                │
+├─────────────────────┼────────────────────────┼───────────────────────────────┤
+│ Type checking       │ Compile time           │ Runtime                       │
+│ Errors found        │ Before running         │ During execution              │
+│ Type annotations    │ Required/inferred      │ Optional                      │
+│ Performance         │ Near-optimal           │ Overhead from checks          │
+│ Memory use          │ Compact                │ Object wrappers               │
+│ Flexibility         │ Constrained            │ Maximum                       │
+│ Refactoring         │ Compiler-assisted      │ Risky without tests           │
+│ IDE support         │ Excellent              │ Limited                       │
+│ Learning curve      │ Steeper                │ Gentler                       │
+│ Compile time        │ Longer                 │ Instant                       │
+│ Metaprogramming     │ Limited/compile-time   │ Full runtime                  │
+│ Interop             │ Explicit FFI           │ Often seamless                │
+├─────────────────────┴────────────────────────┴───────────────────────────────┤
+│                                                                              │
+│ Neither is &#34;better&#34; - they&#39;re tools for different jobs.                      │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Compiler Writer&rsquo;s Perspective
+    <div id="the-compiler-writers-perspective" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-compiler-writers-perspective" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    FOR COMPILER WRITERS                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Building a STATIC language compiler:                                       │
+│   ─────────────────────────────────────                                      │
+│   • Invest heavily in the type checker (Sema)                               │
+│   • Generate type-specific IR (add_i32, mul_f64)                            │
+│   • Erase types in final output                                              │
+│   • Can do aggressive optimizations                                          │
+│   • Errors are compiler messages                                             │
+│                                                                              │
+│   Building a DYNAMIC language compiler:                                      │
+│   ──────────────────────────────────────                                     │
+│   • Simple frontend (no type checking)                                       │
+│   • Generate type-agnostic bytecode                                          │
+│   • Build a runtime with type dispatch                                       │
+│   • Consider JIT for performance                                             │
+│   • Errors are runtime exceptions                                            │
+│                                                                              │
+│   Building a GRADUALLY typed language:                                       │
+│   ─────────────────────────────────────                                      │
+│   • Support both typed and untyped code                                      │
+│   • Insert runtime checks at boundaries                                      │
+│   • Handle the &#34;any&#34; type specially                                          │
+│   • Balance safety vs compatibility                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Key Takeaways
+    <div id="key-takeaways" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#key-takeaways" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    KEY TAKEAWAYS                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. STATIC vs DYNAMIC is about WHEN types are checked                       │
+│      Compile time (before running) vs runtime (during execution)             │
+│                                                                              │
+│   2. This choice SHAPES EVERYTHING                                           │
+│      Compiler architecture, runtime design, performance, tooling             │
+│                                                                              │
+│   3. STATIC languages have work up front                                     │
+│      Heavy compiler, light runtime, types erased                             │
+│                                                                              │
+│   4. DYNAMIC languages defer work                                            │
+│      Light compiler, heavy runtime, types preserved                          │
+│                                                                              │
+│   5. GRADUAL typing is a PRAGMATIC middle ground                             │
+│      For migrating existing code, not new projects                           │
+│                                                                              │
+│   6. ZIG shows COMPTIME as an alternative                                    │
+│      Static typing with dynamic-like flexibility at compile time             │
+│                                                                              │
+│   7. The INDUSTRY is moving toward more static typing                        │
+│      TypeScript, Python hints, Ruby Sorbet - types are winning               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Further Reading
+    <div id="further-reading" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#further-reading" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">Books
+    <div id="books" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#books" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<ul>
+<li>
+<p><strong>&ldquo;Types and Programming Languages&rdquo;</strong> by Benjamin C. Pierce
+The definitive academic text on type theory. Dense but comprehensive.</p>
+</li>
+<li>
+<p><strong>&ldquo;Practical Foundations for Programming Languages&rdquo;</strong> by Robert Harper
+Another excellent academic treatment, available free online.</p>
+</li>
+<li>
+<p><strong>&ldquo;Crafting Interpreters&rdquo;</strong> by Robert Nystrom
+Builds both a tree-walking interpreter (dynamic) and bytecode VM.</p>
+</li>
+</ul>
+
+<h3 class="relative group">Papers
+    <div id="papers" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#papers" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<ul>
+<li>
+<p><strong>&ldquo;Gradual Typing for Functional Languages&rdquo;</strong> by Siek &amp; Taha
+The original gradual typing paper.</p>
+</li>
+<li>
+<p><strong>&ldquo;The Design and Implementation of Typed Scheme&rdquo;</strong>
+How to add types to a dynamic language.</p>
+</li>
+</ul>
+
+<h3 class="relative group">Type Systems to Study
+    <div id="type-systems-to-study" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#type-systems-to-study" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                    TYPE SYSTEMS TO STUDY                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Language    │ Notable Features                                             │
+│   ────────────┼───────────────────────────────────────────────────────────  │
+│   Haskell     │ Strong inference, algebraic data types, typeclasses         │
+│   Rust        │ Ownership, borrowing, lifetimes                             │
+│   Zig         │ Comptime, no hidden control flow                            │
+│   TypeScript  │ Structural typing, gradual, union/intersection              │
+│   OCaml       │ ML-style inference, modules                                  │
+│   Idris       │ Dependent types (types can depend on values)                │
+│   Scala       │ Mix of OO and FP typing                                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Conclusion
+    <div id="conclusion" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#conclusion" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>The static vs dynamic typing distinction is one of the most fundamental decisions in language design. It affects every aspect of your compiler:</p>
+<ul>
+<li><strong>Parser</strong>: Does it need type annotations?</li>
+<li><strong>Semantic Analysis</strong>: Does it type-check, or just validate structure?</li>
+<li><strong>IR</strong>: Are operations type-specific or generic?</li>
+<li><strong>Runtime</strong>: Does it need type dispatch machinery?</li>
+<li><strong>Performance</strong>: Can you optimize knowing exact types?</li>
+</ul>
+<p>Understanding this distinction helps you:</p>
+<ul>
+<li>Choose the right language for each project</li>
+<li>Understand why compilers are built the way they are</li>
+<li>Appreciate the trade-offs language designers make</li>
+<li>Build your own compilers with informed decisions</li>
+</ul>
+<p>Static typing isn&rsquo;t &ldquo;better&rdquo; than dynamic typing—they&rsquo;re different tools for different jobs. The best compiler writers understand both approaches and can apply them appropriately.</p>
+<hr>
+
+<h2 class="relative group">Navigation
+    <div id="navigation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#navigation" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>← <a
+  href="../14-bytecode">Previous: Part 14 - Understanding Bytecode</a></p>
+<p><a
+  href="../">Back to Series Index</a></p>
+
+          
+          
+          
+        </div>
+        
+        
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_drafts/15-static-vs-dynamic.md"
+          data-oid-likes="likes_drafts/15-static-vs-dynamic.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+            <a
+              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/appendix-zig-patterns/">
+              <span class="leading-6">
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;Appendix: Zig Patterns and Methods Reference
+              </span>
+            </a>
+            
+              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-17T00:00:00&#43;00:00">December 17, 2025</time>
+              </span>
+            
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+            <a
+              class="flex text-right text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/14-bytecode/">
+              <span class="leading-6">
+                Zig Compiler Internals Part 14: Understanding Bytecode&ensp;<span class="inline-block rtl:rotate-180">&rarr;</span>
+              </span>
+            </a>
+            
+              <span class="me-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-18T00:00:00&#43;00:00">December 18, 2025</time>
+              </span>
+            
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Yohai
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:1313/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>

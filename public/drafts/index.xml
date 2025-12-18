@@ -7,7 +7,69 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© 2025 Yohai</copyright>
-    <lastBuildDate>Wed, 17 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/drafts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 18 Dec 2025 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/drafts/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Zig Compiler Internals Part 14: Understanding Bytecode</title>
+      <link>http://localhost:1313/drafts/14-bytecode/</link>
+      <pubDate>Thu, 18 Dec 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/drafts/14-bytecode/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Zig Compiler Internals Part 14: Understanding Bytecode
+    &lt;div id=&#34;zig-compiler-internals-part-14-understanding-bytecode&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#zig-compiler-internals-part-14-understanding-bytecode&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;&lt;em&gt;What is bytecode and why do so many language implementations use it?&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Introduction
+    &lt;div id=&#34;introduction&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#introduction&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;You&amp;rsquo;ve likely heard the term &amp;ldquo;bytecode&amp;rdquo; in discussions about Java, Python, WebAssembly, or the Lua scripting language. But what exactly is bytecode, and why do so many language implementations choose this approach?&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>Zig Compiler Internals Part 15: Static vs Dynamic Languages</title>
+      <link>http://localhost:1313/drafts/15-static-vs-dynamic/</link>
+      <pubDate>Thu, 18 Dec 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/drafts/15-static-vs-dynamic/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Zig Compiler Internals Part 15: Static vs Dynamic Languages
+    &lt;div id=&#34;zig-compiler-internals-part-15-static-vs-dynamic-languages&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#zig-compiler-internals-part-15-static-vs-dynamic-languages&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;&lt;em&gt;How does type checking at compile time vs runtime change everything about compiler design?&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Introduction
+    &lt;div id=&#34;introduction&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#introduction&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;One of the most fundamental decisions in programming language design is when to check types: at compile time or at runtime. This choice ripples through every aspect of compiler architecture, from parsing to code generation.&lt;/p&gt;</description>
+      
+    </item>
     
     <item>
       <title>Appendix: Zig Patterns and Methods Reference</title>

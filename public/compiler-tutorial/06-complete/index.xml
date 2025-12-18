@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Section 6: Complete on Yohai&#39;s Blog</title>
+    <link>http://localhost:1313/compiler-tutorial/06-complete/</link>
+    <description>Recent content in Section 6: Complete on Yohai&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© 2025 Yohai</copyright>
+    <atom:link href="http://localhost:1313/compiler-tutorial/06-complete/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>6.1: Integration</title>
+      <link>http://localhost:1313/compiler-tutorial/06-complete/01-integration/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/06-complete/01-integration/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 6.1: Wiring Everything Together
+    &lt;div id=&#34;lesson-61-wiring-everything-together&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-61-wiring-everything-together&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Connect all compiler stages into one pipeline.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Create a &lt;code&gt;compile(source) → output&lt;/code&gt; function that runs the full pipeline.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Pipeline Function
+    &lt;div id=&#34;the-pipeline-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-pipeline-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function compile(source_code) → string:
+    // Stage 1: Lexer
+    tokens = tokenize(source_code)
+
+    // Stage 2: Parser
+    ast = parse(tokens)
+
+    // Stage 3: ZIR Generation
+    zir = generateZIR(ast)
+
+    // Stage 4: Semantic Analysis
+    result = analyze(zir)
+    if result.errors.hasErrors():
+        printErrors(result.errors)
+        return null
+    air = result.air
+
+    // Stage 5: Code Generation
+    c_code = generateProgram(air)
+
+    return c_code
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Error Handling
+    &lt;div id=&#34;error-handling&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#error-handling&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function compile(source_code) → CompileResult:
+    errors = ErrorCollector()
+
+    // Lexer errors (invalid characters)
+    tokens = tokenize(source_code, errors)
+    if errors.hasErrors():
+        return CompileResult { success: false, errors: errors }
+
+    // Parser errors (syntax errors)
+    ast = parse(tokens, errors)
+    if errors.hasErrors():
+        return CompileResult { success: false, errors: errors }
+
+    // ZIR generation (shouldn&amp;#39;t fail if parsing succeeded)
+    zir = generateZIR(ast)
+
+    // Sema errors (type errors, undefined variables)
+    air = analyze(zir, errors)
+    if errors.hasErrors():
+        return CompileResult { success: false, errors: errors }
+
+    // Code generation (shouldn&amp;#39;t fail if sema succeeded)
+    c_code = generateProgram(air)
+
+    return CompileResult {
+        success: true,
+        output: c_code,
+        errors: errors
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Command-Line Interface
+    &lt;div id=&#34;command-line-interface&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#command-line-interface&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function main(args):
+    if length(args) &amp;lt; 2:
+        print(&amp;#34;Usage: compiler &amp;lt;source_file&amp;gt;&amp;#34;)
+        exit(1)
+
+    source_file = args[1]
+    source_code = readFile(source_file)
+
+    result = compile(source_code)
+
+    if not result.success:
+        for error in result.errors:
+            printError(error)
+        exit(1)
+
+    print(result.output)
+    exit(0)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Usage:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>6.2: Walkthrough</title>
+      <link>http://localhost:1313/compiler-tutorial/06-complete/02-walkthrough/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/06-complete/02-walkthrough/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 6.2: Complete Walkthrough
+    &lt;div id=&#34;lesson-62-complete-walkthrough&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-62-complete-walkthrough&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Trace a program through every stage of compilation.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Follow a program through Lexer → Parser → ZIR → Sema → Codegen.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;The Source Program
+    &lt;div id=&#34;the-source-program&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-source-program&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn add(a: i32, b: i32) i32 {
+    return a + b;
+}
+
+fn main() i32 {
+    const result: i32 = add(3, 5);
+    return result;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wait - we don&amp;rsquo;t have function calls! Let&amp;rsquo;s use a simpler program:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>6.3: Test Suite</title>
+      <link>http://localhost:1313/compiler-tutorial/06-complete/03-test-suite/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/06-complete/03-test-suite/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 6.3: Comprehensive Testing
+    &lt;div id=&#34;lesson-63-comprehensive-testing&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-63-comprehensive-testing&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Build a test suite for your compiler.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Create tests that verify each compiler stage and the full pipeline.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Test Categories
+    &lt;div id=&#34;test-categories&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-categories&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                        TEST CATEGORIES                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. UNIT TESTS       Test individual components                            │
+│   2. STAGE TESTS      Test each compiler stage                              │
+│   3. INTEGRATION      Test the full pipeline                                │
+│   4. ERROR TESTS      Verify error messages                                 │
+│   5. EXECUTION TESTS  Run compiled programs                                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Unit Tests: Lexer
+    &lt;div id=&#34;unit-tests-lexer&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#unit-tests-lexer&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Test: Single tokens
+assert tokenize(&amp;#34;+&amp;#34;)[0].type == PLUS
+assert tokenize(&amp;#34;42&amp;#34;)[0].type == NUMBER
+assert tokenize(&amp;#34;fn&amp;#34;)[0].type == KEYWORD_FN
+assert tokenize(&amp;#34;foo&amp;#34;)[0].type == IDENTIFIER
+
+// Test: Multiple tokens
+tokens = tokenize(&amp;#34;1 + 2&amp;#34;)
+assert tokens[0].type == NUMBER
+assert tokens[1].type == PLUS
+assert tokens[2].type == NUMBER
+
+// Test: Keywords vs identifiers
+assert tokenize(&amp;#34;fn&amp;#34;)[0].type == KEYWORD_FN
+assert tokenize(&amp;#34;function&amp;#34;)[0].type == IDENTIFIER
+
+// Test: Line tracking
+tokens = tokenize(&amp;#34;a\nb\nc&amp;#34;)
+assert tokens[0].line == 1
+assert tokens[1].line == 2
+assert tokens[2].line == 3
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Unit Tests: Parser
+    &lt;div id=&#34;unit-tests-parser&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#unit-tests-parser&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Test: Number literal
+ast = parse(tokenize(&amp;#34;42&amp;#34;))
+assert ast.type == NumberExpr
+assert ast.value == 42
+
+// Test: Binary expression
+ast = parse(tokenize(&amp;#34;1 + 2&amp;#34;))
+assert ast.type == BinaryExpr
+assert ast.operator == PLUS
+
+// Test: Precedence
+ast = parse(tokenize(&amp;#34;1 + 2 * 3&amp;#34;))
+// Should be: 1 + (2 * 3), not (1 + 2) * 3
+assert ast.type == BinaryExpr
+assert ast.operator == PLUS
+assert ast.right.type == BinaryExpr
+assert ast.right.operator == STAR
+
+// Test: Function
+ast = parse(tokenize(&amp;#34;fn foo() i32 { return 0; }&amp;#34;))
+assert ast.declarations[0].name == &amp;#34;foo&amp;#34;
+assert ast.declarations[0].return_type.name == &amp;#34;i32&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Unit Tests: ZIR
+    &lt;div id=&#34;unit-tests-zir&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#unit-tests-zir&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Test: Constant flattening
+zir = generateZIR(parse(tokenize(&amp;#34;fn f() i32 { return 42; }&amp;#34;)))
+fn = zir.functions[0]
+assert fn.instructions[0].tag == CONSTANT
+assert fn.instructions[0].data.value == 42
+
+// Test: Binary operation
+zir = generateZIR(parse(tokenize(&amp;#34;fn f() i32 { return 1 + 2; }&amp;#34;)))
+fn = zir.functions[0]
+assert fn.instructions[0].tag == CONSTANT  // 1
+assert fn.instructions[1].tag == CONSTANT  // 2
+assert fn.instructions[2].tag == ADD       // +
+
+// Test: Parameters
+zir = generateZIR(parse(tokenize(&amp;#34;fn f(x: i32) i32 { return x; }&amp;#34;)))
+fn = zir.functions[0]
+assert fn.instructions[0].tag == PARAM_REF
+assert fn.instructions[0].data.param_index == 0
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Unit Tests: Sema
+    &lt;div id=&#34;unit-tests-sema&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#unit-tests-sema&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Test: Type inference
+air = analyze(generateZIR(parse(tokenize(&amp;#34;fn f() i32 { return 42; }&amp;#34;))))
+fn = air.functions[0]
+assert fn.instructions[0].type == I32
+
+// Test: Undefined variable error
+result = analyze(generateZIR(parse(tokenize(&amp;#34;fn f() i32 { return x; }&amp;#34;))))
+assert result.errors.hasErrors()
+assert &amp;#34;undefined&amp;#34; in result.errors[0].message.lower()
+
+// Test: Type mismatch error
+// Would need i64 support to test properly
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Integration Tests
+    &lt;div id=&#34;integration-tests&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#integration-tests&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Test: Minimal program compiles
+result = compile(&amp;#34;fn main() i32 { return 0; }&amp;#34;)
+assert result.success
+assert &amp;#34;#include&amp;#34; in result.output
+assert &amp;#34;int32_t main()&amp;#34; in result.output
+
+// Test: Arithmetic
+result = compile(&amp;#34;fn main() i32 { return 1 + 2 * 3; }&amp;#34;)
+assert result.success
+
+// Test: Local variables
+result = compile(&amp;#34;&amp;#34;&amp;#34;
+fn main() i32 {
+    const x: i32 = 5;
+    return x;
+}
+&amp;#34;&amp;#34;&amp;#34;)
+assert result.success
+
+// Test: Multiple functions
+result = compile(&amp;#34;&amp;#34;&amp;#34;
+fn helper() i32 { return 1; }
+fn main() i32 { return 0; }
+&amp;#34;&amp;#34;&amp;#34;)
+assert result.success
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Error Tests
+    &lt;div id=&#34;error-tests&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#error-tests&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Test: Syntax error
+result = compile(&amp;#34;fn main() { }&amp;#34;)  // Missing return type
+assert not result.success
+assert &amp;#34;expected&amp;#34; in result.errors[0].message.lower()
+
+// Test: Undefined variable
+result = compile(&amp;#34;fn main() i32 { return undefined; }&amp;#34;)
+assert not result.success
+assert &amp;#34;undefined&amp;#34; in result.errors[0].message.lower()
+
+// Test: Duplicate declaration
+result = compile(&amp;#34;&amp;#34;&amp;#34;
+fn main() i32 {
+    const x: i32 = 1;
+    const x: i32 = 2;
+    return x;
+}
+&amp;#34;&amp;#34;&amp;#34;)
+assert not result.success
+assert &amp;#34;already&amp;#34; in result.errors[0].message.lower()
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Execution Tests
+    &lt;div id=&#34;execution-tests&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#execution-tests&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function testExecution(source, expected_exit_code):
+    result = compile(source)
+    assert result.success
+
+    writeFile(&amp;#34;/tmp/test.c&amp;#34;, result.output)
+    system(&amp;#34;cc /tmp/test.c -o /tmp/test&amp;#34;)
+    exit_code = system(&amp;#34;/tmp/test&amp;#34;)
+
+    assert exit_code == expected_exit_code
+
+// Test cases
+testExecution(&amp;#34;fn main() i32 { return 0; }&amp;#34;, 0)
+testExecution(&amp;#34;fn main() i32 { return 42; }&amp;#34;, 42)
+testExecution(&amp;#34;fn main() i32 { return 1 + 2; }&amp;#34;, 3)
+testExecution(&amp;#34;fn main() i32 { return 2 * 3; }&amp;#34;, 6)
+testExecution(&amp;#34;fn main() i32 { return 10 - 4; }&amp;#34;, 6)
+testExecution(&amp;#34;fn main() i32 { return 15 / 3; }&amp;#34;, 5)
+testExecution(&amp;#34;fn main() i32 { return 1 + 2 * 3; }&amp;#34;, 7)
+testExecution(&amp;#34;fn main() i32 { return (1 + 2) * 3; }&amp;#34;, 9)
+testExecution(&amp;#34;fn main() i32 { return -5; }&amp;#34;, 251)  // 256 - 5 due to unsigned exit code
+testExecution(&amp;#34;&amp;#34;&amp;#34;
+fn main() i32 {
+    const x: i32 = 5;
+    const y: i32 = 3;
+    return x + y;
+}
+&amp;#34;&amp;#34;&amp;#34;, 8)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Test Organization
+    &lt;div id=&#34;test-organization&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-organization&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;tests/
+├── lexer/
+│   ├── test_tokens.py
+│   ├── test_whitespace.py
+│   └── test_keywords.py
+├── parser/
+│   ├── test_expressions.py
+│   ├── test_statements.py
+│   └── test_functions.py
+├── zir/
+│   └── test_generation.py
+├── sema/
+│   ├── test_types.py
+│   └── test_errors.py
+├── codegen/
+│   └── test_output.py
+├── integration/
+│   └── test_full_pipeline.py
+└── execution/
+    └── test_programs.py
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Test Runner
+    &lt;div id=&#34;test-runner&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-runner&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function runAllTests():
+    passed = 0
+    failed = 0
+
+    for test in getAllTests():
+        try:
+            test.run()
+            passed++
+            print(&amp;#34;✓ &amp;#34; + test.name)
+        catch error:
+            failed++
+            print(&amp;#34;✗ &amp;#34; + test.name + &amp;#34;: &amp;#34; + error)
+
+    print(&amp;#34;\nResults: &amp;#34; + passed + &amp;#34; passed, &amp;#34; + failed + &amp;#34; failed&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What&amp;rsquo;s Next
+    &lt;div id=&#34;whats-next&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#whats-next&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s explore how to extend your compiler.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>6.4: Extensions</title>
+      <link>http://localhost:1313/compiler-tutorial/06-complete/04-extensions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/06-complete/04-extensions/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 6.4: Where to Go From Here
+    &lt;div id=&#34;lesson-64-where-to-go-from-here&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-64-where-to-go-from-here&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Ideas for extending your mini compiler.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Explore ways to add features and deepen your compiler knowledge.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Easy Extensions
+    &lt;div id=&#34;easy-extensions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#easy-extensions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;1. More Operators
+    &lt;div id=&#34;1-more-operators&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#1-more-operators&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;p&gt;Add comparison operators:&lt;/p&gt;</description>
+      
+    </item>
+    
+  </channel>
+</rss>
