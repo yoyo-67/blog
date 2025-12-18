@@ -1,8 +1,8 @@
 const std = @import("std");
-const ast = @import("./ast.zig");
+const lexer = @import("./lexer.zig");
 
 pub fn main() !void {
-    _ = ast;
+    _ = lexer;
 }
 
 test {
