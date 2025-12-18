@@ -16,9 +16,16 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 
-    const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
+    const runCmd = b.addRunArtifact(exe);
+    runCmd.step.dependOn(b.getInstallStep());
 
     const runStep = b.step("run", "run the compiler");
-    runStep.dependOn(&run_cmd.step);
+    runStep.dependOn(&runCmd.step);
+
+    const unitTest = b.addTest(.{
+        .root_module = root_module,
+    });
+    const runUnitTest = b.addRunArtifact(unitTest);
+    const runTestStep = b.step("test", "test the compiler");
+    runTestStep.dependOn(&runUnitTest.step);
 }
