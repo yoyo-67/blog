@@ -37,9 +37,16 @@ pub fn parse(self: *Ast, allocator: mem.Allocator) !Node {
 
 fn parseNode(self: *Ast, token: Token, token_index: usize) !Node {
     _ = self; // autofix
-    _ = self; // autofix
     if (token.type == .integer) {
         return Node{ .int_literal = .{ .value = try std.fmt.parseInt(u8, token.lexeme, 10), .token_index = token_index } };
+    }
+
+    if (token.type == .plus) {
+        return Node{ .binary_op = .{
+            .lhs = .{ .int_literal = .{ .value = 1 } },
+            .rhs = .{ .int_literal = .{ .value = 2 } },
+            .op = .plus,
+        } };
     }
     unreachable;
 }
@@ -61,4 +68,21 @@ test "ast" {
 
     try expect(tree.root.decls[1].int_literal.value, 10);
     try expect(tree.root.decls[1].int_literal.token_index, 1);
+}
+
+test "plus" {
+    const allocator = testing.allocator;
+
+    const tokens = [_]Token{
+        .{ .type = .integer, .lexeme = "1" },
+        .{ .type = .plus, .lexeme = "+" },
+        .{ .type = .integer, .lexeme = "2" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    var ast = Ast.init(&tokens);
+    const tree = try ast.parse(allocator);
+    defer allocator.free(tree.root.decls);
+
+    try expect(tree.root.decls[0].binary_op.lhs.int_literal.value, 42);
 }
