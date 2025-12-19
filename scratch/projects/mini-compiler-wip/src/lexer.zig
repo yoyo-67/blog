@@ -56,7 +56,7 @@ fn checkIsDigit(c: u8) bool {
 }
 
 fn checkIsAlpha(c: u8) bool {
-    return c >= 'a' and c <= 'z' or c >= 'A' and c <= 'Z';
+    return c >= 'a' and c <= 'z' or c >= 'A' and c <= 'Z' or c == '_';
 }
 
 fn checkIsAlphaNumeric(c: u8) bool {
@@ -130,6 +130,10 @@ fn nextToken(self: *Lexer) Token {
         return self.scanQuotedString();
     }
 
+    if (checkIsAlpha(c)) {
+        return self.scanIdentifier();
+    }
+
     self.advance();
 
     switch (c) {
@@ -169,6 +173,16 @@ fn scanQuotedString(self: *Lexer) Token {
     self.expectChar(openingQuote);
     self.advance();
     const token = self.makeToken(startPos, .string);
+    return token;
+}
+fn scanIdentifier(self: *Lexer) Token {
+    const startPos = self.pos;
+
+    while (checkIsAlphaNumeric(self.peek())) {
+        self.advance();
+    }
+
+    const token = self.makeToken(startPos, .identifier);
     return token;
 }
 
@@ -373,6 +387,29 @@ test "mismatched quotes returns invalid" {
 
     const expected = [_]Token{
         .{ .type = .invalid, .lexeme = "\"hello'" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "identifier" {
+    const allocator = std.testing.allocator;
+    const source = "_foo12 bar+ baz x2";
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .identifier, .lexeme = "_foo12" },
+        .{ .type = .identifier, .lexeme = "bar" },
+        .{ .type = .plus, .lexeme = "+" },
+        .{ .type = .identifier, .lexeme = "baz" },
+        .{ .type = .identifier, .lexeme = "x2" },
         .{ .type = .eof, .lexeme = "" },
     };
 

@@ -17,6 +17,7 @@ pub const Type = enum {
     string,
     single_quote,
     double_quote,
+    identifier,
 
     pub fn toChar(self: Type) ?u8 {
         return switch (self) {
