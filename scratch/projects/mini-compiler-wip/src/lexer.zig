@@ -63,9 +63,13 @@ fn checkIsAlphaNumeric(c: u8) bool {
     return checkIsAlpha(c) or checkIsDigit(c);
 }
 
+fn getText(self: *Lexer, startPos: usize) []const u8 {
+    return self.source[startPos..self.pos];
+}
+
 fn makeToken(self: *Lexer, startPos: usize, tokenType: Token.Type) Token {
     return .{
-        .lexeme = self.source[startPos..self.pos],
+        .lexeme = self.getText(startPos),
         .type = tokenType,
     };
 }
@@ -180,6 +184,10 @@ fn scanIdentifier(self: *Lexer) Token {
 
     while (checkIsAlphaNumeric(self.peek())) {
         self.advance();
+    }
+
+    if (Token.keywords.get(self.getText(startPos))) |kw| {
+        return self.makeToken(startPos, kw);
     }
 
     const token = self.makeToken(startPos, .identifier);
@@ -410,6 +418,30 @@ test "identifier" {
         .{ .type = .plus, .lexeme = "+" },
         .{ .type = .identifier, .lexeme = "baz" },
         .{ .type = .identifier, .lexeme = "x2" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "keyworks" {
+    const allocator = std.testing.allocator;
+    const source = "fn hello const return i32 bool";
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .kw_fn, .lexeme = "fn" },
+        .{ .type = .identifier, .lexeme = "hello" },
+        .{ .type = .kw_const, .lexeme = "const" },
+        .{ .type = .kw_return, .lexeme = "return" },
+        .{ .type = .kw_i32, .lexeme = "i32" },
+        .{ .type = .kw_bool, .lexeme = "bool" },
         .{ .type = .eof, .lexeme = "" },
     };
 
