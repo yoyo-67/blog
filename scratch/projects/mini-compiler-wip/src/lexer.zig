@@ -51,15 +51,23 @@ fn advance(self: *Lexer) void {
     self.pos += 1;
 }
 
-fn isDigit(c: u8) bool {
+fn checkIsDigit(c: u8) bool {
     return c >= '0' and c <= '9';
+}
+
+fn makeToken(self: *Lexer, startPos: usize, tokenType: Token.Type) Token {
+    return .{
+        .lexeme = self.source[startPos..self.pos],
+        .type = tokenType,
+    };
 }
 
 // Private helpers - higher level
 
 fn skipWhiteSpace(self: *Lexer) void {
     while (true) {
-        if (self.peek() == ' ') {
+        const c = self.peek();
+        if (c == ' ' or c == '\n' or c == '\t') {
             self.advance();
         } else {
             break;
@@ -79,28 +87,30 @@ fn nextToken(self: *Lexer) Token {
     }
     const c = self.peek();
 
-    if (isDigit(c)) {
+    if (checkIsDigit(c)) {
         return self.scanNumber();
     }
 
     self.advance();
 
     switch (c) {
-        '+' => return .{ .lexeme = self.source[startPos..self.pos], .type = .plus },
-        else => return .{ .lexeme = "", .type = .invalid },
+        '+' => return self.makeToken(startPos, .plus),
+        '-' => return self.makeToken(startPos, .minus),
+        '*' => return self.makeToken(startPos, .star),
+        '(' => return self.makeToken(startPos, .lpren),
+        ')' => return self.makeToken(startPos, .rpren),
+        ':' => return self.makeToken(startPos, .colon),
+        ';' => return self.makeToken(startPos, .semicolon),
+        else => return self.makeToken(startPos, .invalid),
     }
 }
 
 fn scanNumber(self: *Lexer) Token {
     const startPos = self.pos;
-    while (isDigit(self.peek())) {
+    while (checkIsDigit(self.peek())) {
         self.advance();
     }
-
-    return .{
-        .lexeme = self.source[startPos..self.pos],
-        .type = .integer,
-    };
+    return self.makeToken(startPos, .integer);
 }
 
 // Tests
@@ -138,4 +148,72 @@ test "tokens" {
     const token3 = tokens[2];
     try expect(token3.type, .integer);
     try expectString(token3.lexeme, "312");
+}
+
+test "+-*" {
+    const allocator = std.testing.allocator;
+    const source =
+        \\ + - * ( )   
+        \\ $
+    ;
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .plus, .lexeme = "+" },
+        .{ .type = .minus, .lexeme = "-" },
+        .{ .type = .star, .lexeme = "*" },
+        .{ .type = .lpren, .lexeme = "(" },
+        .{ .type = .rpren, .lexeme = ")" },
+        .{ .type = .invalid, .lexeme = "$" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "empty" {
+    const allocator = std.testing.allocator;
+    const source =
+        \\
+    ;
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "special" {
+    const allocator = std.testing.allocator;
+    const source = "() \n \t $";
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .lpren, .lexeme = "(" },
+        .{ .type = .rpren, .lexeme = ")" },
+        .{ .type = .invalid, .lexeme = "$" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
 }

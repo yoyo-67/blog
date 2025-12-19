@@ -8,4 +8,10 @@ pub const Type = enum {
     plus,
     eof,
     invalid,
+    minus,
+    star,
+    lpren,
+    rpren,
+    colon,
+    semicolon,
 };

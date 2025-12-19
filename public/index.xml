@@ -353,6 +353,229 @@
     </item>
     
     <item>
+      <title>5b.1: Introduction to LLVM</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen-llvm/01-intro-llvm/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen-llvm/01-intro-llvm/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5b.1: Introduction to LLVM
+    &lt;div id=&#34;lesson-5b1-introduction-to-llvm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-5b1-introduction-to-llvm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;What is LLVM and why use it as a compiler backend?&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Understand LLVM&amp;rsquo;s role in compilation and why it&amp;rsquo;s a powerful choice for code generation.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;What is LLVM?
+    &lt;div id=&#34;what-is-llvm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-is-llvm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                           LLVM OVERVIEW                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   LLVM = Low Level Virtual Machine (historical name)                         │
+│                                                                              │
+│   Today: A collection of modular compiler technologies                       │
+│                                                                              │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                         LLVM PROJECT                                │   │
+│   │                                                                     │   │
+│   │   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐              │   │
+│   │   │  LLVM   │  │  Clang  │  │  LLD    │  │  LLDB   │              │   │
+│   │   │  Core   │  │ (C/C++) │  │(linker) │  │(debugger│              │   │
+│   │   └─────────┘  └─────────┘  └─────────┘  └─────────┘              │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   We&amp;#39;ll use LLVM Core: the IR, optimizer, and code generators               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;LLVM in the Compilation Pipeline
+    &lt;div id=&#34;llvm-in-the-compilation-pipeline&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#llvm-in-the-compilation-pipeline&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                      LLVM COMPILATION PIPELINE                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Your Language                                                              │
+│       │                                                                      │
+│       ▼                                                                      │
+│   ┌─────────────┐                                                           │
+│   │  Frontend   │  Lexer, Parser, Sema (YOU BUILD THIS)                     │
+│   └──────┬──────┘                                                           │
+│          │                                                                   │
+│          ▼                                                                   │
+│   ┌─────────────┐                                                           │
+│   │  LLVM IR    │  Portable, typed intermediate representation              │
+│   └──────┬──────┘                                                           │
+│          │                                                                   │
+│          ▼                                                                   │
+│   ┌─────────────┐                                                           │
+│   │  Optimizer  │  100+ optimization passes (LLVM PROVIDES)                 │
+│   └──────┬──────┘                                                           │
+│          │                                                                   │
+│          ▼                                                                   │
+│   ┌─────────────┐                                                           │
+│   │  Backend    │  x86, ARM, RISC-V, WASM... (LLVM PROVIDES)               │
+│   └──────┬──────┘                                                           │
+│          │                                                                   │
+│          ▼                                                                   │
+│   Machine Code                                                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Why Choose LLVM?
+    &lt;div id=&#34;why-choose-llvm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#why-choose-llvm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+
+&lt;h3 class=&#34;relative group&#34;&gt;Advantages
+    &lt;div id=&#34;advantages&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#advantages&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LLVM ADVANTAGES                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. OPTIMIZATION                                                            │
+│      • Dead code elimination                                                 │
+│      • Constant folding/propagation                                          │
+│      • Loop optimization                                                     │
+│      • Inlining                                                              │
+│      • Vectorization (SIMD)                                                  │
+│      • 100+ more passes                                                      │
+│                                                                              │
+│   2. MULTI-TARGET                                                            │
+│      • x86-64, x86                                                           │
+│      • ARM, AArch64                                                          │
+│      • RISC-V                                                                │
+│      • WebAssembly                                                           │
+│      • Many more                                                             │
+│                                                                              │
+│   3. DEBUGGING                                                               │
+│      • DWARF debug info                                                      │
+│      • Source-level debugging                                                │
+│      • Works with GDB, LLDB                                                  │
+│                                                                              │
+│   4. ECOSYSTEM                                                               │
+│      • Used by Clang, Rust, Swift, Julia                                    │
+│      • Well-documented                                                       │
+│      • Active development                                                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Disadvantages
+    &lt;div id=&#34;disadvantages&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#disadvantages&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LLVM DISADVANTAGES                                   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   1. SIZE                                                                    │
+│      • LLVM libraries are ~100-500MB                                         │
+│      • Significant compile-time dependency                                   │
+│                                                                              │
+│   2. COMPILE TIME                                                            │
+│      • Optimization passes take time                                         │
+│      • Debug builds faster, release builds slower                            │
+│                                                                              │
+│   3. COMPLEXITY                                                              │
+│      • Large API to learn                                                    │
+│      • IR has many features you may not need                                │
+│                                                                              │
+│   4. ABI STABILITY                                                           │
+│      • C++ API changes between versions                                      │
+│      • Need to match LLVM version carefully                                  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;LLVM vs C Backend Comparison
+    &lt;div id=&#34;llvm-vs-c-backend-comparison&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#llvm-vs-c-backend-comparison&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                      C BACKEND vs LLVM BACKEND                               │
+├─────────────────────────┬────────────────────────────────────────────────────┤
+│       C Backend         │           LLVM Backend                             │
+├─────────────────────────┼────────────────────────────────────────────────────┤
+│ Output: C source code   │ Output: LLVM IR                                    │
+│ Simple text generation  │ Structured IR generation                           │
+│ Uses gcc/clang to compile│ Uses LLVM tools (llc, opt)                        │
+│ Human-readable output   │ Human-readable IR (text format)                    │
+│ No dependencies         │ Requires LLVM installation                         │
+│ Optimization via cc -O3 │ Direct optimization control                        │
+│ Limited debug info      │ Full debug info support                            │
+│ Simple to implement     │ More complex, more powerful                        │
+└─────────────────────────┴────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Languages Using LLVM
+    &lt;div id=&#34;languages-using-llvm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#languages-using-llvm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Many production languages use LLVM:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
       <title>6.1: Integration</title>
       <link>http://localhost:1313/compiler-tutorial/06-complete/01-integration/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -947,6 +1170,185 @@ Text:
     </item>
     
     <item>
+      <title>5b.2: LLVM IR Basics</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen-llvm/02-llvm-ir-basics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen-llvm/02-llvm-ir-basics/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5b.2: LLVM IR Basics
+    &lt;div id=&#34;lesson-5b2-llvm-ir-basics&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-5b2-llvm-ir-basics&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Understanding LLVM&amp;rsquo;s intermediate representation.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Learn the structure and syntax of LLVM IR.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;LLVM IR Structure
+    &lt;div id=&#34;llvm-ir-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#llvm-ir-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LLVM IR HIERARCHY                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   MODULE                    (one .ll file)                                   │
+│   │                                                                          │
+│   ├── Global Variables      @global_var = global i32 0                      │
+│   │                                                                          │
+│   ├── Function Declarations declare i32 @printf(i8*, ...)                   │
+│   │                                                                          │
+│   └── Function Definitions                                                   │
+│       │                                                                      │
+│       └── FUNCTION          define i32 @main() { ... }                      │
+│           │                                                                  │
+│           └── BASIC BLOCKS  Named sequences of instructions                 │
+│               │                                                              │
+│               └── INSTRUCTIONS  %1 = add i32 %a, %b                         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;A Complete Example
+    &lt;div id=&#34;a-complete-example&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#a-complete-example&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-llvm&#34; data-lang=&#34;llvm&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;; Module-level comments start with semicolon
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;; Function definition
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;define&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;vg&#34;&gt;@add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;%a&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;%b&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nl&#34;&gt;entry:&lt;/span&gt;                              &lt;span class=&#34;c&#34;&gt;; Basic block label
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nv&#34;&gt;%result&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;add&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;%a&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;%b&lt;/span&gt;        &lt;span class=&#34;c&#34;&gt;; Instruction
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;ret&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;%result&lt;/span&gt;                 &lt;span class=&#34;c&#34;&gt;; Return instruction
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;define&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;vg&#34;&gt;@main&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nl&#34;&gt;entry:&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nv&#34;&gt;%sum&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;call&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;vg&#34;&gt;@add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;k&#34;&gt;ret&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;i32&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;%sum&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Naming Conventions
+    &lt;div id=&#34;naming-conventions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#naming-conventions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LLVM NAMING                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   PREFIX    MEANING              EXAMPLE                                     │
+│   ──────    ───────              ───────                                     │
+│   @         Global (functions,   @main, @printf, @global_var                │
+│             global variables)                                                │
+│                                                                              │
+│   %         Local (parameters,   %a, %result, %0, %1                        │
+│             local values)                                                    │
+│                                                                              │
+│   Numbers can be used: %0, %1, %2 (unnamed temporaries)                     │
+│   Names can be used: %result, %sum (named values)                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Basic Types
+    &lt;div id=&#34;basic-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#basic-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LLVM TYPES                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   INTEGERS                                                                   │
+│   i1       1-bit integer (boolean)                                          │
+│   i8       8-bit integer                                                    │
+│   i16      16-bit integer                                                   │
+│   i32      32-bit integer                                                   │
+│   i64      64-bit integer                                                   │
+│   i128     128-bit integer                                                  │
+│                                                                              │
+│   FLOATING POINT                                                             │
+│   float    32-bit float                                                     │
+│   double   64-bit float                                                     │
+│                                                                              │
+│   OTHER                                                                      │
+│   void     No value                                                         │
+│   i8*      Pointer to i8 (like char*)                                       │
+│   [10 x i32]  Array of 10 i32s                                              │
+│   {i32, i64}  Struct with i32 and i64                                       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;SSA Form
+    &lt;div id=&#34;ssa-form&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#ssa-form&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;LLVM IR uses Static Single Assignment (SSA) form:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
       <title>6.2: Walkthrough</title>
       <link>http://localhost:1313/compiler-tutorial/06-complete/02-walkthrough/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -1491,6 +1893,100 @@ function isDeclared(name) → boolean:
     
 &lt;/h2&gt;
 &lt;p&gt;Each AIR instruction result becomes a temporary variable:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5b.3: Type Mapping</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen-llvm/03-type-mapping/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen-llvm/03-type-mapping/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5b.3: Type Mapping
+    &lt;div id=&#34;lesson-5b3-type-mapping&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-5b3-type-mapping&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Map our compiler&amp;rsquo;s types to LLVM IR types.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Convert AIR types to their LLVM IR equivalents.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Mapping Table
+    &lt;div id=&#34;type-mapping-table&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-mapping-table&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         TYPE MAPPING                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Our Type     LLVM Type     Notes                                          │
+│   ────────     ─────────     ─────                                          │
+│   i8           i8            8-bit signed integer                           │
+│   i16          i16           16-bit signed integer                          │
+│   i32          i32           32-bit signed integer                          │
+│   i64          i64           64-bit signed integer                          │
+│   u8           i8            LLVM integers are signless*                    │
+│   u16          i16           Sign matters in operations, not types          │
+│   u32          i32                                                          │
+│   u64          i64                                                          │
+│   bool         i1            1-bit integer                                  │
+│   void         void          No value                                       │
+│                                                                              │
+│   * LLVM uses signed/unsigned operations, not types                         │
+│     sdiv = signed division, udiv = unsigned division                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Type Conversion Function
+    &lt;div id=&#34;type-conversion-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-conversion-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function llvmType(airType) → string:
+    switch airType:
+        case I8, U8:   return &amp;#34;i8&amp;#34;
+        case I16, U16: return &amp;#34;i16&amp;#34;
+        case I32, U32: return &amp;#34;i32&amp;#34;
+        case I64, U64: return &amp;#34;i64&amp;#34;
+        case Bool:     return &amp;#34;i1&amp;#34;
+        case Void:     return &amp;#34;void&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Signedness in LLVM
+    &lt;div id=&#34;signedness-in-llvm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#signedness-in-llvm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;LLVM types don&amp;rsquo;t carry signedness. Instead, operations do:&lt;/p&gt;</description>
       
     </item>
     
@@ -2476,6 +2972,232 @@ Full output:
     </item>
     
     <item>
+      <title>5b.4: Generating Functions</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen-llvm/04-gen-functions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen-llvm/04-gen-functions/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5b.4: Generating Functions
+    &lt;div id=&#34;lesson-5b4-generating-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-5b4-generating-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Generate LLVM IR function definitions from AIR.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Convert AIR function structures to LLVM IR function syntax.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;LLVM Function Syntax
+    &lt;div id=&#34;llvm-function-syntax&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#llvm-function-syntax&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                    LLVM FUNCTION SYNTAX                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   define &amp;lt;return_type&amp;gt; @&amp;lt;name&amp;gt;(&amp;lt;param_list&amp;gt;) {                              │
+│   &amp;lt;label&amp;gt;:                                                                   │
+│       &amp;lt;instructions&amp;gt;                                                         │
+│       &amp;lt;terminator&amp;gt;                                                           │
+│   }                                                                          │
+│                                                                              │
+│   Example:                                                                   │
+│   ────────                                                                   │
+│   define i32 @add(i32 %a, i32 %b) {                                         │
+│   entry:                                                                     │
+│       %result = add i32 %a, %b                                              │
+│       ret i32 %result                                                        │
+│   }                                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;AIR to LLVM Function Mapping
+    &lt;div id=&#34;air-to-llvm-function-mapping&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#air-to-llvm-function-mapping&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                    FUNCTION STRUCTURE MAPPING                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AIR Function:                    LLVM IR:                                  │
+│   ─────────────                    ────────                                  │
+│                                                                              │
+│   function &amp;#34;multiply&amp;#34;:             define i32 @multiply(i32 %p0, i32 %p1) { │
+│     params: [I32, I32]             entry:                                   │
+│     return_type: I32                   ; instructions here                  │
+│     body:                              ret i32 %result                      │
+│       %0 = param(0)                }                                        │
+│       %1 = param(1)                                                         │
+│       %2 = mul_i32(%0, %1)                                                  │
+│       %3 = ret(%2)                                                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Code Generation Steps
+    &lt;div id=&#34;code-generation-steps&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#code-generation-steps&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function generateFunction(airFunc) → string:
+    output = &amp;#34;&amp;#34;
+
+    // 1. Function signature
+    output += &amp;#34;define &amp;#34;
+    output += llvmType(airFunc.return_type)
+    output += &amp;#34; @&amp;#34; + airFunc.name + &amp;#34;(&amp;#34;
+
+    // 2. Parameters
+    for i, paramType in airFunc.params:
+        if i &amp;gt; 0: output += &amp;#34;, &amp;#34;
+        output += llvmType(paramType) + &amp;#34; %p&amp;#34; + i
+    output += &amp;#34;) {\n&amp;#34;
+
+    // 3. Entry block label
+    output += &amp;#34;entry:\n&amp;#34;
+
+    // 4. Instructions
+    for inst in airFunc.body:
+        output += &amp;#34;    &amp;#34; + generateInstruction(inst) + &amp;#34;\n&amp;#34;
+
+    // 5. Close function
+    output += &amp;#34;}\n&amp;#34;
+
+    return output
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Parameter Handling
+    &lt;div id=&#34;parameter-handling&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#parameter-handling&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                    PARAMETER NAMING                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AIR uses param indices:          LLVM uses named parameters:               │
+│   ───────────────────────          ─────────────────────────                 │
+│   %0 = param(0)                    Parameters named %p0, %p1, etc.          │
+│   %1 = param(1)                    Or use original names if available        │
+│                                                                              │
+│   When we see param(N) in AIR, emit %pN in LLVM:                            │
+│                                                                              │
+│   AIR:  %5 = add_i32(param(0), param(1))                                    │
+│   LLVM: %5 = add i32 %p0, %p1                                               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Complete Example
+    &lt;div id=&#34;complete-example&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-example&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;AIR:
+    function &amp;#34;square&amp;#34;:
+        params: [I32]
+        return_type: I32
+        body:
+            %0 = param(0)
+            %1 = mul_i32(%0, %0)
+            %2 = ret(%1)
+
+Generated LLVM IR:
+    define i32 @square(i32 %p0) {
+    entry:
+        %1 = mul i32 %p0, %p0
+        ret i32 %1
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Void Functions
+    &lt;div id=&#34;void-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#void-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;AIR:
+    function &amp;#34;doNothing&amp;#34;:
+        params: []
+        return_type: Void
+        body:
+            %0 = ret_void()
+
+Generated LLVM IR:
+    define void @doNothing() {
+    entry:
+        ret void
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Multiple Functions
+    &lt;div id=&#34;multiple-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#multiple-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;AIR:
+    function &amp;#34;helper&amp;#34;: ...
+    function &amp;#34;main&amp;#34;: ...
+
+LLVM IR:
+    define i32 @helper(i32 %p0) {
+    entry:
+        ; helper body
+    }
+
+    define i32 @main() {
+    entry:
+        ; main body
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Functions are emitted in order. LLVM doesn&amp;rsquo;t require forward declarations for functions defined in the same module.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
       <title>6.4: Extensions</title>
       <link>http://localhost:1313/compiler-tutorial/06-complete/04-extensions/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -3156,6 +3878,76 @@ C code: local_0 = t3;
     
 &lt;/h2&gt;
 &lt;p&gt;At the start of the function, declare all locals:&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5b.5: Generating Instructions</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen-llvm/05-gen-instructions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen-llvm/05-gen-instructions/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5b.5: Generating Instructions
+    &lt;div id=&#34;lesson-5b5-generating-instructions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-5b5-generating-instructions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Convert AIR instructions to LLVM IR instructions.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Generate LLVM IR for constants, arithmetic, and returns.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Instruction Mapping
+    &lt;div id=&#34;instruction-mapping&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#instruction-mapping&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                    AIR TO LLVM INSTRUCTION MAPPING                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   AIR Instruction        LLVM IR                                            │
+│   ───────────────        ───────                                            │
+│   const_i32(42)          Inline as literal: i32 42                          │
+│   add_i32(%a, %b)        %result = add i32 %a, %b                           │
+│   sub_i32(%a, %b)        %result = sub i32 %a, %b                           │
+│   mul_i32(%a, %b)        %result = mul i32 %a, %b                           │
+│   div_i32(%a, %b)        %result = sdiv i32 %a, %b                          │
+│   neg_i32(%a)            %result = sub i32 0, %a                            │
+│   ret(%val)              ret i32 %val                                       │
+│   ret_void()             ret void                                           │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Constants
+    &lt;div id=&#34;constants&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#constants&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;LLVM constants are inlined, not separate instructions:&lt;/p&gt;</description>
       
     </item>
     
@@ -4494,6 +5286,73 @@ Output:
     
 &lt;/h2&gt;
 &lt;p&gt;Let&amp;rsquo;s handle return statements.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>5b.6: Building and Running</title>
+      <link>http://localhost:1313/compiler-tutorial/05-codegen-llvm/06-building-running/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/compiler-tutorial/05-codegen-llvm/06-building-running/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 5b.6: Building and Running
+    &lt;div id=&#34;lesson-5b6-building-and-running&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-5b6-building-and-running&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;Execute your generated LLVM IR.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Goal
+    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;Learn to interpret and compile LLVM IR to native executables.&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;LLVM Tools
+    &lt;div id=&#34;llvm-tools&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#llvm-tools&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LLVM TOOLCHAIN                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Tool     Purpose                                                           │
+│   ────     ───────                                                           │
+│   lli      LLVM interpreter - runs IR directly                              │
+│   llc      LLVM compiler - IR to assembly                                   │
+│   opt      LLVM optimizer - runs optimization passes                        │
+│   llvm-as  Assembler - text IR (.ll) to binary IR (.bc)                    │
+│   llvm-dis Disassembler - binary IR (.bc) to text IR (.ll)                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Method 1: Direct Interpretation with lli
+    &lt;div id=&#34;method-1-direct-interpretation-with-lli&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#method-1-direct-interpretation-with-lli&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;The simplest way to run LLVM IR:&lt;/p&gt;</description>
       
     </item>
     
@@ -7750,6 +8609,37 @@ assert ast.declarations[0].body.statements[0].value.value == 42
     
 &lt;/h2&gt;
 &lt;p&gt;One of the most fundamental decisions in programming language design is when to check types: at compile time or at runtime. This choice ripples through every aspect of compiler architecture, from parsing to code generation.&lt;/p&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>Zig Compiler Internals Part 16: The Language Server Protocol</title>
+      <link>http://localhost:1313/drafts/16-lsp/</link>
+      <pubDate>Thu, 18 Dec 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/drafts/16-lsp/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Zig Compiler Internals Part 16: The Language Server Protocol
+    &lt;div id=&#34;zig-compiler-internals-part-16-the-language-server-protocol&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#zig-compiler-internals-part-16-the-language-server-protocol&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h1&gt;
+&lt;p&gt;&lt;em&gt;How editors and compilers communicate to provide intelligent code assistance.&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2 class=&#34;relative group&#34;&gt;Introduction
+    &lt;div id=&#34;introduction&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#introduction&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;p&gt;When you type code in VS Code, Neovim, or any modern editor, you get autocomplete suggestions, error squiggles, hover documentation, and &amp;ldquo;go to definition&amp;rdquo; - all in real-time. How does this work?&lt;/p&gt;</description>
       
     </item>
     
