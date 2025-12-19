@@ -3410,24 +3410,12 @@ Tokens: [STRING(&amp;#34;hello world&amp;#34;)]
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;&amp;#34;
 Tokens: [STRING(&amp;#34;&amp;#34;)]
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 4: String in expression
-    &lt;div id=&#34;test-4-string-in-expression&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Unterminated string
+    &lt;div id=&#34;test-4-unterminated-string&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-string-in-expression&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  x = &amp;#34;value&amp;#34;
-Tokens: [IDENTIFIER, EQUAL, STRING(&amp;#34;value&amp;#34;)]
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Unterminated string
-    &lt;div id=&#34;test-5-unterminated-string&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-unterminated-string&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-unterminated-string&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h3&gt;

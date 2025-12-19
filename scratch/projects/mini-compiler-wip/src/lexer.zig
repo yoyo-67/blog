@@ -55,11 +55,46 @@ fn checkIsDigit(c: u8) bool {
     return c >= '0' and c <= '9';
 }
 
+fn checkIsAlpha(c: u8) bool {
+    return c >= 'a' and c <= 'z' or c >= 'A' and c <= 'Z';
+}
+
+fn checkIsAlphaNumeric(c: u8) bool {
+    return checkIsAlpha(c) or checkIsDigit(c);
+}
+
 fn makeToken(self: *Lexer, startPos: usize, tokenType: Token.Type) Token {
     return .{
         .lexeme = self.source[startPos..self.pos],
         .type = tokenType,
     };
+}
+
+fn expectChar(self: *Lexer, expected: u8) !void {
+    if (self.peek() != expected) return error.UnexpectedChar;
+}
+
+fn checkTokenType(self: *Lexer, tokenType: Token.Type) bool {
+    const expected = tokenType.toChar() orelse return false;
+    return self.peek() == expected;
+}
+
+fn expectTokenType(self: *Lexer, tokenType: Token.Type) void {
+    if (!self.checkTokenType(tokenType)) unreachable;
+}
+
+fn checkOneOf(self: *Lexer, comptime types: []const Token.Type) bool {
+    inline for (types) |t| {
+        if (self.checkTokenType(t)) return true;
+    }
+    return false;
+}
+
+fn expectOneOf(self: *Lexer, comptime types: []const Token.Type) void {
+    inline for (types) |t| {
+        if (self.checkTokenType(t)) return;
+    }
+    unreachable;
 }
 
 // Private helpers - higher level
@@ -91,6 +126,10 @@ fn nextToken(self: *Lexer) Token {
         return self.scanNumber();
     }
 
+    if (self.checkOneOf(&.{ .double_quote, .single_quote })) {
+        return self.scanQuotedString();
+    }
+
     self.advance();
 
     switch (c) {
@@ -111,6 +150,27 @@ fn scanNumber(self: *Lexer) Token {
         self.advance();
     }
     return self.makeToken(startPos, .integer);
+}
+
+fn scanQuotedString(self: *Lexer) Token {
+    self.expectOneOf(&.{ .single_quote, .double_quote });
+    const quoteType: Token.Type = if (self.checkTokenType(.single_quote)) .single_quote else .double_quote;
+    self.advance();
+
+    const startPos = self.pos;
+
+    while (!self.checkTokenType(quoteType) and !self.checkIsAtEnd()) {
+        self.advance();
+    }
+
+    if (self.checkIsAtEnd()) {
+        return self.makeToken(startPos, .invalid);
+    }
+
+    self.expectTokenType(quoteType);
+    const token = self.makeToken(startPos, .string);
+    self.advance();
+    return token;
 }
 
 // Tests
@@ -209,6 +269,111 @@ test "special" {
         .{ .type = .lpren, .lexeme = "(" },
         .{ .type = .rpren, .lexeme = ")" },
         .{ .type = .invalid, .lexeme = "$" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "digits" {
+    const allocator = std.testing.allocator;
+    const source = "45 3+ 0";
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .integer, .lexeme = "45" },
+        .{ .type = .integer, .lexeme = "3" },
+        .{ .type = .plus, .lexeme = "+" },
+        .{ .type = .integer, .lexeme = "0" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "strings" {
+    const allocator = std.testing.allocator;
+    const source =
+        \\ "hello" "world"
+        \\ ""
+        \\ "hello world"
+    ;
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .string, .lexeme = "hello" },
+        .{ .type = .string, .lexeme = "world" },
+        .{ .type = .string, .lexeme = "" },
+        .{ .type = .string, .lexeme = "hello world" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "unclosed double quote string returns invalid" {
+    const allocator = std.testing.allocator;
+    const source = "\"hello";
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .invalid, .lexeme = "hello" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "unclosed single quote string returns invalid" {
+    const allocator = std.testing.allocator;
+    const source = "'hello";
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .invalid, .lexeme = "hello" },
+        .{ .type = .eof, .lexeme = "" },
+    };
+
+    for (tokens, 0..) |token, i| {
+        try expect(token.type, expected[i].type);
+        try expectString(token.lexeme, expected[i].lexeme);
+    }
+}
+
+test "mismatched quotes returns invalid" {
+    const allocator = std.testing.allocator;
+    const source = "\"hello'";
+
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    defer allocator.free(tokens);
+
+    const expected = [_]Token{
+        .{ .type = .invalid, .lexeme = "hello'" },
         .{ .type = .eof, .lexeme = "" },
     };
 

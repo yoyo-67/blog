@@ -107,13 +107,7 @@ Input:  ""
 Tokens: [STRING("")]
 ```
 
-### Test 4: String in expression
-```
-Input:  x = "value"
-Tokens: [IDENTIFIER, EQUAL, STRING("value")]
-```
-
-### Test 5: Unterminated string
+### Test 4: Unterminated string
 ```
 Input:  "hello
 Tokens: [INVALID]
