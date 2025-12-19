@@ -70,8 +70,8 @@ fn makeToken(self: *Lexer, startPos: usize, tokenType: Token.Type) Token {
     };
 }
 
-fn expectChar(self: *Lexer, expected: u8) !void {
-    if (self.peek() != expected) return error.UnexpectedChar;
+fn expectChar(self: *Lexer, expected: u8) void {
+    if (self.peek() != expected) unreachable;
 }
 
 fn checkTokenType(self: *Lexer, tokenType: Token.Type) bool {
@@ -154,12 +154,11 @@ fn scanNumber(self: *Lexer) Token {
 
 fn scanQuotedString(self: *Lexer) Token {
     self.expectOneOf(&.{ .single_quote, .double_quote });
-    const quoteType: Token.Type = if (self.checkTokenType(.single_quote)) .single_quote else .double_quote;
+    const openingQuote = self.peek();
+    const startPos = self.pos;
     self.advance();
 
-    const startPos = self.pos;
-
-    while (!self.checkTokenType(quoteType) and !self.checkIsAtEnd()) {
+    while (self.peek() != openingQuote and !self.checkIsAtEnd()) {
         self.advance();
     }
 
@@ -167,9 +166,9 @@ fn scanQuotedString(self: *Lexer) Token {
         return self.makeToken(startPos, .invalid);
     }
 
-    self.expectTokenType(quoteType);
-    const token = self.makeToken(startPos, .string);
+    self.expectChar(openingQuote);
     self.advance();
+    const token = self.makeToken(startPos, .string);
     return token;
 }
 
@@ -313,10 +312,10 @@ test "strings" {
     defer allocator.free(tokens);
 
     const expected = [_]Token{
-        .{ .type = .string, .lexeme = "hello" },
-        .{ .type = .string, .lexeme = "world" },
-        .{ .type = .string, .lexeme = "" },
-        .{ .type = .string, .lexeme = "hello world" },
+        .{ .type = .string, .lexeme = "\"hello\"" },
+        .{ .type = .string, .lexeme = "\"world\"" },
+        .{ .type = .string, .lexeme = "\"\"" },
+        .{ .type = .string, .lexeme = "\"hello world\"" },
         .{ .type = .eof, .lexeme = "" },
     };
 
@@ -335,7 +334,7 @@ test "unclosed double quote string returns invalid" {
     defer allocator.free(tokens);
 
     const expected = [_]Token{
-        .{ .type = .invalid, .lexeme = "hello" },
+        .{ .type = .invalid, .lexeme = "\"hello" },
         .{ .type = .eof, .lexeme = "" },
     };
 
@@ -354,7 +353,7 @@ test "unclosed single quote string returns invalid" {
     defer allocator.free(tokens);
 
     const expected = [_]Token{
-        .{ .type = .invalid, .lexeme = "hello" },
+        .{ .type = .invalid, .lexeme = "'hello" },
         .{ .type = .eof, .lexeme = "" },
     };
 
@@ -373,7 +372,7 @@ test "mismatched quotes returns invalid" {
     defer allocator.free(tokens);
 
     const expected = [_]Token{
-        .{ .type = .invalid, .lexeme = "hello'" },
+        .{ .type = .invalid, .lexeme = "\"hello'" },
         .{ .type = .eof, .lexeme = "" },
     };
 
