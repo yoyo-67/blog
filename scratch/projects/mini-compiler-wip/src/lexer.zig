@@ -179,6 +179,7 @@ fn scanQuotedString(self: *Lexer) Token {
     const token = self.makeToken(startPos, .string);
     return token;
 }
+
 fn scanIdentifier(self: *Lexer) Token {
     const startPos = self.pos;
 
