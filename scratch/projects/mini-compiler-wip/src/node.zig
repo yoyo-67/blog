@@ -1,3 +1,5 @@
+const std = @import("std");
+const mem = std.mem;
 pub const Node = union(enum) {
     root: struct {
         decls: []Node,
@@ -9,10 +11,19 @@ pub const Node = union(enum) {
     },
 
     binary_op: struct {
-        lhs: Node,
+        lhs: *const Node,
         op: enum {
             plus,
+            minus,
+            mul,
+            div,
         },
-        rhs: Node,
+        rhs: *const Node,
     },
 };
+
+pub fn createNode(allocator: mem.Allocator, data: Node) !*Node {
+    const node = try allocator.create(Node);
+    node.* = data;
+    return node;
+}
