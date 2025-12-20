@@ -5,3 +5,4 @@ scratch/projects/mini-compiler/output.c
 scratch/projects/mini-compiler/output.ll
 scratch/projects/mini-compiler/output_binary
 scratch/projects/mini-compiler-wip/.zig-cache
+scratch/projects/mini-compiler-wip/zig-out/bin/comp

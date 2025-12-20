@@ -8,6 +8,15 @@ const Token = @import("token.zig").Token;
 const Node = @import("node.zig").Node;
 const createNode = @import("node.zig").createNode;
 
+pub const ParseError = error{
+    UnexpectedToken,
+    UnexpectedEof,
+    InvalidExpression,
+    MissingClosingParen,
+    MissingOperand,
+    OutOfMemory,
+};
+
 pub const Ast = @This();
 
 tokens: []const Token,
@@ -66,10 +75,10 @@ fn advance(self: *Ast) void {
 }
 
 fn parseNode(self: *Ast, allocator: mem.Allocator) !Node {
-    try self.parseExpression(allocator);
+    return try self.parseExpression(allocator);
 }
 
-fn parseExpression(self: *Ast, allocator: mem.Allocator) !Node {
+fn parseExpression(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     const left = try self.parseTerm(allocator);
     while (self.see(.plus) or self.see(.minus)) {
         const op = self.consume();
@@ -77,10 +86,10 @@ fn parseExpression(self: *Ast, allocator: mem.Allocator) !Node {
         return try createNode(allocator, .{ .binary_op = .{ .op = op, .lhs = left, .rhs = right } });
     }
 
-    return try parseTerm(allocator);
+    return left;
 }
 
-fn parseTerm(self: *Ast, allocator: mem.Allocator) !Node {
+fn parseTerm(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     const left = try self.parseUnary(allocator);
     while (self.see(.star) or self.see(.slash)) {
         const op = self.consume();
@@ -91,7 +100,7 @@ fn parseTerm(self: *Ast, allocator: mem.Allocator) !Node {
     return left;
 }
 
-fn parseUnary(self: *Ast, allocator: mem.Allocator) !Node {
+fn parseUnary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     if (self.see(.minus)) {
         _ = self.consume();
         return try self.parseUnary(allocator);
@@ -99,7 +108,7 @@ fn parseUnary(self: *Ast, allocator: mem.Allocator) !Node {
     return try self.parsePrimary(allocator);
 }
 
-fn parsePrimary(self: *Ast, allocator: mem.Allocator) !Node {
+fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     if (self.see(.lpren)) {
         _ = self.expect(.rpren);
         const node = try self.parseExpression(allocator);
