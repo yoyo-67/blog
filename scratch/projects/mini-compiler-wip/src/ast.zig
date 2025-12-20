@@ -5,8 +5,10 @@ const assert = std.debug.assert;
 
 const Token = @import("token.zig").Token;
 
-const Node = @import("node.zig").Node;
-const createNode = @import("node.zig").createNode;
+const node_mod = @import("node.zig");
+const Node = node_mod.Node;
+const createNode = node_mod.createNode;
+const Op = node_mod.Op;
 
 pub const ParseError = error{
     UnexpectedToken,
@@ -67,6 +69,7 @@ fn expect(self: *Ast, token_type: Token.Type) Token {
 
 fn consume(self: *Ast) Token {
     const token = self.current();
+    self.advance();
     return token;
 }
 
@@ -81,9 +84,12 @@ fn parseNode(self: *Ast, allocator: mem.Allocator) !Node {
 fn parseExpression(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     const left = try self.parseTerm(allocator);
     while (self.see(.plus) or self.see(.minus)) {
-        const op = self.consume();
+        const op_token = self.consume();
+        const op: Op = if (op_token.type == .star) .plus else .minus;
         const right = try self.parseTerm(allocator);
-        return try createNode(allocator, .{ .binary_op = .{ .op = op, .lhs = left, .rhs = right } });
+        const left_ptr = try createNode(allocator, left);
+        const right_ptr = try createNode(allocator, right);
+        return .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
     }
 
     return left;
@@ -92,9 +98,12 @@ fn parseExpression(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 fn parseTerm(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     const left = try self.parseUnary(allocator);
     while (self.see(.star) or self.see(.slash)) {
-        const op = self.consume();
+        const op_token = self.consume();
+        const op: Op = if (op_token.type == .star) .mul else .div;
         const right = try self.parseUnary(allocator);
-        return try createNode(allocator, .{ .binary_op = .{ .op = op, .lhs = left, .rhs = right } });
+        const left_ptr = try createNode(allocator, left);
+        const right_ptr = try createNode(allocator, right);
+        return .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
     }
 
     return left;
@@ -118,7 +127,8 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 
     if (self.see(.integer)) {
         const token = self.consume();
-        return try createNode(allocator, .{ .int_literal = token.lexeme });
+        const value = std.fmt.parseInt(i32, token.lexeme, 10) catch unreachable;
+        return .{ .int_literal = .{ .value = value } };
     }
 
     unreachable;
@@ -157,10 +167,8 @@ test "ast" {
     defer allocator.free(tree.root.decls);
 
     try testing.expectEqual(tree.root.decls[0].int_literal.value, 42);
-    try testing.expectEqual(tree.root.decls[0].int_literal.token_index, 0);
 
     try testing.expectEqual(tree.root.decls[1].int_literal.value, 10);
-    try testing.expectEqual(tree.root.decls[1].int_literal.token_index, 1);
 }
 
 test "plus" {
