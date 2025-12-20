@@ -144,6 +144,7 @@ fn nextToken(self: *Lexer) Token {
         '+' => return self.makeToken(startPos, .plus),
         '-' => return self.makeToken(startPos, .minus),
         '*' => return self.makeToken(startPos, .star),
+        '/' => return self.makeToken(startPos, .slash),
         '(' => return self.makeToken(startPos, .lpren),
         ')' => return self.makeToken(startPos, .rpren),
         ':' => return self.makeToken(startPos, .colon),

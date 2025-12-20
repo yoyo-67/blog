@@ -4,11 +4,20 @@ const testing = std.testing;
 const assert = std.debug.assert;
 
 const Token = @import("token.zig").Token;
+const Lexer = @import("lexer.zig").Lexer;
 
 const node_mod = @import("node.zig");
 const Node = node_mod.Node;
 const createNode = node_mod.createNode;
 const Op = node_mod.Op;
+
+fn parseExpr(arena: *std.heap.ArenaAllocator, source: []const u8) !Node {
+    const allocator = arena.allocator();
+    var lexer = Lexer.init(source);
+    const tokens = try lexer.tokenize(allocator);
+    var ast = Ast.init(tokens);
+    return ast.parse(arena);
+}
 
 pub const ParseError = error{
     UnexpectedToken,
@@ -31,14 +40,11 @@ pub fn init(tokens: []const Token) Ast {
     };
 }
 
-pub fn parse(self: *Ast, allocator: mem.Allocator) !Node {
+pub fn parse(self: *Ast, arena: *std.heap.ArenaAllocator) !Node {
+    const allocator = arena.allocator();
     var decls: std.ArrayListUnmanaged(Node) = .empty;
 
-    for (self.tokens) |token| {
-        if (token.type == .eof) {
-            break;
-        }
-
+    while (!self.see(.eof)) {
         const node = try self.parseNode(allocator);
         try decls.append(allocator, node);
     }
@@ -82,28 +88,28 @@ fn parseNode(self: *Ast, allocator: mem.Allocator) !Node {
 }
 
 fn parseExpression(self: *Ast, allocator: mem.Allocator) ParseError!Node {
-    const left = try self.parseTerm(allocator);
+    var left = try self.parseTerm(allocator);
     while (self.see(.plus) or self.see(.minus)) {
         const op_token = self.consume();
-        const op: Op = if (op_token.type == .star) .plus else .minus;
+        const op: Op = if (op_token.type == .plus) .plus else .minus;
         const right = try self.parseTerm(allocator);
         const left_ptr = try createNode(allocator, left);
         const right_ptr = try createNode(allocator, right);
-        return .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
+        left = .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
     }
 
     return left;
 }
 
 fn parseTerm(self: *Ast, allocator: mem.Allocator) ParseError!Node {
-    const left = try self.parseUnary(allocator);
+    var left = try self.parseUnary(allocator);
     while (self.see(.star) or self.see(.slash)) {
         const op_token = self.consume();
         const op: Op = if (op_token.type == .star) .mul else .div;
         const right = try self.parseUnary(allocator);
         const left_ptr = try createNode(allocator, left);
         const right_ptr = try createNode(allocator, right);
-        return .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
+        left = .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
     }
 
     return left;
@@ -153,37 +159,66 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 //
 //
 
-test "ast" {
-    const allocator = testing.allocator;
+test "simple addition: 1 + 2" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
 
-    const tokens = [_]Token{
-        .{ .type = .integer, .lexeme = "42" },
-        .{ .type = .integer, .lexeme = "10" },
-        .{ .type = .eof, .lexeme = "" },
-    };
-
-    var ast = Ast.init(&tokens);
-    const tree = try ast.parse(allocator);
-    defer allocator.free(tree.root.decls);
-
-    try testing.expectEqual(tree.root.decls[0].int_literal.value, 42);
-
-    try testing.expectEqual(tree.root.decls[1].int_literal.value, 10);
+    const tree = try parseExpr(&arena, "1 + 2");
+    try testing.expectEqualStrings("(1 + 2)", try tree.toString(arena.allocator()));
 }
 
-test "plus" {
-    const allocator = testing.allocator;
+test "simple multiplication: 3 * 4" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
 
-    const tokens = [_]Token{
-        .{ .type = .integer, .lexeme = "1" },
-        .{ .type = .plus, .lexeme = "+" },
-        .{ .type = .integer, .lexeme = "2" },
-        .{ .type = .eof, .lexeme = "" },
-    };
+    const tree = try parseExpr(&arena, "3 * 4");
+    try testing.expectEqualStrings("(3 * 4)", try tree.toString(arena.allocator()));
+}
 
-    var ast = Ast.init(&tokens);
-    const tree = try ast.parse(allocator);
-    defer allocator.free(tree.root.decls);
+test "precedence: 1 + 2 * 3" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
 
-    try testing.expectEqual(tree.root.decls[0].binary_op.lhs.int_literal.value, 42);
+    const tree = try parseExpr(&arena, "1 + 2 * 3");
+    try testing.expectEqualStrings("(1 + (2 * 3))", try tree.toString(arena.allocator()));
+}
+
+test "precedence: 1 * 2 + 3" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "1 * 2 + 3");
+    try testing.expectEqualStrings("((1 * 2) + 3)", try tree.toString(arena.allocator()));
+}
+
+test "left associativity: 1 - 2 - 3" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "1 - 2 - 3");
+    try testing.expectEqualStrings("((1 - 2) - 3)", try tree.toString(arena.allocator()));
+}
+
+test "left associativity: 8 / 4 / 2" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "8 / 4 / 2");
+    try testing.expectEqualStrings("((8 / 4) / 2)", try tree.toString(arena.allocator()));
+}
+
+test "complex: 1 + 2 * 3 - 4 / 2" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "1 + 2 * 3 - 4 / 2");
+    try testing.expectEqualStrings("((1 + (2 * 3)) - (4 / 2))", try tree.toString(arena.allocator()));
+}
+
+test "single number" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "42");
+    try testing.expectEqualStrings("42", try tree.toString(arena.allocator()));
 }
