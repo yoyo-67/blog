@@ -197,6 +197,28 @@ fn parseReturnStmt(self: *Ast, allocator: mem.Allocator) !Node {
     return .{ .return_stmt = .{ .value = expression_ptr } };
 }
 
+// "fn add(a: i32, b: i32) { return a + b; }"
+// fn: 'fn' IDENTIFIER '(' parameters? ')' '{' block '}'
+// parameters: parameter (, parameter)*
+// parameter: IDENTIFIER ':' IDENTIFIER
+// block: statement*
+//
+fn parseFn(self: *Ast, allocator: mem.Allocator) !Node {
+    var params: []Node.Param = undefined;
+    _ = self.expect(.kw_fn);
+    const name = self.expect(.identifier).lexeme;
+    _ = self.expect(.lpren);
+    if (!self.see(.rpren)) {
+        params = self.parseParams(allocator);
+    }
+    _ = self.expect(.rpren);
+    _ = self.expect(.lbrace);
+    const block = try self.parseBlock(allocator);
+    _ = self.expect(.rbrace);
+
+    return .{ .fn_decl = .{ .name = name, .params = params, .block = block } };
+}
+
 test "simple addition: 1 + 2" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();

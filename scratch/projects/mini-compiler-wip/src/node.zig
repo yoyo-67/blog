@@ -46,6 +46,15 @@ pub const Node = union(enum) {
         value: *const Node,
     },
 
+    fn_decl: struct { name: []const u8, params: []Param, block: Block },
+
+    pub const Param = struct {
+        name: []const u8,
+        type: []const u8,
+    };
+
+    const Block = struct { decls: []const Node };
+
     pub fn toString(self: Node, allocator: mem.Allocator) ![]const u8 {
         var buf: std.ArrayListUnmanaged(u8) = .empty;
         try self.write(&buf.writer(allocator));
@@ -84,6 +93,31 @@ pub const Node = union(enum) {
                 try writer.writeAll("return(");
                 try writer.writeAll("value=");
                 try ret_stmt.value.write(writer);
+                try writer.writeAll(")");
+            },
+            .fn_decl => |fn_decl| {
+                try writer.writeAll("fn(");
+                try writer.writeAll("name=");
+                try writer.print("{s}", .{fn_decl.name});
+                try writer.writeAll(", params=");
+                if (fn_decl.params.len > 0) {
+                    try writer.writeAll("[");
+                    for (fn_decl.params) |param| {
+                        try writer.writeAll("param(");
+                        try writer.writeAll("name=");
+                        try writer.print("{s}", .{param.name});
+                        try writer.writeAll(", type=");
+                        try writer.print("{s}", .{param.type});
+                        try writer.writeAll(")");
+                    }
+                    try writer.writeAll("]");
+                } else try writer.writeAll("[]");
+                try writer.writeAll(", block=");
+                for (fn_decl.block.decls) |decl| {
+                    try decl.write(writer);
+                }
+                try writer.writeAll(", params=");
+
                 try writer.writeAll(")");
             },
         }
