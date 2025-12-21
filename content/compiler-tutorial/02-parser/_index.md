@@ -5,118 +5,92 @@ weight: 2
 
 # Section 2: The Parser
 
-The parser transforms a flat stream of tokens into a tree structure that represents the program's meaning.
+The parser transforms a flat stream of tokens into a tree structure.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                           WHAT THE PARSER DOES                                │
+│                           WHAT THE PARSER DOES                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   Input:  [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI]     │
+│   Input:  Flat token stream                                                 │
+│           [1] [+] [2] [*] [3]                                               │
 │                                                                              │
-│   Output:                                                                    │
-│                        ConstDecl                                             │
-│                       /        \                                             │
-│                   name:"x"     Add                                           │
-│                               /   \                                          │
-│                           Num:3   Num:5                                      │
+│   Output: Tree structure                                                    │
+│                  Add                                                         │
+│                 /   \                                                        │
+│                1    Mul                                                      │
+│                    /   \                                                     │
+│                   2     3                                                    │
 │                                                                              │
-│   The tree shows STRUCTURE:                                                  │
-│   ✓ "x" is being assigned                                                   │
-│   ✓ The value is an addition                                                │
-│   ✓ Addition has two operands (3 and 5)                                     │
+│   The tree captures STRUCTURE and PRECEDENCE.                               │
+│   * is nested inside +, so it happens first!                                │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Why Trees?
+## The Core Approach
 
-Tokens are flat. But code has structure:
+We'll design a **grammar** first - rules that describe valid programs. Then we'll translate those rules directly into parser code.
 
 ```
-3 + 5 * 2
-
-Tokens: [3] [+] [5] [*] [2]   ← Flat, no structure
-
-Tree:        +                 ← Shows * happens first!
-            / \
-           3   *
-              / \
-             5   2
+Grammar Rule                    →    Parser Function
+────────────────────────────         ─────────────────
+expression → term ((+|-) term)*  →   parseExpression()
+term → unary ((*|/) unary)*      →   parseTerm()
+unary → - unary | primary        →   parseUnary()
+primary → NUMBER | ( expr )      →   parsePrimary()
 ```
 
-The tree captures operator precedence: multiply first, then add.
+Each rule becomes one function. **The grammar IS the parser.**
 
 ---
 
 ## Lessons in This Section
 
-| Lesson | Topic | What You'll Add |
-|--------|-------|-----------------|
-| [1. AST Nodes](01-ast-nodes/) | Node types | Define what AST nodes look like |
-| [2. Atoms](02-atoms/) | Simple expressions | Numbers, identifiers |
-| [3. Grouping](03-grouping/) | Parentheses | `(expression)` |
-| [4. Unary](04-unary/) | Unary operators | `-x` |
-| [5. Binary Simple](05-binary-simple/) | Binary operators | `a + b` (no precedence) |
-| [6. Precedence](06-precedence/) | Binding power | Why `*` beats `+` |
-| [7. Precedence Impl](07-precedence-impl/) | Climbing algorithm | The actual implementation |
-| [8. Statements](08-statements/) | Statements | `return`, `const`, `var` |
-| [9. Blocks](09-blocks/) | Code blocks | `{ stmt; stmt; }` |
-| [10. Functions](10-functions/) | Function declarations | `fn name(...) { ... }` |
-| [11. Complete Parser](11-putting-together/) | Integration | Full parser with tests |
+| Lesson | Topic | What You'll Learn |
+|--------|-------|-------------------|
+| [1. Grammar Basics](01-grammar-basics/) | What is a grammar? | Why we need rules, notation |
+| [2. Repetition](02-repetition/) | Handling chains | `1 + 2 + 3` with loops |
+| [3. Precedence](03-precedence/) | Operator priority | Why `*` beats `+` |
+| [4. Unary & Parens](04-unary-parens/) | Complete expressions | `-x` and `(1 + 2)` |
+| [5. Statements](05-statements/) | Doing things | `const x = 5;` and `return` |
+| [6. Functions](06-functions/) | Declarations | `fn name() { ... }` |
+| [7. Complete Parser](07-complete/) | Everything together | Full working parser |
 
 ---
 
-## What You'll Build
+## The Grammar We'll Build
 
-By the end of this section, you can parse:
+By the end, you'll understand this complete grammar:
 
 ```
-fn add(a: i32, b: i32) i32 {
-    const result: i32 = a + b;
+program     → function*
+function    → "fn" IDENTIFIER "(" parameters? ")" block
+parameters  → parameter ("," parameter)*
+parameter   → IDENTIFIER ":" type
+block       → "{" statement* "}"
+statement   → var_decl | return_stmt
+var_decl    → "const" IDENTIFIER "=" expression ";"
+return_stmt → "return" expression ";"
+expression  → term (("+" | "-") term)*
+term        → unary (("*" | "/") unary)*
+unary       → "-" unary | primary
+primary     → NUMBER | IDENTIFIER | "(" expression ")"
+```
+
+And you'll be able to parse programs like:
+
+```
+fn add(a: i32, b: i32) {
+    const result = a + b;
     return result;
 }
 ```
-
-Into an AST like:
-
-```
-Root
-└── FnDecl("add")
-    ├── params: [("a", i32), ("b", i32)]
-    ├── return_type: i32
-    └── body: Block
-        ├── ConstDecl("result", i32)
-        │   └── value: Binary(+)
-        │       ├── left: Identifier("a")
-        │       └── right: Identifier("b")
-        └── Return
-            └── value: Identifier("result")
-```
-
----
-
-## Parsing Technique: Recursive Descent
-
-We'll use **recursive descent parsing** - the most intuitive approach:
-
-```
-To parse a function:
-    1. Expect "fn" keyword
-    2. Parse the name (identifier)
-    3. Parse the parameters (call parseParams)
-    4. Parse the return type
-    5. Parse the body (call parseBlock)
-
-Each "call parseX" recursively parses that construct.
-```
-
-This mirrors how you'd describe the grammar in English.
 
 ---
 
 ## Start Here
 
-Begin with [Lesson 1: AST Nodes](01-ast-nodes/) →
+Begin with [Lesson 1: Grammar Basics](01-grammar-basics/) →

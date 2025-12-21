@@ -29,6 +29,7 @@ pub const Type = enum {
     single_quote,
     double_quote,
     identifier,
+    equal,
     kw_fn,
     kw_return,
     kw_const,
@@ -47,6 +48,7 @@ pub const Type = enum {
             .semicolon => ';',
             .single_quote => '\'',
             .double_quote => '"',
+            .equal => '=',
             else => null,
         };
     }

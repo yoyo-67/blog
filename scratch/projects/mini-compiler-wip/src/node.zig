@@ -32,6 +32,11 @@ pub const Node = union(enum) {
         rhs: *const Node,
     },
 
+    identifier: struct {
+        name: []const u8,
+        value: *const Node,
+    },
+
     pub fn toString(self: Node, allocator: mem.Allocator) ![]const u8 {
         var buf: std.ArrayListUnmanaged(u8) = .empty;
         try self.write(&buf.writer(allocator));
@@ -53,6 +58,14 @@ pub const Node = union(enum) {
                     if (i > 0) try writer.writeAll(", ");
                     try decl.write(writer);
                 }
+            },
+            .identifier => |iden| {
+                try writer.writeAll("identifier(");
+                try writer.writeAll("name=");
+                try writer.print("{s}", .{iden.name});
+                try writer.writeAll(", value=");
+                try iden.value.write(writer);
+                try writer.writeAll(")");
             },
         }
     }

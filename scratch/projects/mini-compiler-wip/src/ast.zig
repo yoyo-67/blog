@@ -154,10 +154,35 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 //
 //
 // statments - e.g.  do staff
-// x = 1 + 3
+// statements: var_decl | return_stmt
+// var_decls: "const" IDENTIFIER '=' expression ';'
+// return_stmt: 'return' expression ';'
 //
-//
-//
+
+fn parseStatements(self: *Ast, allocator: mem.Allocator) !Node {
+    if (self.see(.kw_const)) {
+        return self.parseVarDecl(allocator);
+    }
+    if (self.see(.kw_return)) {
+        return self.parseReturnStmt(allocator);
+    }
+    unreachable;
+}
+
+fn parseVarDecl(self: *Ast, allocator: mem.Allocator) !Node {
+    _ = self.consume(.identifier);
+    const name = self.consume().lexeme;
+    _ = self.consume(.equal);
+    const value = try self.parseExpression(allocator);
+    const value_ptr = createNode(allocator, value);
+    const node = .{ .identifier = .{ .name = name, .value = value_ptr } };
+    return node;
+}
+
+fn parseReturnStmt(self: *Ast, allocator: mem.Allocator) !Node {
+    _ = self; // autofix
+    _ = allocator; // autofix
+}
 
 test "simple addition: 1 + 2" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
@@ -220,5 +245,13 @@ test "single number" {
     defer arena.deinit();
 
     const tree = try parseExpr(&arena, "42");
+    try testing.expectEqualStrings("42", try tree.toString(arena.allocator()));
+}
+
+test "statements" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "const x = 4 + 4;");
     try testing.expectEqualStrings("42", try tree.toString(arena.allocator()));
 }
