@@ -37,6 +37,15 @@ pub const Node = union(enum) {
         value: *const Node,
     },
 
+    unary_op: struct {
+        op: Op,
+        operand: *const Node,
+    },
+
+    return_stmt: struct {
+        value: *const Node,
+    },
+
     pub fn toString(self: Node, allocator: mem.Allocator) ![]const u8 {
         var buf: std.ArrayListUnmanaged(u8) = .empty;
         try self.write(&buf.writer(allocator));
@@ -65,6 +74,16 @@ pub const Node = union(enum) {
                 try writer.print("{s}", .{iden.name});
                 try writer.writeAll(", value=");
                 try iden.value.write(writer);
+                try writer.writeAll(")");
+            },
+            .unary_op => |unary| {
+                try writer.print("{s}", .{unary.op.symbol()});
+                try unary.operand.write(writer);
+            },
+            .return_stmt => |ret_stmt| {
+                try writer.writeAll("return(");
+                try writer.writeAll("value=");
+                try ret_stmt.value.write(writer);
                 try writer.writeAll(")");
             },
         }

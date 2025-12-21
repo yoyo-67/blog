@@ -40,16 +40,16 @@
   <meta property="og:url" content="http://localhost:1313/compiler-tutorial/02-parser/">
   <meta property="og:site_name" content="Yohai&#39;s Blog">
   <meta property="og:title" content="Section 2: The Parser">
-  <meta property="og:description" content="Section 2: The Parser # The parser transforms a flat stream of tokens into a tree structure that represents the program’s meaning.
-┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT THE PARSER DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Input: [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI] │ │ │ │ Output: │ │ ConstDecl │ │ / \ │ │ name:&#34;x&#34; Add │ │ / \ │ │ Num:3 Num:5 │ │ │ │ The tree shows STRUCTURE: │ │ ✓ &#34;x&#34; is being assigned │ │ ✓ The value is an addition │ │ ✓ Addition has two operands (3 and 5) │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why Trees? # Tokens are flat. But code has structure:">
+  <meta property="og:description" content="Section 2: The Parser # The parser transforms a flat stream of tokens into a tree structure.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT THE PARSER DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Input: Flat token stream │ │ [1] [&#43;] [2] [*] [3] │ │ │ │ Output: Tree structure │ │ Add │ │ / \ │ │ 1 Mul │ │ / \ │ │ 2 3 │ │ │ │ The tree captures STRUCTURE and PRECEDENCE. │ │ * is nested inside &#43;, so it happens first! │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ The Core Approach # We’ll design a grammar first - rules that describe valid programs. Then we’ll translate those rules directly into parser code.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 
   
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Section 2: The Parser">
-  <meta name="twitter:description" content="Section 2: The Parser # The parser transforms a flat stream of tokens into a tree structure that represents the program’s meaning.
-┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT THE PARSER DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Input: [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI] │ │ │ │ Output: │ │ ConstDecl │ │ / \ │ │ name:&#34;x&#34; Add │ │ / \ │ │ Num:3 Num:5 │ │ │ │ The tree shows STRUCTURE: │ │ ✓ &#34;x&#34; is being assigned │ │ ✓ The value is an addition │ │ ✓ Addition has two operands (3 and 5) │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ Why Trees? # Tokens are flat. But code has structure:">
+  <meta name="twitter:description" content="Section 2: The Parser # The parser transforms a flat stream of tokens into a tree structure.
+┌──────────────────────────────────────────────────────────────────────────────┐ │ WHAT THE PARSER DOES │ ├──────────────────────────────────────────────────────────────────────────────┤ │ │ │ Input: Flat token stream │ │ [1] [&#43;] [2] [*] [3] │ │ │ │ Output: Tree structure │ │ Add │ │ / \ │ │ 1 Mul │ │ / \ │ │ 2 3 │ │ │ │ The tree captures STRUCTURE and PRECEDENCE. │ │ * is nested inside &#43;, so it happens first! │ │ │ └──────────────────────────────────────────────────────────────────────────────┘ The Core Approach # We’ll design a grammar first - rules that describe valid programs. Then we’ll translate those rules directly into parser code.">
 
   
   
@@ -201,7 +201,7 @@
     "name": "Section 2: The Parser",
     "headline": "Section 2: The Parser",
     
-    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eSection 2: The Parser\n    \u003cdiv id=\u0022section-2-the-parser\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#section-2-the-parser\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eThe parser transforms a flat stream of tokens into a tree structure that represents the program\u0026rsquo;s meaning.\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌──────────────────────────────────────────────────────────────────────────────┐\n│                           WHAT THE PARSER DOES                                │\n├──────────────────────────────────────────────────────────────────────────────┤\n│                                                                              │\n│   Input:  [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI]     │\n│                                                                              │\n│   Output:                                                                    │\n│                        ConstDecl                                             │\n│                       \/        \\                                             │\n│                   name:\u0026#34;x\u0026#34;     Add                                           │\n│                               \/   \\                                          │\n│                           Num:3   Num:5                                      │\n│                                                                              │\n│   The tree shows STRUCTURE:                                                  │\n│   ✓ \u0026#34;x\u0026#34; is being assigned                                                   │\n│   ✓ The value is an addition                                                │\n│   ✓ Addition has two operands (3 and 5)                                     │\n│                                                                              │\n└──────────────────────────────────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eWhy Trees?\n    \u003cdiv id=\u0022why-trees\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#why-trees\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eTokens are flat. But code has structure:\u003c\/p\u003e",
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003eSection 2: The Parser\n    \u003cdiv id=\u0022section-2-the-parser\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#section-2-the-parser\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eThe parser transforms a flat stream of tokens into a tree structure.\u003c\/p\u003e\n\u003cpre tabindex=\u00220\u0022\u003e\u003ccode\u003e┌──────────────────────────────────────────────────────────────────────────────┐\n│                           WHAT THE PARSER DOES                               │\n├──────────────────────────────────────────────────────────────────────────────┤\n│                                                                              │\n│   Input:  Flat token stream                                                 │\n│           [1] [\u002b] [2] [*] [3]                                               │\n│                                                                              │\n│   Output: Tree structure                                                    │\n│                  Add                                                         │\n│                 \/   \\                                                        │\n│                1    Mul                                                      │\n│                    \/   \\                                                     │\n│                   2     3                                                    │\n│                                                                              │\n│   The tree captures STRUCTURE and PRECEDENCE.                               │\n│   * is nested inside \u002b, so it happens first!                                │\n│                                                                              │\n└──────────────────────────────────────────────────────────────────────────────┘\n\u003c\/code\u003e\u003c\/pre\u003e\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003eThe Core Approach\n    \u003cdiv id=\u0022the-core-approach\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#the-core-approach\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eWe\u0026rsquo;ll design a \u003cstrong\u003egrammar\u003c\/strong\u003e first - rules that describe valid programs. Then we\u0026rsquo;ll translate those rules directly into parser code.\u003c\/p\u003e",
     "inLanguage": "en-us",
     "url" : "http://localhost:1313/compiler-tutorial/02-parser/",
     "author" : {
@@ -217,7 +217,7 @@
     
     
     "mainEntityOfPage": "true",
-    "wordCount": "384"
+    "wordCount": "358"
   }]
   </script>
 
@@ -604,48 +604,44 @@
     </span>
     
 </h1>
-<p>The parser transforms a flat stream of tokens into a tree structure that represents the program&rsquo;s meaning.</p>
+<p>The parser transforms a flat stream of tokens into a tree structure.</p>
 <pre tabindex="0"><code>┌──────────────────────────────────────────────────────────────────────────────┐
-│                           WHAT THE PARSER DOES                                │
+│                           WHAT THE PARSER DOES                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   Input:  [CONST] [IDENT:x] [EQUAL] [NUMBER:3] [PLUS] [NUMBER:5] [SEMI]     │
+│   Input:  Flat token stream                                                 │
+│           [1] [+] [2] [*] [3]                                               │
 │                                                                              │
-│   Output:                                                                    │
-│                        ConstDecl                                             │
-│                       /        \                                             │
-│                   name:&#34;x&#34;     Add                                           │
-│                               /   \                                          │
-│                           Num:3   Num:5                                      │
+│   Output: Tree structure                                                    │
+│                  Add                                                         │
+│                 /   \                                                        │
+│                1    Mul                                                      │
+│                    /   \                                                     │
+│                   2     3                                                    │
 │                                                                              │
-│   The tree shows STRUCTURE:                                                  │
-│   ✓ &#34;x&#34; is being assigned                                                   │
-│   ✓ The value is an addition                                                │
-│   ✓ Addition has two operands (3 and 5)                                     │
+│   The tree captures STRUCTURE and PRECEDENCE.                               │
+│   * is nested inside +, so it happens first!                                │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 </code></pre><hr>
 
-<h2 class="relative group">Why Trees?
-    <div id="why-trees" class="anchor"></div>
+<h2 class="relative group">The Core Approach
+    <div id="the-core-approach" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#why-trees" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-core-approach" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>Tokens are flat. But code has structure:</p>
-<pre tabindex="0"><code>3 + 5 * 2
-
-Tokens: [3] [+] [5] [*] [2]   ← Flat, no structure
-
-Tree:        +                 ← Shows * happens first!
-            / \
-           3   *
-              / \
-             5   2
-</code></pre><p>The tree captures operator precedence: multiply first, then add.</p>
+<p>We&rsquo;ll design a <strong>grammar</strong> first - rules that describe valid programs. Then we&rsquo;ll translate those rules directly into parser code.</p>
+<pre tabindex="0"><code>Grammar Rule                    →    Parser Function
+────────────────────────────         ─────────────────
+expression → term ((+|-) term)*  →   parseExpression()
+term → unary ((*|/) unary)*      →   parseTerm()
+unary → - unary | primary        →   parseUnary()
+primary → NUMBER | ( expr )      →   parsePrimary()
+</code></pre><p>Each rule becomes one function. <strong>The grammar IS the parser.</strong></p>
 <hr>
 
 <h2 class="relative group">Lessons in This Section
@@ -662,128 +658,84 @@ Tree:        +                 ← Shows * happens first!
       <tr>
           <th>Lesson</th>
           <th>Topic</th>
-          <th>What You&rsquo;ll Add</th>
+          <th>What You&rsquo;ll Learn</th>
       </tr>
   </thead>
   <tbody>
       <tr>
           <td><a
-  href="01-ast-nodes/">1. AST Nodes</a></td>
-          <td>Node types</td>
-          <td>Define what AST nodes look like</td>
+  href="01-grammar-basics/">1. Grammar Basics</a></td>
+          <td>What is a grammar?</td>
+          <td>Why we need rules, notation</td>
       </tr>
       <tr>
           <td><a
-  href="02-atoms/">2. Atoms</a></td>
-          <td>Simple expressions</td>
-          <td>Numbers, identifiers</td>
+  href="02-repetition/">2. Repetition</a></td>
+          <td>Handling chains</td>
+          <td><code>1 + 2 + 3</code> with loops</td>
       </tr>
       <tr>
           <td><a
-  href="03-grouping/">3. Grouping</a></td>
-          <td>Parentheses</td>
-          <td><code>(expression)</code></td>
-      </tr>
-      <tr>
-          <td><a
-  href="04-unary/">4. Unary</a></td>
-          <td>Unary operators</td>
-          <td><code>-x</code></td>
-      </tr>
-      <tr>
-          <td><a
-  href="05-binary-simple/">5. Binary Simple</a></td>
-          <td>Binary operators</td>
-          <td><code>a + b</code> (no precedence)</td>
-      </tr>
-      <tr>
-          <td><a
-  href="06-precedence/">6. Precedence</a></td>
-          <td>Binding power</td>
+  href="03-precedence/">3. Precedence</a></td>
+          <td>Operator priority</td>
           <td>Why <code>*</code> beats <code>+</code></td>
       </tr>
       <tr>
           <td><a
-  href="07-precedence-impl/">7. Precedence Impl</a></td>
-          <td>Climbing algorithm</td>
-          <td>The actual implementation</td>
+  href="04-unary-parens/">4. Unary &amp; Parens</a></td>
+          <td>Complete expressions</td>
+          <td><code>-x</code> and <code>(1 + 2)</code></td>
       </tr>
       <tr>
           <td><a
-  href="08-statements/">8. Statements</a></td>
-          <td>Statements</td>
-          <td><code>return</code>, <code>const</code>, <code>var</code></td>
+  href="05-statements/">5. Statements</a></td>
+          <td>Doing things</td>
+          <td><code>const x = 5;</code> and <code>return</code></td>
       </tr>
       <tr>
           <td><a
-  href="09-blocks/">9. Blocks</a></td>
-          <td>Code blocks</td>
-          <td><code>{ stmt; stmt; }</code></td>
+  href="06-functions/">6. Functions</a></td>
+          <td>Declarations</td>
+          <td><code>fn name() { ... }</code></td>
       </tr>
       <tr>
           <td><a
-  href="10-functions/">10. Functions</a></td>
-          <td>Function declarations</td>
-          <td><code>fn name(...) { ... }</code></td>
-      </tr>
-      <tr>
-          <td><a
-  href="11-putting-together/">11. Complete Parser</a></td>
-          <td>Integration</td>
-          <td>Full parser with tests</td>
+  href="07-complete/">7. Complete Parser</a></td>
+          <td>Everything together</td>
+          <td>Full working parser</td>
       </tr>
   </tbody>
 </table>
 <hr>
 
-<h2 class="relative group">What You&rsquo;ll Build
-    <div id="what-youll-build" class="anchor"></div>
+<h2 class="relative group">The Grammar We&rsquo;ll Build
+    <div id="the-grammar-well-build" class="anchor"></div>
     
     <span
         class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-youll-build" aria-label="Anchor">#</a>
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-grammar-well-build" aria-label="Anchor">#</a>
     </span>
     
 </h2>
-<p>By the end of this section, you can parse:</p>
-<pre tabindex="0"><code>fn add(a: i32, b: i32) i32 {
-    const result: i32 = a + b;
+<p>By the end, you&rsquo;ll understand this complete grammar:</p>
+<pre tabindex="0"><code>program     → function*
+function    → &#34;fn&#34; IDENTIFIER &#34;(&#34; parameters? &#34;)&#34; block
+parameters  → parameter (&#34;,&#34; parameter)*
+parameter   → IDENTIFIER &#34;:&#34; type
+block       → &#34;{&#34; statement* &#34;}&#34;
+statement   → var_decl | return_stmt
+var_decl    → &#34;const&#34; IDENTIFIER &#34;=&#34; expression &#34;;&#34;
+return_stmt → &#34;return&#34; expression &#34;;&#34;
+expression  → term ((&#34;+&#34; | &#34;-&#34;) term)*
+term        → unary ((&#34;*&#34; | &#34;/&#34;) unary)*
+unary       → &#34;-&#34; unary | primary
+primary     → NUMBER | IDENTIFIER | &#34;(&#34; expression &#34;)&#34;
+</code></pre><p>And you&rsquo;ll be able to parse programs like:</p>
+<pre tabindex="0"><code>fn add(a: i32, b: i32) {
+    const result = a + b;
     return result;
 }
-</code></pre><p>Into an AST like:</p>
-<pre tabindex="0"><code>Root
-└── FnDecl(&#34;add&#34;)
-    ├── params: [(&#34;a&#34;, i32), (&#34;b&#34;, i32)]
-    ├── return_type: i32
-    └── body: Block
-        ├── ConstDecl(&#34;result&#34;, i32)
-        │   └── value: Binary(+)
-        │       ├── left: Identifier(&#34;a&#34;)
-        │       └── right: Identifier(&#34;b&#34;)
-        └── Return
-            └── value: Identifier(&#34;result&#34;)
 </code></pre><hr>
-
-<h2 class="relative group">Parsing Technique: Recursive Descent
-    <div id="parsing-technique-recursive-descent" class="anchor"></div>
-    
-    <span
-        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
-        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#parsing-technique-recursive-descent" aria-label="Anchor">#</a>
-    </span>
-    
-</h2>
-<p>We&rsquo;ll use <strong>recursive descent parsing</strong> - the most intuitive approach:</p>
-<pre tabindex="0"><code>To parse a function:
-    1. Expect &#34;fn&#34; keyword
-    2. Parse the name (identifier)
-    3. Parse the parameters (call parseParams)
-    4. Parse the return type
-    5. Parse the body (call parseBlock)
-
-Each &#34;call parseX&#34; recursively parses that construct.
-</code></pre><p>This mirrors how you&rsquo;d describe the grammar in English.</p>
-<hr>
 
 <h2 class="relative group">Start Here
     <div id="start-here" class="anchor"></div>
@@ -795,7 +747,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
     
 </h2>
 <p>Begin with <a
-  href="01-ast-nodes/">Lesson 1: AST Nodes</a> →</p>
+  href="01-grammar-basics/">Lesson 1: Grammar Basics</a> →</p>
 
     </div>
   </section>
@@ -874,11 +826,11 @@ Each &#34;call parseX&#34; recursively parses that construct.
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/02-parser/11-putting-together/"
+          href="/compiler-tutorial/02-parser/07-complete/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          2.11: Complete Parser
+          2.7: Complete Parser
           
         </h2>
       </a>
@@ -932,7 +884,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1060 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">5 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1910 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">9 mins</span>
     
 
     
@@ -1012,11 +964,11 @@ Each &#34;call parseX&#34; recursively parses that construct.
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/02-parser/10-functions/"
+          href="/compiler-tutorial/02-parser/06-functions/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          2.10: Functions
+          2.6: Functions
           
         </h2>
       </a>
@@ -1070,7 +1022,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>687 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1657 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">8 mins</span>
     
 
     
@@ -1150,11 +1102,11 @@ Each &#34;call parseX&#34; recursively parses that construct.
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/02-parser/09-blocks/"
+          href="/compiler-tutorial/02-parser/05-statements/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          2.9: Blocks
+          2.5: Statements
           
         </h2>
       </a>
@@ -1208,7 +1160,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>583 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1476 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">7 mins</span>
     
 
     
@@ -1288,11 +1240,11 @@ Each &#34;call parseX&#34; recursively parses that construct.
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/02-parser/08-statements/"
+          href="/compiler-tutorial/02-parser/04-unary-parens/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          2.8: Statements
+          2.4: Unary & Parentheses
           
         </h2>
       </a>
@@ -1346,7 +1298,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>631 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1863 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">9 mins</span>
     
 
     
@@ -1426,11 +1378,11 @@ Each &#34;call parseX&#34; recursively parses that construct.
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/02-parser/07-precedence-impl/"
+          href="/compiler-tutorial/02-parser/03-precedence/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          2.7: Precedence Implementation
+          2.3: Precedence
           
         </h2>
       </a>
@@ -1484,7 +1436,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>835 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1889 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">9 mins</span>
     
 
     
@@ -1564,11 +1516,11 @@ Each &#34;call parseX&#34; recursively parses that construct.
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/02-parser/06-precedence/"
+          href="/compiler-tutorial/02-parser/02-repetition/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          2.6: Precedence
+          2.2: Repetition
           
         </h2>
       </a>
@@ -1622,7 +1574,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>697 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">4 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1100 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">6 mins</span>
     
 
     
@@ -1702,11 +1654,11 @@ Each &#34;call parseX&#34; recursively parses that construct.
     <header class="items-center text-start text-xl font-semibold">
       <a
         
-          href="/compiler-tutorial/02-parser/05-binary-simple/"
+          href="/compiler-tutorial/02-parser/01-grammar-basics/"
         
         class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
         <h2>
-          2.5: Binary Operators (Simple)
+          2.1: Grammar Basics
           
         </h2>
       </a>
@@ -1760,421 +1712,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
   <div class="flex flex-row flex-wrap items-center">
     
     
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>589 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/02-parser/04-unary/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          2.4: Unary Operators
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>544 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/02-parser/03-grouping/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          2.3: Grouping
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>476 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
-    
-
-    
-    
-  </div>
-
-  
-
-  
-  
-
-  
-  
-
-
-
-    </div>
-    
-  </div>
-  <div class="px-6 pt-4 pb-2"></div>
-</article>
-
-            
-              
-
-
-
-
-
-
-
-
-  
-  
-  
-
-
-
-
-
-
-
-
-  
-  
-    
-
-    
-    
-      
-      
-        
-      
-        
-      
-        
-      
-    
-
-    
-    
-      
-      
-    
-
-    
-    
-      
-    
-  
-
-
-
-<article class="flex flex-col md:flex-row relative">
-  
-  <div class=" mt-3 md:mt-0">
-    <header class="items-center text-start text-xl font-semibold">
-      <a
-        
-          href="/compiler-tutorial/02-parser/02-atoms/"
-        
-        class="not-prose before:absolute before:inset-0 decoration-primary-500 dark:text-neutral text-xl font-bold text-neutral-800 hover:underline hover:underline-offset-2">
-        <h2>
-          2.2: Atoms
-          
-        </h2>
-      </a>
-      
-      
-    </header>
-    <div class="text-sm text-neutral-500 dark:text-neutral-400">
-      
-
-
-
-
-
-
-
-  
-
-  
-  
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-
-  
-    
-  
-
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  <div class="flex flex-row flex-wrap items-center">
-    
-    
-      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>447 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">3 mins</span>
+      <time datetime="0001-01-01T00:00:00&#43;00:00">January 1, 1</time><span class="px-2 text-primary-500">&middot;</span><span>1165 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">6 mins</span>
     
 
     
@@ -2205,31 +1743,7 @@ Each &#34;call parseX&#34; recursively parses that construct.
     
   
   
-  <ul class="flex flex-row mt-8 justify-center"><li>
-          <a
-            href="/compiler-tutorial/02-parser/"
-            class="
-              bg-primary-200 dark:bg-primary-400 dark:text-neutral-800
-             mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-            >1</a
-          >
-        </li><li>
-          <a
-            href="/compiler-tutorial/02-parser/page/2/"
-            class=" mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-            >2</a
-          >
-        </li>
-      <li>
-        <a
-          href="/compiler-tutorial/02-parser/page/2/"
-          class="mx-1 block min-w-[1.8rem] rounded text-center hover:bg-primary-600 hover:text-neutral"
-          rel="next"
-          >&rarr;</a
-        >
-      </li>
-    
-  </ul>
+  
 
         
 

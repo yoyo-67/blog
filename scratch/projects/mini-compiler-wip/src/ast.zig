@@ -84,6 +84,9 @@ fn advance(self: *Ast) void {
 }
 
 fn parseNode(self: *Ast, allocator: mem.Allocator) !Node {
+    if (self.see(.kw_const) or self.see(.kw_return)) {
+        return try self.parseStatements(allocator);
+    }
     return try self.parseExpression(allocator);
 }
 
@@ -118,7 +121,13 @@ fn parseTerm(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 fn parseUnary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     if (self.see(.minus)) {
         _ = self.consume();
-        return try self.parseUnary(allocator);
+        const operand = try self.parseUnary(allocator);
+        // Double negation cancels out
+        if (operand == .unary_op and operand.unary_op.op == .minus) {
+            return operand.unary_op.operand.*;
+        }
+        const operand_ptr = try createNode(allocator, operand);
+        return .{ .unary_op = .{ .op = .minus, .operand = operand_ptr } };
     }
     return try self.parsePrimary(allocator);
 }
@@ -170,18 +179,22 @@ fn parseStatements(self: *Ast, allocator: mem.Allocator) !Node {
 }
 
 fn parseVarDecl(self: *Ast, allocator: mem.Allocator) !Node {
-    _ = self.consume(.identifier);
+    _ = self.expect(.kw_const);
     const name = self.consume().lexeme;
-    _ = self.consume(.equal);
+    _ = self.expect(.equal);
     const value = try self.parseExpression(allocator);
-    const value_ptr = createNode(allocator, value);
-    const node = .{ .identifier = .{ .name = name, .value = value_ptr } };
-    return node;
+    const value_ptr = try createNode(allocator, value);
+    _ = self.expect(.semicolon);
+    return .{ .identifier = .{ .name = name, .value = value_ptr } };
 }
 
 fn parseReturnStmt(self: *Ast, allocator: mem.Allocator) !Node {
-    _ = self; // autofix
-    _ = allocator; // autofix
+    _ = self.expect(.kw_return);
+    const expression = try self.parseExpression(allocator);
+    _ = self.expect(.semicolon);
+
+    const expression_ptr = try createNode(allocator, expression);
+    return .{ .return_stmt = .{ .value = expression_ptr } };
 }
 
 test "simple addition: 1 + 2" {
@@ -244,14 +257,22 @@ test "single number" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
 
-    const tree = try parseExpr(&arena, "42");
-    try testing.expectEqualStrings("42", try tree.toString(arena.allocator()));
+    const tree = try parseExpr(&arena, "-42");
+    try testing.expectEqualStrings("-42", try tree.toString(arena.allocator()));
 }
 
 test "statements" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
 
-    const tree = try parseExpr(&arena, "const x = 4 + 4;");
-    try testing.expectEqualStrings("42", try tree.toString(arena.allocator()));
+    const tree = try parseExpr(&arena, "const x = 4 + 4 * ----2;");
+    try testing.expectEqualStrings("identifier(name=x, value=(4 + (4 * 2)))", try tree.toString(arena.allocator()));
+}
+
+test "return statment" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "return 4 + 4;");
+    try testing.expectEqualStrings("return(value=(4 + 4))", try tree.toString(arena.allocator()));
 }

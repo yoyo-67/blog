@@ -53,21 +53,21 @@
     </item>
     
     <item>
-      <title>2.1: AST Nodes</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/01-ast-nodes/</link>
+      <title>2.1: Grammar Basics</title>
+      <link>http://localhost:1313/compiler-tutorial/02-parser/01-grammar-basics/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/01-ast-nodes/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.1: AST Node Types
-    &lt;div id=&#34;lesson-21-ast-node-types&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+      <guid>http://localhost:1313/compiler-tutorial/02-parser/01-grammar-basics/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.1: What is a Grammar?
+    &lt;div id=&#34;lesson-21-what-is-a-grammar&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-21-ast-node-types&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-21-what-is-a-grammar&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h1&gt;
-&lt;p&gt;Before parsing, we need to define what our tree looks like.&lt;/p&gt;
+&lt;p&gt;Before we write any parser code, we need to understand &lt;strong&gt;grammar&lt;/strong&gt; - the rules that describe valid programs.&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;Goal
@@ -79,42 +79,19 @@
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;p&gt;Define data structures for AST nodes that can represent any valid program.&lt;/p&gt;
+&lt;p&gt;Understand why we need grammar rules, and learn the notation for writing them.&lt;/p&gt;
 &lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;What is an AST?
-    &lt;div id=&#34;what-is-an-ast&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;The Problem: Flat Tokens Don&amp;rsquo;t Show Structure
+    &lt;div id=&#34;the-problem-flat-tokens-dont-show-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-is-an-ast&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-problem-flat-tokens-dont-show-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                        ABSTRACT SYNTAX TREE                                   │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   &amp;#34;Abstract&amp;#34; = We ignore concrete syntax details                             │
-│                                                                              │
-│   Source:    ( 3 + 5 )        Tokens have parentheses                       │
-│   AST:       Add(3, 5)        Tree doesn&amp;#39;t - structure is implicit!         │
-│                                                                              │
-│   The tree captures MEANING, not exact syntax.                              │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Node Categories
-    &lt;div id=&#34;node-categories&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#node-categories&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Our AST needs nodes for three categories:&lt;/p&gt;</description>
+&lt;p&gt;The lexer gives us a flat list of tokens:&lt;/p&gt;</description>
       
     </item>
     
@@ -788,21 +765,21 @@
     </item>
     
     <item>
-      <title>2.2: Atoms</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/02-atoms/</link>
+      <title>2.2: Repetition</title>
+      <link>http://localhost:1313/compiler-tutorial/02-parser/02-repetition/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/02-atoms/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.2: Parsing Atoms
-    &lt;div id=&#34;lesson-22-parsing-atoms&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+      <guid>http://localhost:1313/compiler-tutorial/02-parser/02-repetition/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.2: Repetition and Loops
+    &lt;div id=&#34;lesson-22-repetition-and-loops&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-22-parsing-atoms&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-22-repetition-and-loops&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h1&gt;
-&lt;p&gt;Atoms are the simplest expressions: numbers and identifiers.&lt;/p&gt;
+&lt;p&gt;Our grammar only handles &lt;code&gt;1 + 2&lt;/code&gt;. How do we handle &lt;code&gt;1 + 2 + 3&lt;/code&gt;?&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;Goal
@@ -814,46 +791,19 @@
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;p&gt;Parse NUMBER and IDENTIFIER tokens into AST nodes.&lt;/p&gt;
+&lt;p&gt;Use the &lt;code&gt;*&lt;/code&gt; operator in grammar rules and translate it to loops in code.&lt;/p&gt;
 &lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;What Are Atoms?
-    &lt;div id=&#34;what-are-atoms&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;The Problem
+    &lt;div id=&#34;the-problem&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-are-atoms&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-problem&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                              ATOMS                                           │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   Atoms are expressions that don&amp;#39;t contain other expressions.               │
-│                                                                              │
-│   ✓ 42          Number literal                                              │
-│   ✓ foo         Identifier                                                  │
-│   ✓ x           Single-letter identifier                                    │
-│                                                                              │
-│   ✗ 3 + 5       Contains sub-expressions                                   │
-│   ✗ -x          Contains sub-expression                                     │
-│                                                                              │
-│   Atoms are the &amp;#34;leaves&amp;#34; of the expression tree.                            │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Parser State
-    &lt;div id=&#34;parser-state&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#parser-state&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;First, set up your parser structure:&lt;/p&gt;</description>
+&lt;p&gt;Our current rule:&lt;/p&gt;</description>
       
     </item>
     
@@ -1505,21 +1455,21 @@ fn main() i32 {
     </item>
     
     <item>
-      <title>2.3: Grouping</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/03-grouping/</link>
+      <title>2.3: Precedence</title>
+      <link>http://localhost:1313/compiler-tutorial/02-parser/03-precedence/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/03-grouping/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.3: Parenthesized Expressions
-    &lt;div id=&#34;lesson-23-parenthesized-expressions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+      <guid>http://localhost:1313/compiler-tutorial/02-parser/03-precedence/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.3: Operator Precedence
+    &lt;div id=&#34;lesson-23-operator-precedence&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-23-parenthesized-expressions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-23-operator-precedence&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h1&gt;
-&lt;p&gt;Parentheses group expressions: &lt;code&gt;(3 + 5)&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;1 + 2 * 3&lt;/code&gt; should be &lt;code&gt;7&lt;/code&gt;, not &lt;code&gt;9&lt;/code&gt;. How do we make &lt;code&gt;*&lt;/code&gt; happen before &lt;code&gt;+&lt;/code&gt;?&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;Goal
@@ -1531,46 +1481,19 @@ fn main() i32 {
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;p&gt;Parse &lt;code&gt;(expression)&lt;/code&gt; into an AST, handling the parentheses as grouping.&lt;/p&gt;
+&lt;p&gt;Use a two-level grammar to handle operator precedence correctly.&lt;/p&gt;
 &lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;Key Insight
-    &lt;div id=&#34;key-insight&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;The Problem
+    &lt;div id=&#34;the-problem&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#key-insight&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-problem&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                         GROUPING INSIGHT                                     │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   Parentheses don&amp;#39;t create a new node type!                                 │
-│                                                                              │
-│   Source: (42)                                                              │
-│   AST:    NumberExpr { value: 42 }     ← Just the inner expression         │
-│                                                                              │
-│   Source: (3 + 5)                                                           │
-│   AST:    BinaryExpr { ... }           ← Just the inner expression         │
-│                                                                              │
-│   The parentheses are &amp;#34;consumed&amp;#34; during parsing.                            │
-│   They affect HOW we parse, not WHAT we produce.                            │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Updated parseAtom
-    &lt;div id=&#34;updated-parseatom&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#updated-parseatom&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Add a case for &lt;code&gt;LPAREN&lt;/code&gt;:&lt;/p&gt;</description>
+&lt;p&gt;Our current grammar treats all operators the same:&lt;/p&gt;</description>
       
     </item>
     
@@ -2377,21 +2300,21 @@ fn main() i32 {
     </item>
     
     <item>
-      <title>2.4: Unary Operators</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/04-unary/</link>
+      <title>2.4: Unary &amp; Parentheses</title>
+      <link>http://localhost:1313/compiler-tutorial/02-parser/04-unary-parens/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/04-unary/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.4: Unary Operators
-    &lt;div id=&#34;lesson-24-unary-operators&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+      <guid>http://localhost:1313/compiler-tutorial/02-parser/04-unary-parens/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.4: Unary Operators and Parentheses
+    &lt;div id=&#34;lesson-24-unary-operators-and-parentheses&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-24-unary-operators&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-24-unary-operators-and-parentheses&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h1&gt;
-&lt;p&gt;Unary operators apply to a single operand: &lt;code&gt;-x&lt;/code&gt;, &lt;code&gt;-42&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Complete our expression grammar with &lt;code&gt;-5&lt;/code&gt; and &lt;code&gt;(1 + 2)&lt;/code&gt;.&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;Goal
@@ -2403,99 +2326,19 @@ fn main() i32 {
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;p&gt;Parse negation (&lt;code&gt;-expr&lt;/code&gt;) into UnaryExpr nodes.&lt;/p&gt;
+&lt;p&gt;Add unary operators and parentheses to build a complete expression parser.&lt;/p&gt;
 &lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;What Are Unary Operators?
-    &lt;div id=&#34;what-are-unary-operators&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;Unary Operators
+    &lt;div id=&#34;unary-operators&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-are-unary-operators&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#unary-operators&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                          UNARY OPERATORS                                     │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   Unary = one operand (unlike binary which has two)                         │
-│                                                                              │
-│   -42       Negate a number                                                 │
-│   -x        Negate a variable                                               │
-│   -(a + b)  Negate an expression                                            │
-│   --x       Negate a negation (double negative)                             │
-│                                                                              │
-│   The operator comes BEFORE the operand (prefix notation).                  │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;The AST
-    &lt;div id=&#34;the-ast&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-ast&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;-42
-
-UnaryExpr {
-    operator: MINUS,
-    operand: NumberExpr { value: 42 }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;-x
-
-UnaryExpr {
-    operator: MINUS,
-    operand: IdentifierExpr { name: &amp;#34;x&amp;#34; }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;--x
-
-UnaryExpr {
-    operator: MINUS,
-    operand: UnaryExpr {
-        operator: MINUS,
-        operand: IdentifierExpr { name: &amp;#34;x&amp;#34; }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;New Function: parseUnary
-    &lt;div id=&#34;new-function-parseunary&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#new-function-parseunary&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parseUnary():
-    // Check for unary operator
-    if peek().type == MINUS:
-        operator = advance()              // consume &amp;#39;-&amp;#39;
-        operand = parseUnary()            // recursively parse operand
-        return UnaryExpr {
-            operator: operator,
-            operand: operand
-        }
-
-    // No unary operator - fall through to atom
-    return parseAtom()
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Why Recursive?
-    &lt;div id=&#34;why-recursive&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#why-recursive&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;The operand of a unary operator can itself be a unary expression:&lt;/p&gt;</description>
+&lt;p&gt;What about &lt;code&gt;-5&lt;/code&gt; or &lt;code&gt;-x&lt;/code&gt;? These are &lt;strong&gt;unary operators&lt;/strong&gt; - they take one operand.&lt;/p&gt;</description>
       
     </item>
     
@@ -3437,21 +3280,21 @@ Tokens: [INVALID]
     </item>
     
     <item>
-      <title>2.5: Binary Operators (Simple)</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/05-binary-simple/</link>
+      <title>2.5: Statements</title>
+      <link>http://localhost:1313/compiler-tutorial/02-parser/05-statements/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/05-binary-simple/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.5: Binary Operators (Simple)
-    &lt;div id=&#34;lesson-25-binary-operators-simple&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+      <guid>http://localhost:1313/compiler-tutorial/02-parser/05-statements/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.5: Statements
+    &lt;div id=&#34;lesson-25-statements&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-25-binary-operators-simple&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-25-statements&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h1&gt;
-&lt;p&gt;Binary operators combine two expressions: &lt;code&gt;a + b&lt;/code&gt;, &lt;code&gt;3 * 5&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Expressions produce values. Statements DO things.&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;Goal
@@ -3463,63 +3306,87 @@ Tokens: [INVALID]
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;p&gt;Parse binary expressions, ignoring precedence for now. (We&amp;rsquo;ll fix precedence next.)&lt;/p&gt;
+&lt;p&gt;Parse statements: &lt;code&gt;const x = 5;&lt;/code&gt; and &lt;code&gt;return x;&lt;/code&gt;&lt;/p&gt;
 &lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;The Challenge
-    &lt;div id=&#34;the-challenge&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;Expressions vs Statements
+    &lt;div id=&#34;expressions-vs-statements&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-challenge&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#expressions-vs-statements&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                    BINARY OPERATOR CHALLENGE                                 │
+│                    EXPRESSIONS VS STATEMENTS                                 │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   Input: 1 + 2 + 3                                                          │
+│   EXPRESSIONS produce a value:                                              │
+│     42              → produces 42                                           │
+│     x + y           → produces the sum                                      │
+│     foo()           → produces return value                                 │
 │                                                                              │
-│   Two possible trees:                                                        │
+│   STATEMENTS perform an action:                                             │
+│     const x = 5;    → creates a variable (no value produced)               │
+│     return 42;      → exits the function (no value produced)               │
+│     { ... }         → groups statements (no value produced)                │
 │                                                                              │
-│   Left-associative:          Right-associative:                             │
-│         +                           +                                        │
-│        / \                         / \                                       │
-│       +   3                       1   +                                      │
-│      / \                             / \                                     │
-│     1   2                           2   3                                    │
-│                                                                              │
-│   (1 + 2) + 3 = 6               1 + (2 + 3) = 6                             │
-│                                                                              │
-│   For +, both give same answer. But for - or /:                             │
-│   (8 - 5) - 2 = 1               8 - (5 - 2) = 5     ← Different!           │
-│                                                                              │
-│   We want LEFT-ASSOCIATIVE (standard math).                                 │
+│   Key difference: statements usually end with semicolons.                   │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 &lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;First Attempt (Wrong!)
-    &lt;div id=&#34;first-attempt-wrong&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;Expressions vs Statements vs Declarations
+    &lt;div id=&#34;expressions-vs-statements-vs-declarations&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#first-attempt-wrong&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#expressions-vs-statements-vs-declarations&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// WRONG - don&amp;#39;t do this!
-function parseExpression():
-    left = parseUnary()
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
+│              EXPRESSIONS VS STATEMENTS VS DECLARATIONS                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   EXPRESSIONS: Produce a value                                              │
+│   ─────────────────────────────                                             │
+│     1 + 2           → 3                                                     │
+│     x * y           → some number                                           │
+│     foo()           → return value of foo                                   │
+│                                                                              │
+│   STATEMENTS: Do something (perform an action)                              │
+│   ────────────────────────────────────────────                              │
+│     return x;       → exits function with value x                           │
+│     print(x);       → outputs x (if your language has this)                │
+│     { ... }         → groups other statements                              │
+│                                                                              │
+│   DECLARATIONS: Create a new named thing                                    │
+│   ──────────────────────────────────────────                                │
+│     const x = 5;    → creates variable x                                   │
+│     fn foo() {...}  → creates function foo                                 │
+│                                                                              │
+│   Declarations are a special kind of statement that introduces a name.     │
+│                                                                              │
+│   In our grammar, we&amp;#39;ll treat declarations as statements for simplicity.   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
 
-    if isBinaryOperator(peek()):
-        operator = advance()
-        right = parseExpression()    // ← Problem: right-recursive!
-        return BinaryExpr { left, operator, right }
-
-    return left
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This gives right-associativity:&lt;/p&gt;</description>
+&lt;h2 class=&#34;relative group&#34;&gt;Statement Grammar Rules
+    &lt;div id=&#34;statement-grammar-rules&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+    
+    &lt;span
+        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#statement-grammar-rules&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+    &lt;/span&gt;
+    
+&lt;/h2&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;statement   → var_decl | return_stmt
+var_decl    → &amp;#34;const&amp;#34; IDENTIFIER &amp;#34;=&amp;#34; expression &amp;#34;;&amp;#34;
+return_stmt → &amp;#34;return&amp;#34; expression &amp;#34;;&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Let&amp;rsquo;s break these down:&lt;/p&gt;</description>
       
     </item>
     
@@ -4076,21 +3943,21 @@ function isAlphaNumeric(char):
     </item>
     
     <item>
-      <title>2.6: Precedence</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/06-precedence/</link>
+      <title>2.6: Functions</title>
+      <link>http://localhost:1313/compiler-tutorial/02-parser/06-functions/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/06-precedence/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.6: Understanding Precedence
-    &lt;div id=&#34;lesson-26-understanding-precedence&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+      <guid>http://localhost:1313/compiler-tutorial/02-parser/06-functions/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.6: Blocks and Functions
+    &lt;div id=&#34;lesson-26-blocks-and-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-26-understanding-precedence&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-26-blocks-and-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h1&gt;
-&lt;p&gt;Why &lt;code&gt;*&lt;/code&gt; beats &lt;code&gt;+&lt;/code&gt;, and how to represent it.&lt;/p&gt;
+&lt;p&gt;Parse function declarations: &lt;code&gt;fn add(a: i32, b: i32) { return a + b; }&lt;/code&gt;&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;Goal
@@ -4102,49 +3969,19 @@ function isAlphaNumeric(char):
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;p&gt;Understand operator precedence and binding power before implementing it.&lt;/p&gt;
+&lt;p&gt;Parse blocks and function declarations to complete our grammar.&lt;/p&gt;
 &lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;The Problem
-    &lt;div id=&#34;the-problem&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;Blocks
+    &lt;div id=&#34;blocks&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-problem&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#blocks&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                        PRECEDENCE PROBLEM                                    │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   Input: 1 + 2 * 3                                                          │
-│                                                                              │
-│   Without precedence:              With precedence:                         │
-│                                                                              │
-│         *                                +                                   │
-│        / \                              / \                                  │
-│       +   3                            1   *                                 │
-│      / \                                  / \                                │
-│     1   2                                2   3                               │
-│                                                                              │
-│   = (1 + 2) * 3 = 9                 = 1 + (2 * 3) = 7                       │
-│                                                                              │
-│   Math convention: * and / before + and -                                   │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Binding Power
-    &lt;div id=&#34;binding-power&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#binding-power&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Think of operators as having &amp;ldquo;binding power&amp;rdquo; - how tightly they hold their operands.&lt;/p&gt;</description>
+&lt;p&gt;A &lt;strong&gt;block&lt;/strong&gt; is a sequence of statements wrapped in braces.&lt;/p&gt;</description>
       
     </item>
     
@@ -5415,21 +5252,21 @@ Output:
     </item>
     
     <item>
-      <title>2.7: Precedence Implementation</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/07-precedence-impl/</link>
+      <title>2.7: Complete Parser</title>
+      <link>http://localhost:1313/compiler-tutorial/02-parser/07-complete/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/07-precedence-impl/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.7: Precedence Climbing
-    &lt;div id=&#34;lesson-27-precedence-climbing&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+      <guid>http://localhost:1313/compiler-tutorial/02-parser/07-complete/</guid>
+      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.7: Complete Parser
+    &lt;div id=&#34;lesson-27-complete-parser&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-27-precedence-climbing&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-27-complete-parser&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h1&gt;
-&lt;p&gt;Implementing the precedence climbing algorithm.&lt;/p&gt;
+&lt;p&gt;Put everything together with the full grammar, implementation, and patterns.&lt;/p&gt;
 &lt;hr&gt;
 
 &lt;h2 class=&#34;relative group&#34;&gt;Goal
@@ -5441,203 +5278,19 @@ Output:
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;p&gt;Modify &lt;code&gt;parseExpression&lt;/code&gt; to respect operator precedence.&lt;/p&gt;
+&lt;p&gt;Consolidate all lessons into a complete parser with reusable patterns.&lt;/p&gt;
 &lt;hr&gt;
 
-&lt;h2 class=&#34;relative group&#34;&gt;The Algorithm
-    &lt;div id=&#34;the-algorithm&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
+&lt;h2 class=&#34;relative group&#34;&gt;The Complete Grammar
+    &lt;div id=&#34;the-complete-grammar&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
     
     &lt;span
         class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-algorithm&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
+        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-complete-grammar&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
     &lt;/span&gt;
     
 &lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                     PRECEDENCE CLIMBING                                      │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   parseExpression(minPrecedence):                                           │
-│       1. Parse left operand (atom/unary)                                    │
-│       2. While next operator has precedence &amp;gt;= minPrecedence:               │
-│          a. Get operator and its precedence                                 │
-│          b. Parse right operand with higher minimum (precedence + 1)        │
-│          c. Combine into BinaryExpr                                         │
-│       3. Return result                                                       │
-│                                                                              │
-│   The key: recursively call with (precedence + 1) to let higher-precedence │
-│   operators grab their operands first.                                      │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Implementation
-    &lt;div id=&#34;implementation&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#implementation&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parseExpression(minPrecedence = 0):
-    left = parseUnary()
-
-    while true:
-        operator = peek()
-        precedence = getBindingPower(operator.type)
-
-        // Stop if:
-        // - Not an operator (precedence = 0)
-        // - Operator precedence &amp;lt; minimum we&amp;#39;re looking for
-        if precedence &amp;lt; minPrecedence:
-            break
-
-        advance()  // consume operator
-
-        // Recursive call with HIGHER minimum
-        // This lets higher-precedence ops grab their operands
-        right = parseExpression(precedence + 1)
-
-        left = BinaryExpr {
-            left: left,
-            operator: operator,
-            right: right
-        }
-
-    return left
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Binding Power Function
-    &lt;div id=&#34;binding-power-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#binding-power-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function getBindingPower(tokenType):
-    switch tokenType:
-        PLUS:   return 1
-        MINUS:  return 1
-        STAR:   return 2
-        SLASH:  return 2
-        default: return 0
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Trace: &lt;code&gt;1 + 2 * 3&lt;/code&gt;
-    &lt;div id=&#34;trace-1--2--3&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#trace-1--2--3&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;parseExpression(minPrecedence=0):
-    left = parseUnary() → NumberExpr(1)
-
-    Loop:
-        operator = PLUS, precedence = 1
-        1 &amp;gt;= 0? Yes, continue
-        advance() → consume PLUS
-        right = parseExpression(minPrecedence=2):     ← KEY: min=2
-            left = parseUnary() → NumberExpr(2)
-
-            Loop:
-                operator = STAR, precedence = 2
-                2 &amp;gt;= 2? Yes, continue
-                advance() → consume STAR
-                right = parseExpression(minPrecedence=3):
-                    left = parseUnary() → NumberExpr(3)
-                    Loop:
-                        operator = EOF, precedence = 0
-                        0 &amp;gt;= 3? No, break
-                    return NumberExpr(3)
-                left = BinaryExpr(2, *, 3)
-
-            Loop:
-                operator = EOF, precedence = 0
-                0 &amp;gt;= 2? No, break
-            return BinaryExpr(2, *, 3)
-
-        left = BinaryExpr(1, +, BinaryExpr(2, *, 3))
-
-    Loop:
-        operator = EOF, precedence = 0
-        0 &amp;gt;= 0? No, break
-
-    return BinaryExpr(1, +, BinaryExpr(2, *, 3))
-
-Tree:
-      +
-     / \
-    1   *
-       / \
-      2   3
-
-Result: 1 + (2 * 3) = 7 ✓
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Trace: &lt;code&gt;1 * 2 + 3&lt;/code&gt;
-    &lt;div id=&#34;trace-1--2--3-1&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#trace-1--2--3-1&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;parseExpression(minPrecedence=0):
-    left = parseUnary() → NumberExpr(1)
-
-    Loop 1:
-        operator = STAR, precedence = 2
-        2 &amp;gt;= 0? Yes
-        advance() → consume STAR
-        right = parseExpression(minPrecedence=3):
-            left = parseUnary() → NumberExpr(2)
-            Loop:
-                operator = PLUS, precedence = 1
-                1 &amp;gt;= 3? No, break           ← PLUS doesn&amp;#39;t qualify!
-            return NumberExpr(2)
-        left = BinaryExpr(1, *, 2)
-
-    Loop 2:
-        operator = PLUS, precedence = 1
-        1 &amp;gt;= 0? Yes
-        advance() → consume PLUS
-        right = parseExpression(minPrecedence=2):
-            left = parseUnary() → NumberExpr(3)
-            Loop:
-                operator = EOF, precedence = 0
-                0 &amp;gt;= 2? No, break
-            return NumberExpr(3)
-        left = BinaryExpr(BinaryExpr(1, *, 2), +, 3)
-
-    return BinaryExpr(BinaryExpr(1, *, 2), +, 3)
-
-Tree:
-        +
-       / \
-      *   3
-     / \
-    1   2
-
-Result: (1 * 2) + 3 = 5 ✓
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Why precedence + 1?
-    &lt;div id=&#34;why-precedence--1&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#why-precedence--1&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;For left-associativity. With &lt;code&gt;1 + 2 + 3&lt;/code&gt;:&lt;/p&gt;</description>
+&lt;p&gt;Here&amp;rsquo;s our full grammar with 12 rules:&lt;/p&gt;</description>
       
     </item>
     
@@ -6559,79 +6212,6 @@ Tokens:
     </item>
     
     <item>
-      <title>2.8: Statements</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/08-statements/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/08-statements/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.8: Statements
-    &lt;div id=&#34;lesson-28-statements&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-28-statements&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h1&gt;
-&lt;p&gt;Statements are instructions that DO things: declare variables, return values.&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Goal
-    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Parse &lt;code&gt;const&lt;/code&gt;, &lt;code&gt;var&lt;/code&gt;, and &lt;code&gt;return&lt;/code&gt; statements.&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Statements vs Expressions
-    &lt;div id=&#34;statements-vs-expressions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#statements-vs-expressions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                    STATEMENTS VS EXPRESSIONS                                 │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   EXPRESSIONS produce values:                                               │
-│     42              → value: 42                                             │
-│     x + y           → value: sum                                            │
-│     foo()           → value: return value                                   │
-│                                                                              │
-│   STATEMENTS perform actions:                                               │
-│     const x = 5;    → declares variable (no value produced)                │
-│     return x;       → exits function (no value produced)                    │
-│     { ... }         → groups statements (no value produced)                 │
-│                                                                              │
-│   Statements end with semicolons. Expressions don&amp;#39;t.                        │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Variable Declaration
-    &lt;div id=&#34;variable-declaration&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#variable-declaration&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const x: i32 = 42;
-var y: i32 = 0;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Structure:&lt;/p&gt;</description>
-      
-    </item>
-    
-    <item>
       <title>4.8: Complete Sema</title>
       <link>http://localhost:1313/compiler-tutorial/04-sema/08-putting-together/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -7170,165 +6750,6 @@ assert air.functions[0].instructions[0].tag == CONST_I32
     </item>
     
     <item>
-      <title>2.9: Blocks</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/09-blocks/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/09-blocks/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.9: Code Blocks
-    &lt;div id=&#34;lesson-29-code-blocks&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-29-code-blocks&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h1&gt;
-&lt;p&gt;Blocks group multiple statements: &lt;code&gt;{ stmt; stmt; }&lt;/code&gt;&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Goal
-    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Parse &lt;code&gt;{ ... }&lt;/code&gt; into Block nodes containing a list of statements.&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;What Are Blocks?
-    &lt;div id=&#34;what-are-blocks&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#what-are-blocks&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                              BLOCKS                                          │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   {                                                                         │
-│       const x: i32 = 1;                                                     │
-│       const y: i32 = 2;                                                     │
-│       return x + y;                                                         │
-│   }                                                                         │
-│                                                                              │
-│   A block is:                                                               │
-│   - Opening brace {                                                         │
-│   - Zero or more statements                                                 │
-│   - Closing brace }                                                         │
-│                                                                              │
-│   Blocks are used for:                                                      │
-│   - Function bodies                                                         │
-│   - If/else bodies (future extension)                                       │
-│   - Loop bodies (future extension)                                          │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Block AST
-    &lt;div id=&#34;block-ast&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#block-ast&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Block {
-    statements: Statement[]
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;parseBlock
-    &lt;div id=&#34;parseblock&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#parseblock&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parseBlock():
-    expect(LBRACE)     // {
-
-    statements = []
-
-    while peek().type != RBRACE and not isAtEnd():
-        stmt = parseStatement()
-        statements.append(stmt)
-
-    expect(RBRACE)     // }
-
-    return Block {
-        statements: statements
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Step-by-Step Trace
-    &lt;div id=&#34;step-by-step-trace&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#step-by-step-trace&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input: &amp;#34;{ const x: i32 = 1; return x; }&amp;#34;
-
-Tokens: [LBRACE, CONST, IDENT(&amp;#34;x&amp;#34;), COLON, TYPE_I32, EQUAL,
-         NUMBER(1), SEMI, RETURN, IDENT(&amp;#34;x&amp;#34;), SEMI, RBRACE, EOF]
-
-parseBlock():
-    expect(LBRACE) ✓
-    statements = []
-
-    Loop 1:
-        peek() → CONST (not RBRACE)
-        parseStatement() → VarDecl { name: &amp;#34;x&amp;#34;, value: 1 }
-        statements = [VarDecl]
-
-    Loop 2:
-        peek() → RETURN (not RBRACE)
-        parseStatement() → ReturnStmt { value: Identifier(&amp;#34;x&amp;#34;) }
-        statements = [VarDecl, ReturnStmt]
-
-    Loop 3:
-        peek() → RBRACE
-        exit loop
-
-    expect(RBRACE) ✓
-
-    return Block { statements: [VarDecl, ReturnStmt] }
-
-Result:
-Block {
-    statements: [
-        VarDecl { name: &amp;#34;x&amp;#34;, type: i32, value: 1, is_const: true },
-        ReturnStmt { value: IdentifierExpr { name: &amp;#34;x&amp;#34; } }
-    ]
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Empty Blocks
-    &lt;div id=&#34;empty-blocks&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#empty-blocks&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Blocks can be empty:&lt;/p&gt;</description>
-      
-    </item>
-    
-    <item>
       <title>5.9: Program</title>
       <link>http://localhost:1313/compiler-tutorial/05-codegen/09-gen-program/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -7469,52 +6890,6 @@ Generated C:
     
 &lt;/h2&gt;
 &lt;p&gt;Save output to a file and compile:&lt;/p&gt;</description>
-      
-    </item>
-    
-    <item>
-      <title>2.10: Functions</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/10-functions/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/10-functions/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.10: Function Declarations
-    &lt;div id=&#34;lesson-210-function-declarations&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-210-function-declarations&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h1&gt;
-&lt;p&gt;Functions are the building blocks of programs.&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Goal
-    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Parse &lt;code&gt;fn name(params) return_type { body }&lt;/code&gt; into FnDecl nodes.&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Function Syntax
-    &lt;div id=&#34;function-syntax&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#function-syntax&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Structure:&lt;/p&gt;</description>
       
     </item>
     
@@ -7991,550 +7366,6 @@ Expected: 42
     
 &lt;/h2&gt;
 &lt;p&gt;We have a complete compiler! Let&amp;rsquo;s wire all the stages together.&lt;/p&gt;</description>
-      
-    </item>
-    
-    <item>
-      <title>2.11: Complete Parser</title>
-      <link>http://localhost:1313/compiler-tutorial/02-parser/11-putting-together/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/compiler-tutorial/02-parser/11-putting-together/</guid>
-      <description>&lt;h1 class=&#34;relative group&#34;&gt;Lesson 2.11: Putting It All Together
-    &lt;div id=&#34;lesson-211-putting-it-all-together&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#lesson-211-putting-it-all-together&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h1&gt;
-&lt;p&gt;Let&amp;rsquo;s assemble all the pieces into a complete, working parser.&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Goal
-    &lt;div id=&#34;goal&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#goal&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;Create a &lt;code&gt;parse(tokens)&lt;/code&gt; function that transforms tokens into a complete AST.&lt;/p&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Complete Parser Structure
-    &lt;div id=&#34;complete-parser-structure&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-parser-structure&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                         COMPLETE PARSER                                      │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   Parser {                                                                   │
-│       tokens: Token[]                                                        │
-│       pos: integer                                                           │
-│                                                                              │
-│       // Helpers                                                             │
-│       peek() → Token                                                         │
-│       advance() → Token                                                      │
-│       expect(type) → Token                                                   │
-│       isAtEnd() → boolean                                                    │
-│                                                                              │
-│       // Expressions                                                         │
-│       parseExpression(minPrec) → Expr                                       │
-│       parseUnary() → Expr                                                   │
-│       parseAtom() → Expr                                                    │
-│                                                                              │
-│       // Types                                                               │
-│       parseType() → TypeExpr                                                │
-│                                                                              │
-│       // Statements                                                          │
-│       parseStatement() → Stmt                                               │
-│       parseVarDecl() → VarDecl                                              │
-│       parseReturnStmt() → ReturnStmt                                        │
-│       parseBlock() → Block                                                  │
-│                                                                              │
-│       // Declarations                                                        │
-│       parseFunction() → FnDecl                                              │
-│       parseParamList() → Parameter[]                                        │
-│       parseParam() → Parameter                                              │
-│                                                                              │
-│       // Entry point                                                         │
-│       parseProgram() → Root                                                 │
-│   }                                                                          │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;The Call Hierarchy
-    &lt;div id=&#34;the-call-hierarchy&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#the-call-hierarchy&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;parseProgram()
-└── parseFunction()
-    ├── parseParamList()
-    │   └── parseParam()
-    │       └── parseType()
-    ├── parseType()
-    └── parseBlock()
-        └── parseStatement()
-            ├── parseVarDecl()
-            │   ├── parseType()
-            │   └── parseExpression()
-            ├── parseReturnStmt()
-            │   └── parseExpression()
-            └── parseBlock() (nested)
-
-parseExpression()
-└── parseUnary()
-    └── parseAtom()
-        └── parseExpression() (for grouping)
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Complete Code Summary
-    &lt;div id=&#34;complete-code-summary&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#complete-code-summary&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-
-&lt;h3 class=&#34;relative group&#34;&gt;Helper Functions
-    &lt;div id=&#34;helper-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#helper-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function peek():
-    return tokens[pos]
-
-function advance():
-    token = tokens[pos]
-    pos = pos + 1
-    return token
-
-function expect(type):
-    if peek().type != type:
-        error(&amp;#34;Expected &amp;#34; + type + &amp;#34;, got &amp;#34; + peek().type)
-    return advance()
-
-function isAtEnd():
-    return peek().type == EOF
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Binding Power
-    &lt;div id=&#34;binding-power&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#binding-power&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function getBindingPower(tokenType):
-    switch tokenType:
-        PLUS, MINUS:  return 1
-        STAR, SLASH:  return 2
-        default:      return 0
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Expression Parsing
-    &lt;div id=&#34;expression-parsing&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#expression-parsing&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parseExpression(minPrecedence = 0):
-    left = parseUnary()
-    while getBindingPower(peek().type) &amp;gt;= minPrecedence:
-        op = advance()
-        right = parseExpression(getBindingPower(op.type) + 1)
-        left = BinaryExpr { left, op, right }
-    return left
-
-function parseUnary():
-    if peek().type == MINUS:
-        op = advance()
-        return UnaryExpr { op, parseUnary() }
-    return parseAtom()
-
-function parseAtom():
-    token = peek()
-    if token.type == NUMBER:
-        advance()
-        return NumberExpr { value: parseInt(token.lexeme) }
-    if token.type == IDENTIFIER:
-        advance()
-        return IdentifierExpr { name: token.lexeme }
-    if token.type == LPAREN:
-        advance()
-        expr = parseExpression()
-        expect(RPAREN)
-        return expr
-    error(&amp;#34;Expected expression&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Type Parsing
-    &lt;div id=&#34;type-parsing&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#type-parsing&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parseType():
-    token = peek()
-    if token.type in [TYPE_I32, TYPE_I64, TYPE_BOOL, TYPE_VOID]:
-        advance()
-        return TypeExpr { name: tokenTypeToString(token.type) }
-    if token.type == IDENTIFIER:
-        advance()
-        return TypeExpr { name: token.lexeme }
-    error(&amp;#34;Expected type&amp;#34;)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Statement Parsing
-    &lt;div id=&#34;statement-parsing&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#statement-parsing&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parseStatement():
-    if peek().type in [KEYWORD_CONST, KEYWORD_VAR]:
-        return parseVarDecl()
-    if peek().type == KEYWORD_RETURN:
-        return parseReturnStmt()
-    if peek().type == LBRACE:
-        return parseBlock()
-    error(&amp;#34;Expected statement&amp;#34;)
-
-function parseVarDecl():
-    is_const = (advance().type == KEYWORD_CONST)
-    name = expect(IDENTIFIER).lexeme
-    expect(COLON)
-    type = parseType()
-    expect(EQUAL)
-    value = parseExpression()
-    expect(SEMICOLON)
-    return VarDecl { name, type, value, is_const }
-
-function parseReturnStmt():
-    expect(KEYWORD_RETURN)
-    value = null
-    if peek().type != SEMICOLON:
-        value = parseExpression()
-    expect(SEMICOLON)
-    return ReturnStmt { value }
-
-function parseBlock():
-    expect(LBRACE)
-    statements = []
-    while peek().type != RBRACE and not isAtEnd():
-        statements.append(parseStatement())
-    expect(RBRACE)
-    return Block { statements }
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Declaration Parsing
-    &lt;div id=&#34;declaration-parsing&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#declaration-parsing&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parseFunction():
-    expect(KEYWORD_FN)
-    name = expect(IDENTIFIER).lexeme
-    expect(LPAREN)
-    params = parseParamList()
-    expect(RPAREN)
-    return_type = parseType()
-    body = parseBlock()
-    return FnDecl { name, params, return_type, body }
-
-function parseParamList():
-    params = []
-    if peek().type == RPAREN:
-        return params
-    params.append(parseParam())
-    while peek().type == COMMA:
-        advance()
-        params.append(parseParam())
-    return params
-
-function parseParam():
-    name = expect(IDENTIFIER).lexeme
-    expect(COLON)
-    type = parseType()
-    return Parameter { name, type }
-
-function parseProgram():
-    declarations = []
-    while not isAtEnd():
-        declarations.append(parseFunction())
-    return Root { declarations }
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Entry Point
-    &lt;div id=&#34;entry-point&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#entry-point&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function parse(tokens):
-    parser = Parser { tokens: tokens, pos: 0 }
-    return parser.parseProgram()
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Full Test Suite
-    &lt;div id=&#34;full-test-suite&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#full-test-suite&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-
-&lt;h3 class=&#34;relative group&#34;&gt;Test 1: Empty program
-    &lt;div id=&#34;test-1-empty-program&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-1-empty-program&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;&amp;#34;
-Tokens: [EOF]
-AST:    Root { declarations: [] }
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 2: Minimal function
-    &lt;div id=&#34;test-2-minimal-function&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-2-minimal-function&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;fn main() i32 { return 0; }&amp;#34;
-AST:    Root {
-            declarations: [
-                FnDecl {
-                    name: &amp;#34;main&amp;#34;,
-                    params: [],
-                    return_type: i32,
-                    body: Block {
-                        statements: [
-                            ReturnStmt { value: NumberExpr(0) }
-                        ]
-                    }
-                }
-            ]
-        }
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 3: Function with expression
-    &lt;div id=&#34;test-3-function-with-expression&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-3-function-with-expression&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:  &amp;#34;fn calc() i32 { return 1 + 2 * 3; }&amp;#34;
-AST:    Root {
-            declarations: [
-                FnDecl {
-                    name: &amp;#34;calc&amp;#34;,
-                    params: [],
-                    return_type: i32,
-                    body: Block {
-                        statements: [
-                            ReturnStmt {
-                                value: BinaryExpr(
-                                    1, +, BinaryExpr(2, *, 3)
-                                )
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 4: Function with parameters
-    &lt;div id=&#34;test-4-function-with-parameters&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-4-function-with-parameters&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
-fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
-
-AST verified: params contains two parameters, body returns binary expression
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 5: Function with locals
-    &lt;div id=&#34;test-5-function-with-locals&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-5-function-with-locals&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
-fn compute() i32 {
-    const x: i32 = 5;
-    const y: i32 = 3;
-    return x + y;
-}
-
-AST verified: body contains two VarDecl and one ReturnStmt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 6: Multiple functions
-    &lt;div id=&#34;test-6-multiple-functions&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-6-multiple-functions&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
-fn square(x: i32) i32 { return x * x; }
-fn main() i32 { return 0; }
-
-AST verified: Root.declarations has two FnDecl
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 class=&#34;relative group&#34;&gt;Test 7: Complex program
-    &lt;div id=&#34;test-7-complex-program&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#test-7-complex-program&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h3&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Input:
-fn add(a: i32, b: i32) i32 {
-    const result: i32 = a + b;
-    return result;
-}
-
-fn main() i32 {
-    return 0;
-}
-
-Expected AST structure verified
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Integration: Lexer + Parser
-    &lt;div id=&#34;integration-lexer--parser&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#integration-lexer--parser&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;function compile(source):
-    tokens = tokenize(source)
-    ast = parse(tokens)
-    return ast
-
-// Test
-source = &amp;#34;fn main() i32 { return 42; }&amp;#34;
-ast = compile(source)
-assert ast.declarations[0].name == &amp;#34;main&amp;#34;
-assert ast.declarations[0].body.statements[0].value.value == 42
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Error Handling Tips
-    &lt;div id=&#34;error-handling-tips&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#error-handling-tips&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;ol&gt;
-&lt;li&gt;&lt;strong&gt;Synchronization&lt;/strong&gt;: After an error, skip to the next statement or declaration&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Multiple errors&lt;/strong&gt;: Don&amp;rsquo;t stop at the first error; collect them all&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Context&lt;/strong&gt;: Include line/column in error messages&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Recovery&lt;/strong&gt;: Try to parse as much as possible even with errors&lt;/li&gt;
-&lt;/ol&gt;
-&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;Summary
-    &lt;div id=&#34;summary&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#summary&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────────────────────┐
-│                         PARSER SUMMARY                                       │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   1. AST NODES       Define node types for the tree                         │
-│   2. ATOMS           Numbers, identifiers                                   │
-│   3. GROUPING        Parenthesized expressions                              │
-│   4. UNARY           Negation: -x                                           │
-│   5. BINARY          a + b, a * b                                           │
-│   6. PRECEDENCE      Why * beats +                                          │
-│   7. PREC IMPL       Precedence climbing algorithm                          │
-│   8. STATEMENTS      const, var, return                                     │
-│   9. BLOCKS          { stmt; stmt; }                                        │
-│  10. FUNCTIONS       fn name(params) type { body }                          │
-│  11. INTEGRATION     Complete parser                                        │
-│                                                                              │
-│   Lines of code: ~150-200 depending on language                             │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-
-&lt;h2 class=&#34;relative group&#34;&gt;What&amp;rsquo;s Next
-    &lt;div id=&#34;whats-next&#34; class=&#34;anchor&#34;&gt;&lt;/div&gt;
-    
-    &lt;span
-        class=&#34;absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none&#34;&gt;
-        &lt;a class=&#34;text-primary-300 dark:text-neutral-700 !no-underline&#34; href=&#34;#whats-next&#34; aria-label=&#34;Anchor&#34;&gt;#&lt;/a&gt;
-    &lt;/span&gt;
-    
-&lt;/h2&gt;
-&lt;p&gt;We have tokens (lexer) and a tree (parser). Now we need to transform this tree into a simpler representation for analysis and code generation.&lt;/p&gt;</description>
       
     </item>
     

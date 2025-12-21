@@ -149,6 +149,7 @@ fn nextToken(self: *Lexer) Token {
         ')' => return self.makeToken(startPos, .rpren),
         ':' => return self.makeToken(startPos, .colon),
         ';' => return self.makeToken(startPos, .semicolon),
+        '=' => return self.makeToken(startPos, .equal),
         else => return self.makeToken(startPos, .invalid),
     }
 }

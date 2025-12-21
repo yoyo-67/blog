@@ -6,7 +6,7 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/01-setup/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/01-ast-nodes/</loc>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/01-grammar-basics/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/03-zir/01-ir-instructions/</loc>
@@ -30,7 +30,7 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/02-single-chars/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/02-atoms/</loc>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/02-repetition/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/03-zir/02-flatten-expr/</loc>
@@ -54,7 +54,7 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/03-whitespace/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/03-grouping/</loc>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/03-precedence/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/03-zir/03-flatten-nested/</loc>
@@ -78,7 +78,7 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/04-numbers/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/04-unary/</loc>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/04-unary-parens/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/03-zir/04-name-references/</loc>
@@ -102,7 +102,7 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/05-strings/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/05-binary-simple/</loc>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/05-statements/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/03-zir/05-param-references/</loc>
@@ -123,7 +123,7 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/06-identifiers/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/06-precedence/</loc>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/06-functions/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/03-zir/06-function-ir/</loc>
@@ -144,7 +144,7 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/07-keywords/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/07-precedence-impl/</loc>
+    <loc>http://localhost:1313/compiler-tutorial/02-parser/07-complete/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/03-zir/07-putting-together/</loc>
@@ -162,28 +162,16 @@
     <loc>http://localhost:1313/compiler-tutorial/01-lexer/08-putting-together/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/08-statements/</loc>
-  </url>
-  <url>
     <loc>http://localhost:1313/compiler-tutorial/04-sema/08-putting-together/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/08-gen-calls/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/09-blocks/</loc>
-  </url>
-  <url>
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/09-gen-program/</loc>
   </url>
   <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/10-functions/</loc>
-  </url>
-  <url>
     <loc>http://localhost:1313/compiler-tutorial/05-codegen/10-putting-together/</loc>
-  </url>
-  <url>
-    <loc>http://localhost:1313/compiler-tutorial/02-parser/11-putting-together/</loc>
   </url>
   <url>
     <loc>http://localhost:1313/drafts/</loc>
