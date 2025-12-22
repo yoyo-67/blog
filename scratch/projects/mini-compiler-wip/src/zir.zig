@@ -9,26 +9,42 @@ const Node = node_mod.Node;
 
 const Zir = @This();
 
+instructions: std.ArrayListUnmanaged(Instruction),
+
 fn init() Zir {
-    return .{};
+    return .{
+        .instructions = .empty,
+    };
 }
 
-fn generate(self: *Zir, allocator: mem.Allocator, node: Node) ![]const Instruction {
-    _ = self; // autofix
-    var items: std.ArrayListUnmanaged(Instruction) = .empty;
+fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !void {
     for (node.root.decls) |decl| {
         switch (decl) {
             .int_literal => |int_decl| {
-                try items.append(allocator, int_decl.value);
+                try self.emit(allocator, .{ .constant = .{ .value = int_decl.value } });
             },
+
+            else => unreachable,
         }
     }
-    return items.toOwnedSlice(allocator);
+}
+
+fn emit(self: *Zir, allocator: mem.Allocator, instruction: Instruction) !void {
+    try self.instructions.append(allocator, instruction);
+}
+
+fn toString(self: *Zir, allocator: mem.Allocator) ![]const u8 {
+    _ = self; // autofix
+    _ = self; // autofix
+    _ = allocator; // autofix
+    return "";
 }
 
 const InstructionRef = u32;
 
-const Instruction = union(enum) {};
+const Instruction = union(enum) {
+    constant: struct { value: i32 },
+};
 
 test "constant: 42" {
     const allocator = testing.allocator;
