@@ -140,21 +140,10 @@ fn nextToken(self: *Lexer) Token {
 
     self.advance();
 
-    switch (c) {
-        '+' => return self.makeToken(startPos, .plus),
-        '-' => return self.makeToken(startPos, .minus),
-        '*' => return self.makeToken(startPos, .star),
-        '/' => return self.makeToken(startPos, .slash),
-        '(' => return self.makeToken(startPos, .lpren),
-        ')' => return self.makeToken(startPos, .rpren),
-        '{' => return self.makeToken(startPos, .lbrace),
-        '}' => return self.makeToken(startPos, .rbrace),
-        ':' => return self.makeToken(startPos, .colon),
-        ';' => return self.makeToken(startPos, .semicolon),
-        ',' => return self.makeToken(startPos, .comma),
-        '=' => return self.makeToken(startPos, .equal),
-        else => return self.makeToken(startPos, .invalid),
+    if (Token.Type.fromChar(c)) |tokenType| {
+        return self.makeToken(startPos, tokenType);
     }
+    return self.makeToken(startPos, .invalid);
 }
 
 fn scanNumber(self: *Lexer) Token {

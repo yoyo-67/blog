@@ -13,6 +13,24 @@ pub const keywords = std.StaticStringMap(Type).initComptime(.{
     .{ "i32", .kw_i32 },
 });
 
+// Single source of truth for char <-> Type mappings
+const char_type_map = .{
+    .{ '+', .plus },
+    .{ '-', .minus },
+    .{ '*', .star },
+    .{ '/', .slash },
+    .{ '(', .lpren },
+    .{ ')', .rpren },
+    .{ '{', .lbrace },
+    .{ '}', .rbrace },
+    .{ ':', .colon },
+    .{ ';', .semicolon },
+    .{ ',', .comma },
+    .{ '\'', .single_quote },
+    .{ '"', .double_quote },
+    .{ '=', .equal },
+};
+
 pub const Type = enum {
     integer,
     plus,
@@ -40,22 +58,16 @@ pub const Type = enum {
     kw_bool,
 
     pub fn toChar(self: Type) ?u8 {
-        return switch (self) {
-            .plus => '+',
-            .minus => '-',
-            .star => '*',
-            .slash => '/',
-            .lpren => '(',
-            .rpren => ')',
-            .lbrace => '{',
-            .rbrace => '}',
-            .colon => ':',
-            .semicolon => ';',
-            .comma => ',',
-            .single_quote => '\'',
-            .double_quote => '"',
-            .equal => '=',
-            else => null,
-        };
+        inline for (char_type_map) |entry| {
+            if (self == entry[1]) return entry[0];
+        }
+        return null;
+    }
+
+    pub fn fromChar(c: u8) ?Type {
+        inline for (char_type_map) |entry| {
+            if (c == entry[0]) return entry[1];
+        }
+        return null;
     }
 };
