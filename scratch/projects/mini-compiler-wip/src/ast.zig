@@ -84,6 +84,9 @@ fn advance(self: *Ast) void {
 }
 
 fn parseNode(self: *Ast, allocator: mem.Allocator) !Node {
+    if (self.see(.kw_fn)) {
+        return try self.parseFn(allocator);
+    }
     if (self.see(.kw_const) or self.see(.kw_return)) {
         return try self.parseStatements(allocator);
     }
@@ -204,19 +207,53 @@ fn parseReturnStmt(self: *Ast, allocator: mem.Allocator) !Node {
 // block: statement*
 //
 fn parseFn(self: *Ast, allocator: mem.Allocator) !Node {
-    var params: []Node.Param = undefined;
+    var params: std.ArrayListUnmanaged(Node.Param) = .empty;
     _ = self.expect(.kw_fn);
     const name = self.expect(.identifier).lexeme;
     _ = self.expect(.lpren);
     if (!self.see(.rpren)) {
-        params = self.parseParams(allocator);
+        try self.parseParams(allocator, &params);
     }
     _ = self.expect(.rpren);
     _ = self.expect(.lbrace);
     const block = try self.parseBlock(allocator);
     _ = self.expect(.rbrace);
 
-    return .{ .fn_decl = .{ .name = name, .params = params, .block = block } };
+    return .{ .fn_decl = .{ .name = name, .params = try params.toOwnedSlice(allocator), .block = block } };
+}
+
+fn parseParams(self: *Ast, allocator: mem.Allocator, params: *std.ArrayListUnmanaged(Node.Param)) !void {
+    // parameter: IDENTIFIER ':' TYPE
+    while (true) {
+        const param_name = self.expect(.identifier).lexeme;
+        _ = self.expect(.colon);
+        const param_type = self.parseType();
+        try params.append(allocator, .{ .name = param_name, .type = param_type });
+        if (!self.see(.comma)) break;
+        _ = self.consume(); // consume comma
+    }
+}
+
+fn parseType(self: *Ast) []const u8 {
+    if (self.see(.kw_i32)) {
+        return self.consume().lexeme;
+    }
+    if (self.see(.kw_bool)) {
+        return self.consume().lexeme;
+    }
+    if (self.see(.identifier)) {
+        return self.consume().lexeme;
+    }
+    unreachable;
+}
+
+fn parseBlock(self: *Ast, allocator: mem.Allocator) ParseError!Node.Block {
+    var decls: std.ArrayListUnmanaged(Node) = .empty;
+    while (!self.see(.rbrace) and !self.see(.eof)) {
+        const node = try self.parseNode(allocator);
+        try decls.append(allocator, node);
+    }
+    return .{ .decls = try decls.toOwnedSlice(allocator) };
 }
 
 test "simple addition: 1 + 2" {
@@ -297,4 +334,12 @@ test "return statment" {
 
     const tree = try parseExpr(&arena, "return 4 + 4;");
     try testing.expectEqualStrings("return(value=(4 + 4))", try tree.toString(arena.allocator()));
+}
+
+test "fn declaration" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "fn add(a: i32, b: i32) { return 1 + 2; }");
+    try testing.expectEqualStrings("fn(name=add, params=[param(name=a, type=i32), param(name=b, type=i32)], block=return(value=(1 + 2)))", try tree.toString(arena.allocator()));
 }

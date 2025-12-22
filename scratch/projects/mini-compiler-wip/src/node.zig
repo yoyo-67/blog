@@ -53,7 +53,7 @@ pub const Node = union(enum) {
         type: []const u8,
     };
 
-    const Block = struct { decls: []const Node };
+    pub const Block = struct { decls: []const Node };
 
     pub fn toString(self: Node, allocator: mem.Allocator) ![]const u8 {
         var buf: std.ArrayListUnmanaged(u8) = .empty;
@@ -102,7 +102,10 @@ pub const Node = union(enum) {
                 try writer.writeAll(", params=");
                 if (fn_decl.params.len > 0) {
                     try writer.writeAll("[");
-                    for (fn_decl.params) |param| {
+                    for (fn_decl.params, 0..) |param, idx| {
+                        if (idx > 0) {
+                            try writer.writeAll(", ");
+                        }
                         try writer.writeAll("param(");
                         try writer.writeAll("name=");
                         try writer.print("{s}", .{param.name});
@@ -116,8 +119,6 @@ pub const Node = union(enum) {
                 for (fn_decl.block.decls) |decl| {
                     try decl.write(writer);
                 }
-                try writer.writeAll(", params=");
-
                 try writer.writeAll(")");
             },
         }
