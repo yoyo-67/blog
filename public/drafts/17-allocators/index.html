@@ -1,0 +1,3431 @@
+<!doctype html>
+<html
+  lang="en-us"
+  dir="ltr"
+  class="scroll-smooth"
+  data-default-appearance="dark"
+  data-auto-appearance="true"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  
+    <meta http-equiv="content-language" content="en-us">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color">
+
+  
+  
+    <title>Part 17: Allocators Deep Dive - Inside Zig&#39;s Memory Management &middot; Yohai&#39;s Blog</title>
+    <meta name="title" content="Part 17: Allocators Deep Dive - Inside Zig&#39;s Memory Management &middot; Yohai&#39;s Blog">
+  
+
+  
+  
+  
+  
+  
+  <link rel="canonical" href="http://localhost:1313/drafts/17-allocators/">
+  
+
+  
+  
+    <meta name="author" content="Yohai">
+  
+  
+
+  
+  <meta property="og:url" content="http://localhost:1313/drafts/17-allocators/">
+  <meta property="og:site_name" content="Yohai&#39;s Blog">
+  <meta property="og:title" content="Part 17: Allocators Deep Dive - Inside Zig&#39;s Memory Management">
+  <meta property="og:description" content="Part 17: Allocators Deep Dive - Inside Zig’s Memory Management # In Part 12, we introduced Zig’s allocator system. Now we’ll go deeper - examining the actual implementation of each allocator, understanding their internal data structures, and learning when each one shines.
+But first, let’s understand how memory actually works - from the hardware up.
+Part 0: How Memory Really Works # Before we can understand allocators, we need to understand what they’re actually managing.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="drafts">
+    <meta property="article:published_time" content="2025-12-21T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-21T00:00:00+00:00">
+
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Part 17: Allocators Deep Dive - Inside Zig&#39;s Memory Management">
+  <meta name="twitter:description" content="Part 17: Allocators Deep Dive - Inside Zig’s Memory Management # In Part 12, we introduced Zig’s allocator system. Now we’ll go deeper - examining the actual implementation of each allocator, understanding their internal data structures, and learning when each one shines.
+But first, let’s understand how memory actually works - from the hardware up.
+Part 0: How Memory Really Works # Before we can understand allocators, we need to understand what they’re actually managing.">
+
+  
+  
+  
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+  
+    
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+    
+  
+  
+  <link
+    type="text/css"
+    rel="stylesheet"
+    href="/css/main.bundle.min.0975a8c7c266a0697f94839b45e1574c449de253527d44ed516d5c5c3c820c9389d7d86576faae12267b129f8749ecbf7581cddb636aba7690aa633b95aaa87d.css"
+    integrity="sha512-CXWox8JmoGl/lIObReFXTESd4lNSfUTtUW1cXDyCDJOJ19hldvquEiZ7Ep&#43;HSey/dYHN22NqunaQqmM7laqofQ==">
+
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/appearance.min.6f41174b3a05b680820fe08cadbfa5fb7a7ca347b76a0955cdc68b9d8aca1ce24f0547e138cea33bcc7904d551a90afcb1cc7f2d9fe8557075d501419046c08c.js"
+    integrity="sha512-b0EXSzoFtoCCD&#43;CMrb&#43;l&#43;3p8o0e3aglVzcaLnYrKHOJPBUfhOM6jO8x5BNVRqQr8scx/LZ/oVXB11QFBkEbAjA=="></script>
+  
+  
+  
+  
+  
+  
+    
+    <script src="/lib/zoom/zoom.min.umd.a527109b68c082a70f3697716dd72a9d5aa8b545cf800cecbbc7399f2ca6f6e0ce3e431f2062b48bbfa47c9ea42822714060bef309be073f49b9c0e30d318d7b.js" integrity="sha512-pScQm2jAgqcPNpdxbdcqnVqotUXPgAzsu8c5nyym9uDOPkMfIGK0i7&#43;kfJ6kKCJxQGC&#43;8wm&#43;Bz9JucDjDTGNew=="></script>
+  
+
+  
+  
+  
+    
+  
+  
+    
+  
+  
+    
+  
+  
+  
+  
+  
+  
+    
+    <script
+      defer
+      type="text/javascript"
+      id="script-bundle"
+      src="/js/main.bundle.min.9cc802d09f28c6af56ceee7bc6e320a39251fdae98243f2a9942f221ac57a9f49c51609699a91794a7b2580ee1deaa8e4d794a68ffa94aa317c66e893ce51e02.js"
+      integrity="sha512-nMgC0J8oxq9Wzu57xuMgo5JR/a6YJD8qmULyIaxXqfScUWCWmakXlKeyWA7h3qqOTXlKaP&#43;pSqMXxm6JPOUeAg=="
+      data-copy="Copy"
+      data-copied="Copied"></script>
+  
+
+  
+  
+
+<script src="/lib/jquery/jquery.slim.min.b0dca576e87d7eaa5850ae4e61759c065786cdb6489d68fcc82240539eebd5da522bdb4fda085ffd245808c8fe2acb2516408eb774ef26b5f6015fc6737c0ea8.js" integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj&#43;KsslFkCOt3TvJrX2AV/Gc3wOqA=="></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+  
+  
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  
+
+  
+  <script type="application/ld+json">
+  [{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "articleSection": "Drafts",
+    "name": "Part 17: Allocators Deep Dive - Inside Zig\u0027s Memory Management",
+    "headline": "Part 17: Allocators Deep Dive - Inside Zig\u0027s Memory Management",
+    
+    "abstract": "\u003ch1 class=\u0022relative group\u0022\u003ePart 17: Allocators Deep Dive - Inside Zig\u0026rsquo;s Memory Management\n    \u003cdiv id=\u0022part-17-allocators-deep-dive---inside-zigs-memory-management\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#part-17-allocators-deep-dive---inside-zigs-memory-management\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h1\u003e\n\u003cp\u003eIn Part 12, we introduced Zig\u0026rsquo;s allocator system. Now we\u0026rsquo;ll go deeper - examining the actual implementation of each allocator, understanding their internal data structures, and learning when each one shines.\u003c\/p\u003e\n\u003cp\u003eBut first, let\u0026rsquo;s understand how memory actually works - from the hardware up.\u003c\/p\u003e\n\u003chr\u003e\n\n\u003ch2 class=\u0022relative group\u0022\u003ePart 0: How Memory Really Works\n    \u003cdiv id=\u0022part-0-how-memory-really-works\u0022 class=\u0022anchor\u0022\u003e\u003c\/div\u003e\n    \n    \u003cspan\n        class=\u0022absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none\u0022\u003e\n        \u003ca class=\u0022text-primary-300 dark:text-neutral-700 !no-underline\u0022 href=\u0022#part-0-how-memory-really-works\u0022 aria-label=\u0022Anchor\u0022\u003e#\u003c\/a\u003e\n    \u003c\/span\u003e\n    \n\u003c\/h2\u003e\n\u003cp\u003eBefore we can understand allocators, we need to understand what they\u0026rsquo;re actually managing.\u003c\/p\u003e",
+    "inLanguage": "en-us",
+    "url" : "http://localhost:1313/drafts/17-allocators/",
+    "author" : {
+      "@type": "Person",
+      "name": "Yohai"
+    },
+    "copyrightYear": "2025",
+    "dateCreated": "2025-12-21T00:00:00\u002b00:00",
+    "datePublished": "2025-12-21T00:00:00\u002b00:00",
+    
+    "dateModified": "2025-12-21T00:00:00\u002b00:00",
+    
+    
+    
+    "mainEntityOfPage": "true",
+    "wordCount": "7753"
+  }]
+  </script>
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <body class="flex flex-col h-screen m-auto leading-7 max-w-7xl px-6 sm:px-14 md:px-24 lg:px-32 text-lg bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600">
+    <div id="the-top" class="absolute flex self-center">
+      <a
+        class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600"
+        href="#main-content">
+        <span class="font-bold text-primary-600 pe-2 dark:text-primary-400">&darr;</span>
+        Skip to main content
+      </a>
+    </div>
+    
+    
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div
+  class="main-menu flex items-center justify-between py-6 md:justify-start gap-x-3 pt-[2px] pr-2 md:pr-4 pb-[3px] pl-0">
+  
+  
+
+  <div class="flex flex-1 items-center justify-between">
+    <nav class="flex space-x-3">
+      
+        <a href="/" class="text-base font-medium">
+          Yohai&rsquo;s Blog
+        </a>
+      
+    </nav>
+    
+  <nav class="hidden md:flex items-center gap-x-5 md:ml-12 h-12">
+    
+      
+        
+  <a
+  href="/posts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Posts"
+  title="Posts">
+  
+  
+    <p class="text-base font-medium">
+      Posts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/drafts/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Drafts"
+  title="Drafts">
+  
+  
+    <p class="text-base font-medium">
+      Drafts
+    </p>
+  
+</a>
+
+
+
+      
+        
+  <a
+  href="/tags/"
+  
+  class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+  aria-label="Tags"
+  title="Tags">
+  
+  
+    <p class="text-base font-medium">
+      Tags
+    </p>
+  
+</a>
+
+
+
+      
+    
+
+    
+
+    
+
+    
+      <button
+        id="search-button"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <div class=" flex items-center">
+        <button
+          id="appearance-switcher"
+          aria-label="Dark mode switcher"
+          type="button"
+          class="text-base hover:text-primary-600 dark:hover:text-primary-400">
+          <div class="flex items-center justify-center dark:hidden">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+          </div>
+          <div class="items-center justify-center hidden dark:flex">
+            <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+          </div>
+        </button>
+      </div>
+    
+  </nav>
+
+    
+  <div class="flex md:hidden items-center gap-x-5 md:ml-12 h-12">
+    <span></span>
+
+    
+
+    
+
+    
+      <button
+        id="search-button-mobile"
+        aria-label="Search"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400"
+        title="Search (/)">
+        <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+      </button>
+    
+
+    
+      <button
+        id="appearance-switcher-mobile"
+        aria-label="Dark mode switcher"
+        type="button"
+        class="text-base hover:text-primary-600 dark:hover:text-primary-400 me-1">
+        <div class="flex items-center justify-center dark:hidden">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M32 256c0-123.8 100.3-224 223.8-224c11.36 0 29.7 1.668 40.9 3.746c9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3c9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480C132.1 480 32 379.6 32 256z"/></svg>
+</span>
+        </div>
+        <div class="items-center justify-center hidden dark:flex">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 159.1c-53.02 0-95.1 42.98-95.1 95.1S202.1 351.1 256 351.1s95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347L446.1 255.1l63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7l-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89L164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6L12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256l-63.15 91.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7l19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109l109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69 0-127.1-57.31-127.1-127.1c0-70.69 57.31-127.1 127.1-127.1s127.1 57.3 127.1 127.1C383.1 326.7 326.7 383.1 256 383.1z"/></svg>
+</span>
+        </div>
+      </button>
+    
+  </div>
+
+  </div>
+  
+  <div class="-my-2 md:hidden">
+    <div id="menu-button" class="block">
+      
+        <div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400">
+          <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>
+</span>
+        </div>
+        <div
+          id="menu-wrapper"
+          class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50 pt-[5px]">
+          <ul
+            class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none text-end max-w-7xl">
+            <li id="menu-close-button">
+              <span
+                class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400">
+                <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+              </span>
+            </li>
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/posts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Posts"
+    title="Posts">
+    
+    
+      <p class="text-bg font-bg">
+        Posts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/drafts/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Drafts"
+    title="Drafts">
+    
+    
+      <p class="text-bg font-bg">
+        Drafts
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+              
+  <li class="mt-1">
+  <a
+    href="/tags/"
+    
+    class="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+    aria-label="Tags"
+    title="Tags">
+    
+    
+      <p class="text-bg font-bg">
+        Tags
+      </p>
+    
+  </a>
+</li>
+
+
+
+            
+
+          </ul>
+          
+        </div>
+      
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+    
+    <div class="relative flex flex-col grow">
+      <main id="main-content" class="grow">
+        
+  
+  <article>
+    
+    
+
+    
+    <header id="single_header" class="mt-5 max-w-prose">
+      
+        <ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden">
+  
+  
+    
+  
+    
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/"
+      >Yohai&#39;s Blog</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="inline">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/"
+      >Drafts</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+  
+  <li class="hidden">
+    <a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href="/drafts/17-allocators/"
+      >Part 17: Allocators Deep Dive - Inside Zig&#39;s Memory Management</a
+    ><span class="px-1 text-primary-500">/</span>
+  </li>
+
+</ol>
+
+
+      
+      <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        Part 17: Allocators Deep Dive - Inside Zig's Memory Management
+      </h1>
+      <div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden">
+        
+
+
+
+
+
+  
+  
+
+
+
+  
+
+  
+  
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+
+  
+    
+  
+
+  
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <div class="flex flex-row flex-wrap items-center">
+    
+    
+      <time datetime="2025-12-21T00:00:00&#43;00:00">December 21, 2025</time><span class="px-2 text-primary-500">&middot;</span><span>7753 words</span><span class="px-2 text-primary-500">&middot;</span><span title="Reading time">37 mins</span>
+    
+
+    
+    
+  </div>
+
+  
+
+  
+  
+
+  
+  
+
+
+
+      </div>
+      
+        
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    
+    
+<div class="flex author">
+  
+  <div class="place-self-center">
+    
+      <div class="text-[0.6rem] uppercase leading-3 text-neutral-500 dark:text-neutral-400">
+        Author
+      </div>
+      <div class="font-semibold leading-6 text-neutral-800 dark:text-neutral-300">
+        Yohai
+      </div>
+    
+    
+    <div class="text-2xl sm:text-lg">
+</div>
+  </div>
+</div>
+
+  
+
+  
+
+  
+    <div class="mb-5"></div>
+  
+
+      
+    </header>
+
+    
+    <section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row">
+      
+      
+      
+      
+      
+        <div class="order-first lg:ml-auto px-0 lg:order-last lg:ps-8 lg:max-w-2xs">
+          <div class="toc ps-5 print:hidden lg:sticky lg:top-10">
+            
+              <details
+  open
+  id="TOCView"
+  class="toc-right mt-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-neutral-200 scrollbar-thumb-neutral-400 dark:scrollbar-track-neutral-800 dark:scrollbar-thumb-neutral-600 rounded-lg -ms-5 ps-5 pe-2 hidden lg:block">
+  <summary
+    class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="min-w-[220px] py-2 border-dotted border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#part-0-how-memory-really-works">Part 0: How Memory Really Works</a>
+      <ul>
+        <li><a href="#physical-memory-the-hardware-reality">Physical Memory: The Hardware Reality</a></li>
+        <li><a href="#the-problem-multiple-programs">The Problem: Multiple Programs</a></li>
+        <li><a href="#the-solution-virtual-memory">The Solution: Virtual Memory</a></li>
+        <li><a href="#pages-the-unit-of-memory-management">Pages: The Unit of Memory Management</a></li>
+        <li><a href="#the-page-table-where-translation-happens">The Page Table: Where Translation Happens</a></li>
+        <li><a href="#the-mmu-hardware-that-does-translation">The MMU: Hardware That Does Translation</a></li>
+        <li><a href="#page-faults-when-things-arent-present">Page Faults: When Things Aren&rsquo;t Present</a></li>
+        <li><a href="#how-programs-get-memory-mmap-and-brk">How Programs Get Memory: mmap and brk</a></li>
+        <li><a href="#lazy-allocation-memory-that-doesnt-exist-yet">Lazy Allocation: Memory That Doesn&rsquo;t Exist Yet</a></li>
+        <li><a href="#memory-layout-of-a-process">Memory Layout of a Process</a></li>
+        <li><a href="#stack-vs-heap-two-ways-to-allocate">Stack vs Heap: Two Ways to Allocate</a></li>
+        <li><a href="#memory-alignment-why-it-matters">Memory Alignment: Why It Matters</a></li>
+        <li><a href="#the-cost-of-syscalls">The Cost of Syscalls</a></li>
+        <li><a href="#putting-it-all-together">Putting It All Together</a></li>
+      </ul>
+    </li>
+    <li><a href="#the-allocator-interface">The Allocator Interface</a></li>
+    <li><a href="#1-pageallocator---the-foundation">1. PageAllocator - The Foundation</a>
+      <ul>
+        <li><a href="#the-simple-idea">The Simple Idea</a></li>
+        <li><a href="#what-happens-when-you-allocate">What Happens When You Allocate</a></li>
+        <li><a href="#alignment-handling---the-clever-trick">Alignment Handling - The Clever Trick</a></li>
+        <li><a href="#when-to-use-pageallocator">When to Use PageAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#2-arenaallocator---the-batch-processor">2. ArenaAllocator - The Batch Processor</a>
+      <ul>
+        <li><a href="#the-simple-idea-1">The Simple Idea</a></li>
+        <li><a href="#internal-structure">Internal Structure</a></li>
+        <li><a href="#step-by-step-what-happens-during-allocation">Step-by-Step: What Happens During Allocation</a></li>
+        <li><a href="#what-if-it-doesnt-fit">What If It Doesn&rsquo;t Fit?</a></li>
+        <li><a href="#free-behavior---the-clever-optimization">Free Behavior - The Clever Optimization</a></li>
+        <li><a href="#reset-modes-visualized">Reset Modes Visualized</a></li>
+        <li><a href="#real-world-example-parser">Real-World Example: Parser</a></li>
+        <li><a href="#when-to-use-arena">When to Use Arena</a></li>
+      </ul>
+    </li>
+    <li><a href="#3-fixedbufferallocator---zero-heap-allocations">3. FixedBufferAllocator - Zero Heap Allocations</a>
+      <ul>
+        <li><a href="#the-simple-idea-2">The Simple Idea</a></li>
+        <li><a href="#internal-structure---minimal">Internal Structure - Minimal!</a></li>
+        <li><a href="#step-by-step-allocation">Step-by-Step Allocation</a></li>
+        <li><a href="#what-happens-on-outofmemory">What Happens on OutOfMemory?</a></li>
+        <li><a href="#thread-safe-variant-lock-free">Thread-Safe Variant (Lock-Free!)</a></li>
+        <li><a href="#compile-time-usage">Compile-Time Usage</a></li>
+        <li><a href="#when-to-use-fixedbufferallocator">When to Use FixedBufferAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#4-debugallocator---the-memory-detective">4. DebugAllocator - The Memory Detective</a>
+      <ul>
+        <li><a href="#the-simple-idea-3">The Simple Idea</a></li>
+        <li><a href="#how-it-catches-bugs">How It Catches Bugs</a></li>
+        <li><a href="#internal-structure---bucket-system">Internal Structure - Bucket System</a></li>
+        <li><a href="#allocation-flow">Allocation Flow</a></li>
+        <li><a href="#leak-detection-on-deinit">Leak Detection on deinit()</a></li>
+        <li><a href="#configuration-options">Configuration Options</a></li>
+        <li><a href="#when-to-use-debugallocator">When to Use DebugAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#5-smpallocator---multi-threaded-production">5. SmpAllocator - Multi-Threaded Production</a>
+      <ul>
+        <li><a href="#the-simple-idea-4">The Simple Idea</a></li>
+        <li><a href="#internal-structure-1">Internal Structure</a></li>
+        <li><a href="#allocation-flow---the-lock-rotation-trick">Allocation Flow - The Lock Rotation Trick</a></li>
+        <li><a href="#freelist-structure">Freelist Structure</a></li>
+        <li><a href="#when-to-use-smpallocator">When to Use SmpAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#6-memorypool---object-pool-pattern">6. MemoryPool - Object Pool Pattern</a>
+      <ul>
+        <li><a href="#the-simple-idea-5">The Simple Idea</a></li>
+        <li><a href="#internal-structure-2">Internal Structure</a></li>
+        <li><a href="#create-and-destroy-flow">create() and destroy() Flow</a></li>
+        <li><a href="#visual-example">Visual Example</a></li>
+        <li><a href="#preheating-for-deterministic-behavior">Preheating for Deterministic Behavior</a></li>
+        <li><a href="#when-to-use-memorypool">When to Use MemoryPool</a></li>
+      </ul>
+    </li>
+    <li><a href="#7-threadsafeallocator---simple-wrapper">7. ThreadSafeAllocator - Simple Wrapper</a>
+      <ul>
+        <li><a href="#the-simple-idea-6">The Simple Idea</a></li>
+        <li><a href="#the-entire-implementation">The Entire Implementation</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+      </ul>
+    </li>
+    <li><a href="#8-11-specialized-allocators-brief">8-11. Specialized Allocators (Brief)</a>
+      <ul>
+        <li><a href="#wasmallocator">WasmAllocator</a></li>
+        <li><a href="#sbrkallocator">SbrkAllocator</a></li>
+        <li><a href="#c_allocator--raw_c_allocator">c_allocator / raw_c_allocator</a></li>
+        <li><a href="#stackfallbackallocator">StackFallbackAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#quick-reference-which-allocator">Quick Reference: Which Allocator?</a></li>
+    <li><a href="#summary">Summary</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+<details class="toc-inside mt-0 overflow-hidden rounded-lg -ms-5 ps-5 lg:hidden">
+  <summary
+    class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 -ms-5 ps-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden">
+    Table of Contents
+  </summary>
+  <div
+    class="py-2 border-dotted border-neutral-300 border-s-1 -ms-5 ps-5 dark:border-neutral-600">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#part-0-how-memory-really-works">Part 0: How Memory Really Works</a>
+      <ul>
+        <li><a href="#physical-memory-the-hardware-reality">Physical Memory: The Hardware Reality</a></li>
+        <li><a href="#the-problem-multiple-programs">The Problem: Multiple Programs</a></li>
+        <li><a href="#the-solution-virtual-memory">The Solution: Virtual Memory</a></li>
+        <li><a href="#pages-the-unit-of-memory-management">Pages: The Unit of Memory Management</a></li>
+        <li><a href="#the-page-table-where-translation-happens">The Page Table: Where Translation Happens</a></li>
+        <li><a href="#the-mmu-hardware-that-does-translation">The MMU: Hardware That Does Translation</a></li>
+        <li><a href="#page-faults-when-things-arent-present">Page Faults: When Things Aren&rsquo;t Present</a></li>
+        <li><a href="#how-programs-get-memory-mmap-and-brk">How Programs Get Memory: mmap and brk</a></li>
+        <li><a href="#lazy-allocation-memory-that-doesnt-exist-yet">Lazy Allocation: Memory That Doesn&rsquo;t Exist Yet</a></li>
+        <li><a href="#memory-layout-of-a-process">Memory Layout of a Process</a></li>
+        <li><a href="#stack-vs-heap-two-ways-to-allocate">Stack vs Heap: Two Ways to Allocate</a></li>
+        <li><a href="#memory-alignment-why-it-matters">Memory Alignment: Why It Matters</a></li>
+        <li><a href="#the-cost-of-syscalls">The Cost of Syscalls</a></li>
+        <li><a href="#putting-it-all-together">Putting It All Together</a></li>
+      </ul>
+    </li>
+    <li><a href="#the-allocator-interface">The Allocator Interface</a></li>
+    <li><a href="#1-pageallocator---the-foundation">1. PageAllocator - The Foundation</a>
+      <ul>
+        <li><a href="#the-simple-idea">The Simple Idea</a></li>
+        <li><a href="#what-happens-when-you-allocate">What Happens When You Allocate</a></li>
+        <li><a href="#alignment-handling---the-clever-trick">Alignment Handling - The Clever Trick</a></li>
+        <li><a href="#when-to-use-pageallocator">When to Use PageAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#2-arenaallocator---the-batch-processor">2. ArenaAllocator - The Batch Processor</a>
+      <ul>
+        <li><a href="#the-simple-idea-1">The Simple Idea</a></li>
+        <li><a href="#internal-structure">Internal Structure</a></li>
+        <li><a href="#step-by-step-what-happens-during-allocation">Step-by-Step: What Happens During Allocation</a></li>
+        <li><a href="#what-if-it-doesnt-fit">What If It Doesn&rsquo;t Fit?</a></li>
+        <li><a href="#free-behavior---the-clever-optimization">Free Behavior - The Clever Optimization</a></li>
+        <li><a href="#reset-modes-visualized">Reset Modes Visualized</a></li>
+        <li><a href="#real-world-example-parser">Real-World Example: Parser</a></li>
+        <li><a href="#when-to-use-arena">When to Use Arena</a></li>
+      </ul>
+    </li>
+    <li><a href="#3-fixedbufferallocator---zero-heap-allocations">3. FixedBufferAllocator - Zero Heap Allocations</a>
+      <ul>
+        <li><a href="#the-simple-idea-2">The Simple Idea</a></li>
+        <li><a href="#internal-structure---minimal">Internal Structure - Minimal!</a></li>
+        <li><a href="#step-by-step-allocation">Step-by-Step Allocation</a></li>
+        <li><a href="#what-happens-on-outofmemory">What Happens on OutOfMemory?</a></li>
+        <li><a href="#thread-safe-variant-lock-free">Thread-Safe Variant (Lock-Free!)</a></li>
+        <li><a href="#compile-time-usage">Compile-Time Usage</a></li>
+        <li><a href="#when-to-use-fixedbufferallocator">When to Use FixedBufferAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#4-debugallocator---the-memory-detective">4. DebugAllocator - The Memory Detective</a>
+      <ul>
+        <li><a href="#the-simple-idea-3">The Simple Idea</a></li>
+        <li><a href="#how-it-catches-bugs">How It Catches Bugs</a></li>
+        <li><a href="#internal-structure---bucket-system">Internal Structure - Bucket System</a></li>
+        <li><a href="#allocation-flow">Allocation Flow</a></li>
+        <li><a href="#leak-detection-on-deinit">Leak Detection on deinit()</a></li>
+        <li><a href="#configuration-options">Configuration Options</a></li>
+        <li><a href="#when-to-use-debugallocator">When to Use DebugAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#5-smpallocator---multi-threaded-production">5. SmpAllocator - Multi-Threaded Production</a>
+      <ul>
+        <li><a href="#the-simple-idea-4">The Simple Idea</a></li>
+        <li><a href="#internal-structure-1">Internal Structure</a></li>
+        <li><a href="#allocation-flow---the-lock-rotation-trick">Allocation Flow - The Lock Rotation Trick</a></li>
+        <li><a href="#freelist-structure">Freelist Structure</a></li>
+        <li><a href="#when-to-use-smpallocator">When to Use SmpAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#6-memorypool---object-pool-pattern">6. MemoryPool - Object Pool Pattern</a>
+      <ul>
+        <li><a href="#the-simple-idea-5">The Simple Idea</a></li>
+        <li><a href="#internal-structure-2">Internal Structure</a></li>
+        <li><a href="#create-and-destroy-flow">create() and destroy() Flow</a></li>
+        <li><a href="#visual-example">Visual Example</a></li>
+        <li><a href="#preheating-for-deterministic-behavior">Preheating for Deterministic Behavior</a></li>
+        <li><a href="#when-to-use-memorypool">When to Use MemoryPool</a></li>
+      </ul>
+    </li>
+    <li><a href="#7-threadsafeallocator---simple-wrapper">7. ThreadSafeAllocator - Simple Wrapper</a>
+      <ul>
+        <li><a href="#the-simple-idea-6">The Simple Idea</a></li>
+        <li><a href="#the-entire-implementation">The Entire Implementation</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+      </ul>
+    </li>
+    <li><a href="#8-11-specialized-allocators-brief">8-11. Specialized Allocators (Brief)</a>
+      <ul>
+        <li><a href="#wasmallocator">WasmAllocator</a></li>
+        <li><a href="#sbrkallocator">SbrkAllocator</a></li>
+        <li><a href="#c_allocator--raw_c_allocator">c_allocator / raw_c_allocator</a></li>
+        <li><a href="#stackfallbackallocator">StackFallbackAllocator</a></li>
+      </ul>
+    </li>
+    <li><a href="#quick-reference-which-allocator">Quick Reference: Which Allocator?</a></li>
+    <li><a href="#summary">Summary</a></li>
+  </ul>
+</nav>
+  </div>
+</details>
+
+
+
+            
+          </div>
+        </div>
+      
+
+
+      <div class="min-w-0 min-h-0 max-w-fit">
+        
+
+        <div class="article-content max-w-prose mb-20">
+          
+<h1 class="relative group">Part 17: Allocators Deep Dive - Inside Zig&rsquo;s Memory Management
+    <div id="part-17-allocators-deep-dive---inside-zigs-memory-management" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-17-allocators-deep-dive---inside-zigs-memory-management" aria-label="Anchor">#</a>
+    </span>
+    
+</h1>
+<p>In Part 12, we introduced Zig&rsquo;s allocator system. Now we&rsquo;ll go deeper - examining the actual implementation of each allocator, understanding their internal data structures, and learning when each one shines.</p>
+<p>But first, let&rsquo;s understand how memory actually works - from the hardware up.</p>
+<hr>
+
+<h2 class="relative group">Part 0: How Memory Really Works
+    <div id="part-0-how-memory-really-works" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#part-0-how-memory-really-works" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Before we can understand allocators, we need to understand what they&rsquo;re actually managing.</p>
+
+<h3 class="relative group">Physical Memory: The Hardware Reality
+    <div id="physical-memory-the-hardware-reality" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#physical-memory-the-hardware-reality" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Your computer has RAM - physical chips that store bytes. Each byte has an address:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    PHYSICAL RAM (8GB example)                │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Address        Content                                      │
+│  ────────       ───────                                      │
+│  0x00000000     [byte] [byte] [byte] [byte] ...             │
+│  0x00000004     [byte] [byte] [byte] [byte] ...             │
+│  0x00000008     [byte] [byte] [byte] [byte] ...             │
+│  ...                                                         │
+│  0x1FFFFFFFF    [byte] [byte] [byte] [byte]  ← Last byte    │
+│                                               (8GB = 2^33)  │
+│                                                              │
+│  Physical RAM is just a giant array of bytes!               │
+│  RAM[address] = byte_value                                  │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><p><strong>The CPU reads/writes memory through the memory bus:</strong></p>
+<pre tabindex="0"><code>┌─────────────┐                      ┌─────────────────────┐
+│     CPU     │ ◄─── Memory Bus ───► │        RAM          │
+│             │                      │                     │
+│  &#34;Read from │   Address: 0x1000    │  Returns: 0x42      │
+│   0x1000&#34;   │   ─────────────────► │                     │
+│             │   ◄───────────────── │                     │
+│             │   Data: 0x42         │                     │
+└─────────────┘                      └─────────────────────┘
+</code></pre>
+<h3 class="relative group">The Problem: Multiple Programs
+    <div id="the-problem-multiple-programs" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-problem-multiple-programs" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>What happens when you run multiple programs?</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    THE PROBLEM                               │
+│                                                              │
+│  Program A thinks it owns address 0x1000                    │
+│  Program B thinks it owns address 0x1000                    │
+│                                                              │
+│  Both compiled to use the same addresses!                   │
+│                                                              │
+│  ┌─────────────┐    ┌─────────────┐                         │
+│  │  Program A  │    │  Program B  │                         │
+│  │             │    │             │                         │
+│  │ ptr = 0x1000│    │ ptr = 0x1000│                         │
+│  │ *ptr = 42   │    │ *ptr = 99   │  ← They&#39;d overwrite    │
+│  └─────────────┘    └─────────────┘    each other!         │
+│                                                              │
+│  Also: What if Program A tries to read Program B&#39;s          │
+│  passwords stored in memory? SECURITY DISASTER!             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Solution: Virtual Memory
+    <div id="the-solution-virtual-memory" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-solution-virtual-memory" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Every process gets its own <strong>virtual address space</strong> - an illusion that it has all memory to itself:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    VIRTUAL MEMORY                            │
+│                                                              │
+│  Program A&#39;s View:           Program B&#39;s View:              │
+│  ┌─────────────────┐        ┌─────────────────┐             │
+│  │ 0x0000 - 0xFFFF │        │ 0x0000 - 0xFFFF │             │
+│  │ (all mine!)     │        │ (all mine!)     │             │
+│  │                 │        │                 │             │
+│  │ 0x1000: my data │        │ 0x1000: my data │             │
+│  └────────┬────────┘        └────────┬────────┘             │
+│           │                          │                       │
+│           │ TRANSLATION              │ TRANSLATION           │
+│           ▼                          ▼                       │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │                   PHYSICAL RAM                       │    │
+│  │                                                      │    │
+│  │  A&#39;s 0x1000 ──► Physical 0x50000                    │    │
+│  │  B&#39;s 0x1000 ──► Physical 0x80000                    │    │
+│  │                                                      │    │
+│  │  Different physical locations!                       │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  The OS + CPU translate virtual → physical addresses        │
+│  Programs never see real physical addresses                  │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Pages: The Unit of Memory Management
+    <div id="pages-the-unit-of-memory-management" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#pages-the-unit-of-memory-management" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Memory isn&rsquo;t managed byte-by-byte - that would require a translation table entry for every single byte! Instead, memory is divided into <strong>pages</strong>:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    MEMORY PAGES                              │
+│                                                              │
+│  Typical page size: 4KB (4096 bytes)                        │
+│  Some systems: 16KB, 64KB, or &#34;huge pages&#34; of 2MB/1GB       │
+│                                                              │
+│  Virtual Address Space (divided into pages):                │
+│  ┌────────┬────────┬────────┬────────┬────────┬────────┐   │
+│  │ Page 0 │ Page 1 │ Page 2 │ Page 3 │ Page 4 │  ...   │   │
+│  │ 0-4095 │4096-   │8192-   │12288-  │16384-  │        │   │
+│  │        │8191    │12287   │16383   │20479   │        │   │
+│  └────────┴────────┴────────┴────────┴────────┴────────┘   │
+│                                                              │
+│  Physical RAM (also divided into pages, called &#34;frames&#34;):   │
+│  ┌────────┬────────┬────────┬────────┬────────┬────────┐   │
+│  │Frame 0 │Frame 1 │Frame 2 │Frame 3 │Frame 4 │  ...   │   │
+│  └────────┴────────┴────────┴────────┴────────┴────────┘   │
+│                                                              │
+│  Each virtual page maps to a physical frame                  │
+│  (or to nothing - &#34;not present&#34;)                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Page Table: Where Translation Happens
+    <div id="the-page-table-where-translation-happens" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-page-table-where-translation-happens" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Every process has a <strong>page table</strong> - a data structure mapping virtual pages to physical frames:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                   PAGE TABLE (per process)                   │
+│                                                              │
+│  Virtual Page    Physical Frame    Flags                    │
+│  ────────────    ──────────────    ─────                    │
+│  Page 0     ──►  Frame 47          [R, W, Present]          │
+│  Page 1     ──►  Frame 123         [R, Present]             │
+│  Page 2     ──►  (not present)     [Not Present]            │
+│  Page 3     ──►  Frame 8           [R, W, X, Present]       │
+│  Page 4     ──►  (not present)     [Not Present]            │
+│  ...                                                         │
+│                                                              │
+│  Flags:                                                      │
+│    R = Readable                                              │
+│    W = Writable                                              │
+│    X = Executable                                            │
+│    Present = Actually in physical RAM                        │
+│                                                              │
+│  The page table lives in RAM, managed by the OS             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The MMU: Hardware That Does Translation
+    <div id="the-mmu-hardware-that-does-translation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-mmu-hardware-that-does-translation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>The CPU has a special unit called the <strong>MMU (Memory Management Unit)</strong> that translates addresses on every memory access:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                 ADDRESS TRANSLATION (MMU)                    │
+│                                                              │
+│  Your code: ptr = 0x00003042                                │
+│                    ▼                                         │
+│  ┌─────────────────────────────────────────────────┐        │
+│  │ Virtual Address: 0x00003042                      │        │
+│  │                                                  │        │
+│  │ Split into:                                      │        │
+│  │   Page Number: 0x00003  (which page?)           │        │
+│  │   Offset:      0x042    (where in that page?)   │        │
+│  └─────────────────────────────────────────────────┘        │
+│                    ▼                                         │
+│  ┌─────────────────────────────────────────────────┐        │
+│  │ MMU looks up Page 3 in Page Table               │        │
+│  │                                                  │        │
+│  │ Page 3 ──► Frame 8                              │        │
+│  └─────────────────────────────────────────────────┘        │
+│                    ▼                                         │
+│  ┌─────────────────────────────────────────────────┐        │
+│  │ Physical Address = Frame 8 base + Offset        │        │
+│  │                  = 0x00008000 + 0x042           │        │
+│  │                  = 0x00008042                   │        │
+│  └─────────────────────────────────────────────────┘        │
+│                    ▼                                         │
+│  RAM access at physical address 0x00008042                  │
+│                                                              │
+│  This happens FOR EVERY memory access!                      │
+│  (But it&#39;s fast - the MMU is in hardware + TLB cache)       │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Page Faults: When Things Aren&rsquo;t Present
+    <div id="page-faults-when-things-arent-present" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#page-faults-when-things-arent-present" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>What happens when you access a page that&rsquo;s &ldquo;not present&rdquo;?</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                      PAGE FAULT                              │
+│                                                              │
+│  1. Your code accesses address 0x5000                       │
+│  2. MMU looks up page 5 in page table                       │
+│  3. Page 5 says &#34;NOT PRESENT&#34;                               │
+│  4. MMU triggers a PAGE FAULT (CPU exception)               │
+│  5. OS kernel takes over                                    │
+│                                                              │
+│  The OS then decides what to do:                            │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Case A: Valid access, page just not loaded yet       │   │
+│  │         (e.g., lazy allocation, swapped to disk)     │   │
+│  │                                                      │   │
+│  │   → OS allocates physical frame                      │   │
+│  │   → OS updates page table: Page 5 → Frame N         │   │
+│  │   → OS resumes your program (retry the access)       │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Case B: Invalid access (you accessed bad memory!)    │   │
+│  │                                                      │   │
+│  │   → OS sends SIGSEGV signal                          │   │
+│  │   → Your program crashes: &#34;Segmentation fault&#34;       │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                              │
+│  This is how:                                               │
+│  • NULL pointer access is caught (page 0 marked invalid)   │
+│  • Programs can&#39;t access each other&#39;s memory               │
+│  • Lazy memory allocation works                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">How Programs Get Memory: mmap and brk
+    <div id="how-programs-get-memory-mmap-and-brk" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-programs-get-memory-mmap-and-brk" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>When your program needs memory, it asks the OS using <strong>system calls</strong>:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│               GETTING MEMORY FROM THE OS                     │
+│                                                              │
+│  Two main syscalls on Linux:                                │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                      mmap()                          │   │
+│  │                                                      │   │
+│  │  &#34;Give me N bytes of virtual address space&#34;          │   │
+│  │                                                      │   │
+│  │  1. OS finds unused region in your virtual space     │   │
+│  │  2. OS creates page table entries (marked not-present│   │
+│  │     initially - lazy allocation!)                    │   │
+│  │  3. Returns pointer to start of region               │   │
+│  │                                                      │   │
+│  │  void* ptr = mmap(NULL, 4096,                       │   │
+│  │                   PROT_READ | PROT_WRITE,           │   │
+│  │                   MAP_PRIVATE | MAP_ANONYMOUS,       │   │
+│  │                   -1, 0);                           │   │
+│  │                                                      │   │
+│  │  PROT_READ  = pages will be readable                │   │
+│  │  PROT_WRITE = pages will be writable                │   │
+│  │  MAP_PRIVATE = changes are private to this process  │   │
+│  │  MAP_ANONYMOUS = not backed by a file               │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                      munmap()                        │   │
+│  │                                                      │   │
+│  │  &#34;I&#39;m done with this memory region&#34;                  │   │
+│  │                                                      │   │
+│  │  munmap(ptr, 4096);                                 │   │
+│  │                                                      │   │
+│  │  • OS marks those pages as invalid                   │   │
+│  │  • Physical frames returned to system                │   │
+│  │  • Future accesses = segfault                        │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                              │
+│  This is exactly what Zig&#39;s PageAllocator does!             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Lazy Allocation: Memory That Doesn&rsquo;t Exist Yet
+    <div id="lazy-allocation-memory-that-doesnt-exist-yet" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#lazy-allocation-memory-that-doesnt-exist-yet" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Here&rsquo;s a surprising fact - when you mmap memory, it doesn&rsquo;t immediately use RAM:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                   LAZY ALLOCATION                            │
+│                                                              │
+│  Step 1: mmap(NULL, 1GB, ...)                               │
+│                                                              │
+│  Page Table:                                                │
+│  ┌──────────────────────────────────────────────────┐      │
+│  │ Page 0: [Not Present, but VALID when accessed]    │      │
+│  │ Page 1: [Not Present, but VALID when accessed]    │      │
+│  │ Page 2: [Not Present, but VALID when accessed]    │      │
+│  │ ... 262,000+ pages ...                            │      │
+│  └──────────────────────────────────────────────────┘      │
+│                                                              │
+│  Physical RAM used: ~0 bytes!                               │
+│  Virtual space reserved: 1GB                                │
+│                                                              │
+│  Step 2: You write to address in Page 0                     │
+│                                                              │
+│  ┌──────────────────────────────────────────────────┐      │
+│  │ 1. MMU sees &#34;Not Present&#34; → PAGE FAULT            │      │
+│  │ 2. OS sees &#34;this is a valid mmap&#39;d region&#34;        │      │
+│  │ 3. OS allocates ONE physical frame (4KB)          │      │
+│  │ 4. OS updates page table: Page 0 → Frame N        │      │
+│  │ 5. OS resumes your code                           │      │
+│  └──────────────────────────────────────────────────┘      │
+│                                                              │
+│  Physical RAM used: 4KB                                     │
+│  Only pages you ACTUALLY TOUCH use real RAM!                │
+│                                                              │
+│  This is why you can mmap huge regions cheaply.             │
+│  It&#39;s also why memory usage grows as you access memory.     │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Memory Layout of a Process
+    <div id="memory-layout-of-a-process" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#memory-layout-of-a-process" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Every process has a standard memory layout:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│            VIRTUAL ADDRESS SPACE LAYOUT                      │
+│                                                              │
+│  High addresses (e.g., 0x7FFFFFFFFFFF on 64-bit Linux)      │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │                      STACK                            │   │
+│  │  • Local variables                                    │   │
+│  │  • Function call frames                               │   │
+│  │  • Grows DOWNWARD ↓                                   │   │
+│  │                                                       │   │
+│  │  var x: u32 = 42;  // lives here                     │   │
+│  │                         ↓                             │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │                    (unmapped gap)                     │   │
+│  │              Stack overflow = segfault                │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │                                                       │   │
+│  │                   MEMORY MAPPINGS                     │   │
+│  │  • mmap() allocations                                 │   │
+│  │  • Shared libraries (.so files)                       │   │
+│  │  • Grows downward (usually)                           │   │
+│  │                                                       │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │                    (unmapped gap)                     │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │                         ↑                             │   │
+│  │                       HEAP                            │   │
+│  │  • malloc/allocator memory                            │   │
+│  │  • Grows UPWARD ↑                                     │   │
+│  │                                                       │   │
+│  │  var ptr = allocator.alloc(...);  // lives here      │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │                       BSS                             │   │
+│  │  • Uninitialized global variables                     │   │
+│  │  • var global: [1000]u8 = undefined;                 │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │                       DATA                            │   │
+│  │  • Initialized global variables                       │   │
+│  │  • const message = &#34;hello&#34;;                          │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │                       TEXT                            │   │
+│  │  • Your compiled code (machine instructions)          │   │
+│  │  • Read-only + Executable                             │   │
+│  ├───────────────────────────────────────────────────────┤   │
+│  │  0x0 - typically unmapped (NULL pointer protection)  │   │
+│  └──────────────────────────────────────────────────────┘   │
+│  Low addresses (0x0)                                        │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Stack vs Heap: Two Ways to Allocate
+    <div id="stack-vs-heap-two-ways-to-allocate" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#stack-vs-heap-two-ways-to-allocate" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                    STACK ALLOCATION                          │
+│                                                              │
+│  fn example() void {                                        │
+│      var buffer: [1024]u8 = undefined;  // ON STACK         │
+│      var x: u32 = 42;                   // ON STACK         │
+│  }  // Everything freed automatically when function returns │
+│                                                              │
+│  How it works:                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Stack pointer (SP) register = 0x7FFE0000           │    │
+│  │                                                     │    │
+│  │ Before call:  SP ──► [previous frame data]         │    │
+│  │                                                     │    │
+│  │ Enter func:   SP -= 1028  (make room)              │    │
+│  │               SP ──► [buffer: 1024 bytes]          │    │
+│  │                      [x: 4 bytes]                  │    │
+│  │                      [previous frame data]         │    │
+│  │                                                     │    │
+│  │ Return:       SP += 1028  (restore)                │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  • FAST: Just move stack pointer (single instruction)       │
+│  • AUTOMATIC: Freed when function returns                   │
+│  • LIMITED: Stack size is fixed (usually 1-8 MB)           │
+│  • LIFO: Can&#39;t free in arbitrary order                      │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    HEAP ALLOCATION                           │
+│                                                              │
+│  fn example(allocator: Allocator) !void {                   │
+│      var buffer = try allocator.alloc(u8, 1024);  // HEAP   │
+│      defer allocator.free(buffer);                          │
+│  }                                                          │
+│                                                              │
+│  How it works:                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Allocator maintains data structures tracking:       │    │
+│  │   • Which regions are free                          │    │
+│  │   • Which regions are in use                        │    │
+│  │   • Size of each allocation                         │    │
+│  │                                                     │    │
+│  │ alloc(): Find free region, mark as used, return ptr │    │
+│  │ free():  Mark region as free for reuse             │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  • FLEXIBLE: Allocate any size, free in any order          │
+│  • UNLIMITED: Can grow (via mmap) as needed                │
+│  • SLOWER: Bookkeeping overhead                             │
+│  • MANUAL: Must free explicitly (or use defer)             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Memory Alignment: Why It Matters
+    <div id="memory-alignment-why-it-matters" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#memory-alignment-why-it-matters" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>CPUs work most efficiently when data is &ldquo;aligned&rdquo; to certain boundaries:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                   MEMORY ALIGNMENT                           │
+│                                                              │
+│  CPU reads memory in &#34;words&#34; (4 or 8 bytes at a time)       │
+│                                                              │
+│  Aligned u32 at address 0x1000:                             │
+│  ┌────┬────┬────┬────┬────┬────┬────┬────┐                 │
+│  │ 0  │ 1  │ 2  │ 3  │ 4  │ 5  │ 6  │ 7  │  address       │
+│  ├────┴────┴────┴────┼────┴────┴────┴────┤                 │
+│  │    your u32       │    next word       │                 │
+│  └───────────────────┴───────────────────┘                 │
+│  ◄─── one read ─────►                                       │
+│  CPU reads bytes 0-3 in ONE memory access. FAST!           │
+│                                                              │
+│  Misaligned u32 at address 0x1002:                          │
+│  ┌────┬────┬────┬────┬────┬────┬────┬────┐                 │
+│  │ 0  │ 1  │ 2  │ 3  │ 4  │ 5  │ 6  │ 7  │  address       │
+│  ├────┴────┼────┴────┴────┴────┼────┴────┤                 │
+│  │  ??     │    your u32       │   ??    │                 │
+│  └─────────┴───────────────────┴─────────┘                 │
+│  ◄─ read 1 ─►◄──── read 2 ────►                            │
+│  CPU needs TWO memory accesses + shifting. SLOW!           │
+│  (Some CPUs will fault/crash on misaligned access)         │
+│                                                              │
+│  Alignment rules:                                           │
+│    u8  - any address (1-byte aligned)                       │
+│    u16 - even addresses (2-byte aligned)                    │
+│    u32 - addresses divisible by 4 (4-byte aligned)          │
+│    u64 - addresses divisible by 8 (8-byte aligned)          │
+│    SIMD - often 16-byte or 32-byte aligned                  │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><p>This is why Zig allocators take an <code>alignment</code> parameter!</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// You specify what alignment you need
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allocator</span><span class="p">.</span><span class="nf">alignedAlloc</span><span class="p">(</span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="err">@</span><span class="s">&#34;16&#34;</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Returns address divisible by 16
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">The Cost of Syscalls
+    <div id="the-cost-of-syscalls" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-cost-of-syscalls" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Asking the OS for memory (mmap) is expensive:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│                   SYSCALL OVERHEAD                           │
+│                                                              │
+│  Normal function call: ~1-5 CPU cycles                      │
+│  System call: ~100-1000+ CPU cycles                         │
+│                                                              │
+│  What happens during a syscall:                             │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ 1. Save all CPU registers                           │    │
+│  │ 2. Switch from user mode to kernel mode             │    │
+│  │ 3. Look up syscall handler                          │    │
+│  │ 4. Execute kernel code                              │    │
+│  │ 5. Switch back to user mode                         │    │
+│  │ 6. Restore all CPU registers                        │    │
+│  │ 7. Resume your program                              │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  This is why allocators exist!                              │
+│                                                              │
+│  Bad:  Every allocation = mmap() syscall                    │
+│  Good: mmap() big chunks, subdivide them ourselves          │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │           What allocators do:                       │    │
+│  │                                                     │    │
+│  │   mmap(64KB) ─► [                                  ]│    │
+│  │                                                     │    │
+│  │   alloc(100) ─► [████     ]  (no syscall!)         │    │
+│  │   alloc(200) ─► [████████ ]  (no syscall!)         │    │
+│  │   alloc(50)  ─► [██████████] (no syscall!)         │    │
+│  │                                                     │    │
+│  │   One syscall serves many allocations!              │    │
+│  └────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Putting It All Together
+    <div id="putting-it-all-together" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#putting-it-all-together" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Now you understand why Zig&rsquo;s allocators work the way they do:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────────┐
+│             HOW ALLOCATORS FIT INTO THE PICTURE              │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                    YOUR CODE                         │   │
+│  │  var data = try allocator.alloc(u8, 100);           │   │
+│  └─────────────────────────┬───────────────────────────┘   │
+│                            ▼                                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              ALLOCATOR (Arena, GPA, etc.)            │   │
+│  │                                                      │   │
+│  │  • Manages chunks of memory                          │   │
+│  │  • Subdivides into smaller pieces                    │   │
+│  │  • Tracks what&#39;s free/used                          │   │
+│  │  • Handles alignment                                 │   │
+│  └─────────────────────────┬───────────────────────────┘   │
+│                            ▼ (occasionally)                 │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                   PageAllocator                      │   │
+│  │                                                      │   │
+│  │  mmap() / munmap() syscalls                         │   │
+│  └─────────────────────────┬───────────────────────────┘   │
+│                            ▼                                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                   OPERATING SYSTEM                   │   │
+│  │                                                      │   │
+│  │  • Updates page tables                               │   │
+│  │  • Allocates physical frames (lazily)               │   │
+│  │  • Manages virtual address space                     │   │
+│  └─────────────────────────┬───────────────────────────┘   │
+│                            ▼                                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                      MMU + RAM                       │   │
+│  │                                                      │   │
+│  │  • Translates virtual → physical                     │   │
+│  │  • Actual bytes in silicon                           │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                              │
+│  Each layer adds abstraction:                               │
+│  Physical RAM → Virtual Memory → Pages → Allocator → You   │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">The Allocator Interface
+    <div id="the-allocator-interface" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-allocator-interface" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Before diving into specific allocators, let&rsquo;s understand what they all have in common.</p>
+<p>Every allocator in Zig is just two pointers bundled together:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                    Allocator (16 bytes)                  │
+├─────────────────────────────────────────────────────────┤
+│  ptr: *anyopaque     ──────► [Allocator&#39;s internal      │
+│                               state/data]               │
+│                                                          │
+│  vtable: *VTable     ──────► ┌─────────────────────┐    │
+│                               │ alloc:  fn pointer │    │
+│                               │ resize: fn pointer │    │
+│                               │ remap:  fn pointer │    │
+│                               │ free:   fn pointer │    │
+│                               └─────────────────────┘    │
+└─────────────────────────────────────────────────────────┘
+</code></pre><p><strong>Why this design?</strong></p>
+<ul>
+<li>Any allocator can be passed to any function expecting <code>Allocator</code></li>
+<li>No generics needed at the call site</li>
+<li>The caller doesn&rsquo;t need to know which allocator implementation is used</li>
+<li>Cost: one pointer indirection per call (usually negligible)</li>
+</ul>
+<hr>
+
+<h2 class="relative group">1. PageAllocator - The Foundation
+    <div id="1-pageallocator---the-foundation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#1-pageallocator---the-foundation" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Source:</strong> <code>std/heap/PageAllocator.zig</code> (199 lines)
+<strong>Access:</strong> <code>std.heap.page_allocator</code></p>
+
+<h3 class="relative group">The Simple Idea
+    <div id="the-simple-idea" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-simple-idea" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>PageAllocator is the simplest possible allocator - it just asks the operating system for memory directly. Every allocation is a syscall.</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                   YOUR PROGRAM                           │
+│                                                          │
+│   const ptr = page_allocator.alloc(u8, 1000);           │
+│                         │                                │
+│                         ▼                                │
+│              ┌─────────────────────┐                    │
+│              │   PageAllocator     │                    │
+│              │   (no state!)       │                    │
+│              └──────────┬──────────┘                    │
+│                         │                                │
+│                         ▼ mmap() syscall                 │
+├─────────────────────────────────────────────────────────┤
+│                 OPERATING SYSTEM                         │
+│                                                          │
+│   &#34;Here&#39;s 4096 bytes (one page) of memory&#34;              │
+│   (You asked for 1000, but I only deal in pages)        │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">What Happens When You Allocate
+    <div id="what-happens-when-you-allocate" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-happens-when-you-allocate" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Let&rsquo;s trace through <code>page_allocator.alloc(u8, 100)</code>:</p>
+<pre tabindex="0"><code>Step 1: You ask for 100 bytes
+        ↓
+Step 2: PageAllocator calls mmap(NULL, 4096, PROT_READ|PROT_WRITE, ...)
+        (4096 = page size, the minimum the OS will give)
+        ↓
+Step 3: OS returns pointer to a fresh 4096-byte region
+        ↓
+Step 4: You get back that pointer
+
+Memory layout:
+┌────────────────────────────────────────────────────────────┐
+│ Address 0x7f4a00000000                                      │
+├────────────────────────────────────────────────────────────┤
+│ ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ ◄──100 bytes─►◄────────── 3996 bytes wasted ──────────────►│
+│   (your data)                (padding to page size)         │
+└────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Alignment Handling - The Clever Trick
+    <div id="alignment-handling---the-clever-trick" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#alignment-handling---the-clever-trick" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>What if you need 64KB alignment but the OS gives you an unaligned address?</p>
+<pre tabindex="0"><code>You want: 64KB-aligned memory (address must be multiple of 65536)
+OS gives: 0x7f4a00001000 (not aligned to 64KB)
+
+PageAllocator&#39;s solution: Over-allocate, then trim!
+
+Step 1: Ask for MORE than needed
+        Request size + alignment = extra room to find aligned spot
+
+Step 2: OS returns unaligned region:
+        ┌──────────────────────────────────────────────────────┐
+        │░░░░░░░░░░░░░░░░████████████████████████░░░░░░░░░░░░░░│
+        ▲               ▲                       ▲              ▲
+        │               │                       │              │
+     OS start     Aligned spot            Your data ends    OS end
+    (unaligned)   (we&#39;ll use this)
+
+Step 3: Unmap the unusable parts:
+        - munmap(OS start, prefix_length)
+        - munmap(suffix_start, suffix_length)
+
+Step 4: Return the aligned middle section
+</code></pre><p>The actual code:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Unmap prefix (bytes before aligned address)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">const</span><span class="w"> </span><span class="n">drop_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">result_ptr</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">slice</span><span class="p">.</span><span class="n">ptr</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">drop_len</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="n">posix</span><span class="p">.</span><span class="nf">munmap</span><span class="p">(</span><span class="n">slice</span><span class="p">[</span><span class="mi">0</span><span class="p">..</span><span class="n">drop_len</span><span class="p">]);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Unmap suffix (extra bytes at end)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">remaining_len</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">aligned_len</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">posix</span><span class="p">.</span><span class="nf">munmap</span><span class="p">(</span><span class="nb">@alignCast</span><span class="p">(</span><span class="n">result_ptr</span><span class="p">[</span><span class="n">aligned_len</span><span class="p">..</span><span class="n">remaining_len</span><span class="p">]));</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">When to Use PageAllocator
+    <div id="when-to-use-pageallocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use-pageallocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ Good for:                    │ Bad for:                 │
+├──────────────────────────────┼──────────────────────────┤
+│ ✓ Backing other allocators   │ ✗ Small allocations      │
+│ ✓ Large, long-lived data     │ ✗ Frequent alloc/free    │
+│ ✓ Thread safety (free!)      │ ✗ Memory efficiency      │
+│ ✓ Simplicity                 │ ✗ Performance-critical   │
+└──────────────────────────────┴──────────────────────────┘
+
+Overhead: ~4KB minimum per allocation (one page)
+Speed: Slow (syscall per operation)
+</code></pre><hr>
+
+<h2 class="relative group">2. ArenaAllocator - The Batch Processor
+    <div id="2-arenaallocator---the-batch-processor" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#2-arenaallocator---the-batch-processor" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Source:</strong> <code>std/heap/arena_allocator.zig</code> (307 lines)
+<strong>Access:</strong> <code>std.heap.ArenaAllocator</code></p>
+
+<h3 class="relative group">The Simple Idea
+    <div id="the-simple-idea-1" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-simple-idea-1" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Arena is a &ldquo;bump allocator&rdquo; - allocations just bump a pointer forward. You can&rsquo;t free individual items, but you can free EVERYTHING at once.</p>
+<p>Think of it like a notepad: you write, write, write&hellip; then tear off all the pages at once.</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                   ARENA CONCEPT                          │
+│                                                          │
+│  Traditional allocator:        Arena allocator:          │
+│  ┌───┬───┬───┬───┬───┐        ┌───────────────────────┐ │
+│  │ A │ B │ C │ D │ E │        │ A B C D E ──────────► │ │
+│  └───┴───┴───┴───┴───┘        └───────────────────────┘ │
+│  (each tracked separately)     (just bump pointer)      │
+│                                                          │
+│  free(C) = complex             free(C) = no-op          │
+│  must update freelists         (can&#39;t free one thing)   │
+│                                                          │
+│  free all = free each          free all = one operation │
+│  O(n) operations               reset pointer to 0       │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Internal Structure
+    <div id="internal-structure" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#internal-structure" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                 ArenaAllocator                           │
+├─────────────────────────────────────────────────────────┤
+│  child_allocator ──────► (backing allocator, e.g. page) │
+│                                                          │
+│  state:                                                  │
+│    buffer_list ──────► [linked list of buffers]         │
+│    end_index: 1847     (next free byte in current buf)  │
+└─────────────────────────────────────────────────────────┘
+
+The buffer_list (singly-linked):
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│  current ────► ┌────────────────────────────────────┐   │
+│                │ Buffer 3 (newest, 12KB)             │   │
+│                │ ┌────────────────────────────────┐  │   │
+│                │ │████████████████░░░░░░░░░░░░░░░░│  │   │
+│                │ │◄── used ──────►◄─ available ──►│  │   │
+│                │ │            end_index=1847       │  │   │
+│                │ └────────────────────────────────┘  │   │
+│                │ next ──────────────────────────────────┐│
+│                └────────────────────────────────────┘   ││
+│                                                         ▼│
+│                ┌────────────────────────────────────┐   │
+│                │ Buffer 2 (8KB) - FULL              │   │
+│                │ ████████████████████████████████████│   │
+│                │ next ──────────────────────────────────┐│
+│                └────────────────────────────────────┘   ││
+│                                                         ▼│
+│                ┌────────────────────────────────────┐   │
+│                │ Buffer 1 (oldest, 4KB) - FULL      │   │
+│                │ ████████████████████████████████████│   │
+│                │ next ──► null                       │   │
+│                └────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Step-by-Step: What Happens During Allocation
+    <div id="step-by-step-what-happens-during-allocation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-by-step-what-happens-during-allocation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Let&rsquo;s trace <code>arena.allocator().alloc(u32, 10)</code> (40 bytes):</p>
+<pre tabindex="0"><code>State before:
+┌─────────────────────────────────────────────────────────┐
+│ Buffer (4096 bytes total)                                │
+│ ┌───────────────────────────────────────────────────────┐│
+│ │███████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░││
+│ │                              ▲                        ││
+│ │                         end_index=2048                ││
+│ └───────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────┘
+
+Step 1: Calculate aligned position
+        - Need 40 bytes for 10 × u32
+        - u32 requires 4-byte alignment
+        - end_index=2048 is already 4-byte aligned ✓
+
+Step 2: Check if it fits
+        - 2048 + 40 = 2088
+        - 2088 &lt; 4096 ✓ (fits in current buffer)
+
+Step 3: Bump the pointer
+        - Return pointer to byte 2048
+        - Update end_index = 2088
+
+State after:
+┌─────────────────────────────────────────────────────────┐
+│ Buffer (4096 bytes total)                                │
+│ ┌───────────────────────────────────────────────────────┐│
+│ │███████████████████████████████████████░░░░░░░░░░░░░░░││
+│ │                              ◄40 bytes►▲              ││
+│ │                              (your u32s) end_index=2088│
+│ └───────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">What If It Doesn&rsquo;t Fit?
+    <div id="what-if-it-doesnt-fit" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-if-it-doesnt-fit" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>State before: Buffer almost full
+┌─────────────────────────────────────────────────────────┐
+│ Buffer 1 (4096 bytes)                                    │
+│ ███████████████████████████████████████████████████████░░│
+│                                              end_index=4090│
+└─────────────────────────────────────────────────────────┘
+
+Request: alloc(u8, 100)  // 100 bytes needed
+
+Step 1: Check fit → 4090 + 100 = 4190 &gt; 4096 ✗ DOESN&#39;T FIT
+
+Step 2: Allocate NEW buffer from child_allocator
+        - New size = old_size × 1.5 = 6144 bytes (growth factor)
+
+Step 3: Prepend new buffer to list
+
+State after:
+┌─────────────────────────────────────────────────────────┐
+│ Buffer 2 (6144 bytes) ← NEW, now current                 │
+│ ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│ ◄100 bytes►                                 end_index=100│
+│ next ─────────────────────────┐                          │
+└───────────────────────────────┼──────────────────────────┘
+                                ▼
+┌─────────────────────────────────────────────────────────┐
+│ Buffer 1 (4096 bytes) ← OLD, kept for later deinit      │
+│ █████████████████████████████████████████████████████████│
+│ next ──► null                                            │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Free Behavior - The Clever Optimization
+    <div id="free-behavior---the-clever-optimization" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#free-behavior---the-clever-optimization" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Individual <code>free()</code> is mostly a no-op, BUT there&rsquo;s one exception:</p>
+<pre tabindex="0"><code>If you free the MOST RECENT allocation, arena can reclaim it!
+
+State:
+┌─────────────────────────────────────────────────────────┐
+│ Buffer                                                   │
+│ ██████████████████████████████████████████████████░░░░░░│
+│                                 ◄─── last alloc ───►    │
+│                                 A (50 bytes)  end=2500  │
+└─────────────────────────────────────────────────────────┘
+
+free(A):
+- Is A the last allocation? Check: A.ptr + A.len == buffer.ptr + end_index
+- YES! We can reclaim by: end_index -= 50
+
+After free(A):
+┌─────────────────────────────────────────────────────────┐
+│ Buffer                                                   │
+│ ████████████████████████████████████████████░░░░░░░░░░░░│
+│                                          end=2450       │
+└─────────────────────────────────────────────────────────┘
+
+But if you free something that&#39;s NOT the last allocation:
+- Nothing happens (no-op)
+- Memory stays &#34;allocated&#34; until reset/deinit
+</code></pre>
+<h3 class="relative group">Reset Modes Visualized
+    <div id="reset-modes-visualized" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#reset-modes-visualized" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                    .free_all                             │
+│                                                          │
+│  Before:  [Buf3]──►[Buf2]──►[Buf1]──►null               │
+│                                                          │
+│  Action:  Return ALL buffers to child_allocator          │
+│                                                          │
+│  After:   null (empty list, end_index=0)                │
+│                                                          │
+│  Use when: Done with arena, won&#39;t use again             │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                 .retain_capacity                         │
+│                                                          │
+│  Before:  [Buf3]──►[Buf2]──►[Buf1]──►null               │
+│           end_index=5000                                 │
+│                                                          │
+│  Action:  Keep all buffers, just reset end_index         │
+│                                                          │
+│  After:   [Buf3]──►[Buf2]──►[Buf1]──►null               │
+│           end_index=0 (ready to reuse!)                  │
+│                                                          │
+│  Use when: Loop processing (reuse memory each iteration)│
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│              .retain_with_limit(8192)                    │
+│                                                          │
+│  Before:  [Buf3 12KB]──►[Buf2 8KB]──►[Buf1 4KB]──►null  │
+│                                                          │
+│  Action:  Keep up to 8KB, free the rest                  │
+│                                                          │
+│  After:   [Buf2 8KB]──►null                              │
+│           (Buf3 and Buf1 returned to child_allocator)   │
+│                                                          │
+│  Use when: Want to limit memory retention               │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Real-World Example: Parser
+    <div id="real-world-example-parser" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#real-world-example-parser" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">parseFile</span><span class="p">(</span><span class="n">source</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kr">const</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="o">!</span><span class="n">Ast</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Create arena - all AST nodes will live here
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">arena</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">heap</span><span class="p">.</span><span class="n">ArenaAllocator</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">std</span><span class="p">.</span><span class="n">heap</span><span class="p">.</span><span class="n">page_allocator</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="n">arena</span><span class="p">.</span><span class="nf">deinit</span><span class="p">();</span><span class="w">  </span><span class="c1">// Free EVERYTHING when done
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">allocator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arena</span><span class="p">.</span><span class="nf">allocator</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Parse creates hundreds of AST nodes
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="c1">// Each node is just a bump allocation - super fast!
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="nf">parseExpression</span><span class="p">(</span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">source</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Process the AST...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="nf">analyze</span><span class="p">(</span><span class="n">root</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="nf">codegen</span><span class="p">(</span><span class="n">root</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// When function returns: arena.deinit() frees ALL nodes at once
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="c1">// No need to walk the tree and free each node!
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">When to Use Arena
+    <div id="when-to-use-arena" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use-arena" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ PERFECT for:                  │ AVOID for:              │
+├───────────────────────────────┼─────────────────────────┤
+│ ✓ Parsing (AST nodes)         │ ✗ Long-lived objects    │
+│ ✓ HTTP request handling       │ ✗ Need to free one item │
+│ ✓ Game frame allocations      │ ✗ Unpredictable lifetime│
+│ ✓ Compiler passes             │                         │
+│ ✓ Tree/graph building         │                         │
+└───────────────────────────────┴─────────────────────────┘
+
+Speed: VERY FAST (just pointer bump)
+Memory: Grows as needed, freed all at once
+</code></pre><hr>
+
+<h2 class="relative group">3. FixedBufferAllocator - Zero Heap Allocations
+    <div id="3-fixedbufferallocator---zero-heap-allocations" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#3-fixedbufferallocator---zero-heap-allocations" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Source:</strong> <code>std/heap/FixedBufferAllocator.zig</code> (231 lines)
+<strong>Access:</strong> <code>std.heap.FixedBufferAllocator</code></p>
+
+<h3 class="relative group">The Simple Idea
+    <div id="the-simple-idea-2" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-simple-idea-2" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Like ArenaAllocator, but uses a buffer YOU provide. Zero heap allocations ever.</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ ArenaAllocator:              FixedBufferAllocator:       │
+│                                                          │
+│ Gets memory from             Uses YOUR buffer            │
+│ child_allocator              (stack, static, embedded)   │
+│       ↓                              ↓                   │
+│ ┌───────────┐                ┌───────────────────────┐  │
+│ │ Heap/OS   │                │ var buf: [4096]u8;    │  │
+│ └───────────┘                │ // lives on stack     │  │
+│                              └───────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Internal Structure - Minimal!
+    <div id="internal-structure---minimal" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#internal-structure---minimal" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">FixedBufferAllocator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">end_index</span><span class="o">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">,</span><span class="w">   </span><span class="c1">// Where next allocation goes
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="n">buffer</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="kt">u8</span><span class="p">,</span><span class="w">       </span><span class="c1">// Your buffer
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>That&rsquo;s literally it. Two fields.</p>
+
+<h3 class="relative group">Step-by-Step Allocation
+    <div id="step-by-step-allocation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#step-by-step-allocation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>Your code:
+    var buf: [1024]u8 = undefined;
+    var fba = FixedBufferAllocator.init(&amp;buf);
+    const allocator = fba.allocator();
+
+    const a = try allocator.alloc(u8, 100);
+    const b = try allocator.alloc(u32, 10);  // 40 bytes, needs 4-byte align
+    const c = try allocator.alloc(u8, 200);
+
+Memory layout after each allocation:
+
+After alloc(u8, 100):
+┌────────────────────────────────────────────────────────────┐
+│ buf[0..1024]                                                │
+│ ████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ ◄─── a: 100 bytes ──►                                       │
+│                      ▲                                      │
+│                 end_index=100                               │
+└────────────────────────────────────────────────────────────┘
+
+After alloc(u32, 10): [needs 4-byte alignment!]
+┌────────────────────────────────────────────────────────────┐
+│ buf[0..1024]                                                │
+│ ████████████████████░░░░████████████████░░░░░░░░░░░░░░░░░░ │
+│ ◄─── a: 100 ──────►    ◄─── b: 40 ─────►                   │
+│                    ▲pad▲                ▲                   │
+│                   (align to 4)     end_index=144            │
+└────────────────────────────────────────────────────────────┘
+
+After alloc(u8, 200):
+┌────────────────────────────────────────────────────────────┐
+│ buf[0..1024]                                                │
+│ ████████████████████░░░░████████████████████████████████░░ │
+│ ◄─── a ────►      ◄─── b ────►◄────── c: 200 ───────►     │
+│                                                     ▲       │
+│                                               end_index=344 │
+└────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">What Happens on OutOfMemory?
+    <div id="what-happens-on-outofmemory" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#what-happens-on-outofmemory" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>State: end_index=900, buffer size=1024
+
+Request: alloc(u8, 200)
+
+Check: 900 + 200 = 1100 &gt; 1024  ✗ DOESN&#39;T FIT
+
+Result: Returns null (allocation failed)
+        No panic, no abort - just null
+
+Your code must handle this:
+    const ptr = allocator.alloc(u8, 200) orelse {
+        // Handle out of memory
+        return error.OutOfMemory;
+    };
+</code></pre>
+<h3 class="relative group">Thread-Safe Variant (Lock-Free!)
+    <div id="thread-safe-variant-lock-free" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#thread-safe-variant-lock-free" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>FixedBufferAllocator offers a thread-safe allocator using atomics:</p>
+<pre tabindex="0"><code>Regular allocator:             Thread-safe allocator:
+┌─────────────────────────┐   ┌─────────────────────────┐
+│ fba.allocator()         │   │ fba.threadSafeAllocator()│
+│                         │   │                         │
+│ end_index += size;      │   │ CAS loop:               │
+│ (not safe if multiple   │   │   load end_index        │
+│  threads!)              │   │   try CAS to new value  │
+│                         │   │   retry if failed       │
+└─────────────────────────┘   └─────────────────────────┘
+</code></pre><p>The lock-free code:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="k">fn</span><span class="w"> </span><span class="nf">threadSafeAlloc</span><span class="p">(...)</span><span class="w"> </span><span class="o">?</span><span class="p">[</span><span class="o">*</span><span class="p">]</span><span class="kt">u8</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">end_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@atomicLoad</span><span class="p">(</span><span class="kt">usize</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">self</span><span class="p">.</span><span class="n">end_index</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">seq_cst</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Calculate what we need
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="kr">const</span><span class="w"> </span><span class="n">new_end_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">end_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">aligned_size</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">new_end_index</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">buffer</span><span class="p">.</span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Try to claim it atomically
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">        </span><span class="n">end_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@cmpxchgWeak</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="kt">usize</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="o">&amp;</span><span class="n">self</span><span class="p">.</span><span class="n">end_index</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">end_index</span><span class="p">,</span><span class="w">      </span><span class="c1">// expected old value
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">            </span><span class="n">new_end_index</span><span class="p">,</span><span class="w">  </span><span class="c1">// new value to write
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">            </span><span class="p">.</span><span class="n">seq_cst</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">seq_cst</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">)</span><span class="w"> </span><span class="k">orelse</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">aligned_index</span><span class="p">..</span><span class="n">new_end_index</span><span class="p">].</span><span class="n">ptr</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// If CAS failed (another thread beat us), loop and retry
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">Compile-Time Usage
+    <div id="compile-time-usage" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#compile-time-usage" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>FixedBufferAllocator works at comptime!</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">const</span><span class="w"> </span><span class="n">my_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kr">comptime</span><span class="w"> </span><span class="n">blk</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">buffer</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1024</span><span class="p">]</span><span class="kt">u8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">undefined</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">fba</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FixedBufferAllocator</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">buffer</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">allocator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fba</span><span class="p">.</span><span class="nf">allocator</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// This runs at compile time!
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="kr">var</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="nf">ArrayList</span><span class="p">(</span><span class="kt">u32</span><span class="p">).</span><span class="nf">init</span><span class="p">(</span><span class="n">allocator</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">list</span><span class="p">.</span><span class="nf">appendSlice</span><span class="p">(</span><span class="o">&amp;</span><span class="p">[</span><span class="n">_</span><span class="p">]</span><span class="kt">u32</span><span class="p">{</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="k">unreachable</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">break</span><span class="w"> </span><span class="o">:</span><span class="n">blk</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">items</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// my_data is baked into the binary at compile time
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">When to Use FixedBufferAllocator
+    <div id="when-to-use-fixedbufferallocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use-fixedbufferallocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ PERFECT for:                  │ AVOID for:              │
+├───────────────────────────────┼─────────────────────────┤
+│ ✓ Embedded systems (no heap!) │ ✗ Unknown size needs    │
+│ ✓ Stack-based scratch space   │ ✗ When you need growth  │
+│ ✓ Compile-time allocation     │                         │
+│ ✓ Performance-critical paths  │                         │
+│ ✓ Deterministic memory usage  │                         │
+└───────────────────────────────┴─────────────────────────┘
+
+Speed: BLAZING FAST (just pointer arithmetic)
+Memory: Fixed size, you control exactly how much
+</code></pre><hr>
+
+<h2 class="relative group">4. DebugAllocator - The Memory Detective
+    <div id="4-debugallocator---the-memory-detective" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#4-debugallocator---the-memory-detective" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Source:</strong> <code>std/heap/debug_allocator.zig</code> (1428 lines)
+<strong>Access:</strong> <code>std.heap.DebugAllocator</code> (formerly GeneralPurposeAllocator)</p>
+
+<h3 class="relative group">The Simple Idea
+    <div id="the-simple-idea-3" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-simple-idea-3" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>A slow allocator that catches memory bugs. It tracks every allocation and catches:</p>
+<ul>
+<li>Memory leaks (forgot to free)</li>
+<li>Double frees (freed same memory twice)</li>
+<li>Use-after-free (using memory after freeing it)</li>
+</ul>
+
+<h3 class="relative group">How It Catches Bugs
+    <div id="how-it-catches-bugs" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#how-it-catches-bugs" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                    NORMAL ALLOCATOR                      │
+│                                                          │
+│  alloc(100) ──► returns ptr 0x1000                      │
+│  free(0x1000) ──► memory returned to pool               │
+│  alloc(100) ──► might return 0x1000 again! (reused)     │
+│                                                          │
+│  Problem: If you use 0x1000 after free, it might        │
+│           &#34;work&#34; because memory was reused. Bug hidden! │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                    DEBUG ALLOCATOR                       │
+│                                                          │
+│  alloc(100):                                             │
+│    1. Get memory                                         │
+│    2. Record: &#34;0x1000 allocated at main.zig:42&#34;         │
+│    3. Return ptr                                         │
+│                                                          │
+│  free(0x1000):                                           │
+│    1. Check: was this actually allocated? ✓             │
+│    2. Record: &#34;0x1000 freed at main.zig:87&#34;             │
+│    3. POISON the memory (fill with 0xAA)                │
+│    4. DON&#39;T reuse this address (never_reuse mode)       │
+│                                                          │
+│  If you use 0x1000 after free:                          │
+│    - Memory is poisoned (reads return garbage)          │
+│    - Crash with helpful message!                        │
+│                                                          │
+│  If you free(0x1000) again:                             │
+│    - Allocator sees &#34;already freed!&#34;                    │
+│    - Prints 3 stack traces:                             │
+│      1. Where you allocated                             │
+│      2. Where you first freed                           │
+│      3. Where you freed again (the bug!)                │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Internal Structure - Bucket System
+    <div id="internal-structure---bucket-system" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#internal-structure---bucket-system" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Small allocations use &ldquo;buckets&rdquo; - pages divided into same-size slots:</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                SIZE CLASS BUCKETS                        │
+│                                                          │
+│  Size Class 0 (1 byte):     Size Class 3 (8 bytes):     │
+│  ┌─┬─┬─┬─┬─┬─┬─┬─┐         ┌────────┬────────┬────────┐ │
+│  │1│1│1│1│1│1│1│1│         │   8    │   8    │   8    │ │
+│  └─┴─┴─┴─┴─┴─┴─┴─┘         └────────┴────────┴────────┘ │
+│                                                          │
+│  Size Class 4 (16 bytes):   Size Class 5 (32 bytes):    │
+│  ┌────────────────┐         ┌────────────────────────┐  │
+│  │       16       │         │           32           │  │
+│  └────────────────┘         └────────────────────────┘  │
+│                                                          │
+│  Each bucket is a PAGE containing:                       │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │ BucketHeader                                      │   │
+│  │   - alloc_cursor (which slot next)               │   │
+│  │   - used_bits (1 bit per slot: allocated?)       │   │
+│  │   - stack_traces[] (where each slot allocated)   │   │
+│  ├──────────────────────────────────────────────────┤   │
+│  │ Slot 0 │ Slot 1 │ Slot 2 │ Slot 3 │ ...          │   │
+│  └──────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Allocation Flow
+    <div id="allocation-flow" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#allocation-flow" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>Request: alloc(u8, 20)
+
+Step 1: Find size class
+        20 bytes → round up to power of 2 → 32 bytes → class 5
+
+Step 2: Get bucket for class 5
+        ┌──────────────────────────────────────────────────┐
+        │ Bucket for 32-byte slots                         │
+        │ ┌──────┬──────┬──────┬──────┬──────┬──────┐     │
+        │ │ used │ used │ FREE │ used │ FREE │ ...  │     │
+        │ └──────┴──────┴──────┴──────┴──────┴──────┘     │
+        │ used_bits: 1 1 0 1 0 ...                         │
+        │                 ▲                                │
+        │            pick this one                         │
+        └──────────────────────────────────────────────────┘
+
+Step 3: Mark slot as used, capture stack trace
+        used_bits[2] = 1
+        stack_traces[2] = captureStackTrace()
+
+Step 4: Return pointer to slot 2
+</code></pre>
+<h3 class="relative group">Leak Detection on deinit()
+    <div id="leak-detection-on-deinit" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#leak-detection-on-deinit" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">var</span><span class="w"> </span><span class="n">gpa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">heap</span><span class="p">.</span><span class="nf">DebugAllocator</span><span class="p">(.{}){};</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">defer</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">check</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gpa</span><span class="p">.</span><span class="nf">deinit</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">check</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="p">.</span><span class="n">leak</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// Leaks detected! Stack traces printed.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">const</span><span class="w"> </span><span class="n">allocator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gpa</span><span class="p">.</span><span class="nf">allocator</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="kr">const</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="n">allocator</span><span class="p">.</span><span class="nf">alloc</span><span class="p">(</span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Oops! Forgot to free(data)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// On deinit, allocator walks all buckets:
+</span></span></span><span class="line"><span class="cl"><span class="c1">//   For each slot where used_bit == 1:
+</span></span></span><span class="line"><span class="cl"><span class="c1">//     Print: &#34;LEAK! Allocated at: [stack trace]&#34;
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">Configuration Options
+    <div id="configuration-options" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#configuration-options" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">var</span><span class="w"> </span><span class="n">gpa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">heap</span><span class="p">.</span><span class="nf">DebugAllocator</span><span class="p">(.{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// How many stack frames to capture (more = slower but more info)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">.</span><span class="n">stack_trace_frames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Track total bytes allocated (useful for memory budgets)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">.</span><span class="n">enable_memory_limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Keep freed memory mapped (helps detect use-after-free)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">.</span><span class="n">never_unmap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Print every alloc/free (very verbose!)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">    </span><span class="p">.</span><span class="n">verbose_log</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}){};</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">When to Use DebugAllocator
+    <div id="when-to-use-debugallocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use-debugallocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ PERFECT for:                  │ NEVER use for:          │
+├───────────────────────────────┼─────────────────────────┤
+│ ✓ Development builds          │ ✗ Production/Release    │
+│ ✓ Finding memory leaks        │ ✗ Performance-sensitive │
+│ ✓ Debugging double-free       │ ✗ Memory-constrained    │
+│ ✓ Debugging use-after-free    │                         │
+│ ✓ CI/testing environments     │                         │
+└───────────────────────────────┴─────────────────────────┘
+
+Speed: SLOW (captures stack traces, maintains metadata)
+Memory: HIGH overhead (100+ bytes per allocation)
+Value: PRICELESS when debugging memory bugs
+</code></pre><hr>
+
+<h2 class="relative group">5. SmpAllocator - Multi-Threaded Production
+    <div id="5-smpallocator---multi-threaded-production" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#5-smpallocator---multi-threaded-production" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Source:</strong> <code>std/heap/SmpAllocator.zig</code> (224 lines)
+<strong>Access:</strong> <code>std.heap.smp_allocator</code></p>
+
+<h3 class="relative group">The Simple Idea
+    <div id="the-simple-idea-4" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-simple-idea-4" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Each thread gets its own freelist. No lock contention in the common case.</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│              TRADITIONAL MULTI-THREADED                  │
+│                                                          │
+│   Thread 1 ─────┐                                        │
+│                 ├──► [Single Freelist] ◄── Lock!        │
+│   Thread 2 ─────┤         ▲                              │
+│                 │     contention                         │
+│   Thread 3 ─────┘                                        │
+│                                                          │
+│   Every alloc/free = lock acquisition = SLOW            │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                    SMP ALLOCATOR                         │
+│                                                          │
+│   Thread 1 ──────► [Freelist 1] ◄── usually no lock!    │
+│                                                          │
+│   Thread 2 ──────► [Freelist 2] ◄── usually no lock!    │
+│                                                          │
+│   Thread 3 ──────► [Freelist 3] ◄── usually no lock!    │
+│                                                          │
+│   Each thread prefers its own freelist                   │
+│   Lock only needed if another thread has what we need    │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Internal Structure
+    <div id="internal-structure-1" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#internal-structure-1" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                 GLOBAL STATE (singleton)                 │
+│                                                          │
+│   threads[0..128]:  Array of Thread structs              │
+│   cpu_count:        Actual number of CPUs                │
+│                                                          │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ threads[0]                threads[1]                 │ │
+│ │ ┌─────────────────┐      ┌─────────────────┐        │ │
+│ │ │ mutex           │      │ mutex           │        │ │
+│ │ │ next_addrs[14]  │      │ next_addrs[14]  │        │ │
+│ │ │ frees[14]       │      │ frees[14]       │        │ │
+│ │ └─────────────────┘      └─────────────────┘        │ │
+│ │                                                      │ │
+│ │ threads[2]                 ...threads[127]          │ │
+│ │ ┌─────────────────┐      ┌─────────────────┐        │ │
+│ │ │ mutex           │      │ mutex           │        │ │
+│ │ │ next_addrs[14]  │      │ next_addrs[14]  │        │ │
+│ │ │ frees[14]       │      │ frees[14]       │        │ │
+│ │ └─────────────────┘      └─────────────────┘        │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                          │
+│ threadlocal var thread_index: u32;  // Which slot I use  │
+└─────────────────────────────────────────────────────────┘
+
+Each thread slot has 14 SIZE CLASSES:
+  Class 0:  8-byte slots
+  Class 1:  16-byte slots
+  Class 2:  32-byte slots
+  ...
+  Class 13: 64KB slots (slab_len)
+
+  Anything larger → goes directly to PageAllocator
+</code></pre>
+<h3 class="relative group">Allocation Flow - The Lock Rotation Trick
+    <div id="allocation-flow---the-lock-rotation-trick" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#allocation-flow---the-lock-rotation-trick" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>Thread A wants to allocate 50 bytes:
+
+Step 1: What&#39;s my slot?
+        thread_index = 3 (threadlocal variable)
+
+Step 2: Try to lock my slot
+        ┌────────────────────────────────────────────────┐
+        │ threads[3].mutex.tryLock()                     │
+        │                                                 │
+        │ SUCCESS? ──► Great! Use this slot&#39;s freelist   │
+        │                                                 │
+        │ FAILED? ──► Someone else has it, try next slot │
+        └────────────────────────────────────────────────┘
+
+Step 3: (If failed) Try slot 4, then 5, then 6...
+        for (i in 0..cpu_count) {
+            slot = (thread_index + i) % cpu_count;
+            if (threads[slot].mutex.tryLock()) {
+                thread_index = slot;  // Remember for next time
+                break;
+            }
+        }
+
+Step 4: Got a slot! Now allocate from its freelist
+        ┌────────────────────────────────────────────────┐
+        │ 50 bytes → size class 6 (64 bytes)             │
+        │                                                 │
+        │ Check frees[6]:                                │
+        │   If non-null: Pop from freelist, return it    │
+        │   If null: Bump next_addrs[6], return that     │
+        │                                                 │
+        │ If next_addrs[6] hits page boundary:           │
+        │   Get fresh 64KB slab from PageAllocator       │
+        └────────────────────────────────────────────────┘
+
+Step 5: Unlock and return
+</code></pre>
+<h3 class="relative group">Freelist Structure
+    <div id="freelist-structure" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#freelist-structure" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│              SIZE CLASS 4 (32-byte slots)                │
+│                                                          │
+│  frees[4] ──► ┌──────────────────────────────────┐      │
+│               │ freed slot at 0x1000              │      │
+│               │ ┌────────────────────────────┐   │      │
+│               │ │ next ──────────────────────────────┐  │
+│               │ │ (rest is garbage/old data)  │   │  │  │
+│               │ └────────────────────────────┘   │  │  │
+│               └──────────────────────────────────┘  │  │
+│                                                     ▼  │
+│               ┌──────────────────────────────────┐     │
+│               │ freed slot at 0x2000              │     │
+│               │ next ────────────────────────────────┐  │
+│               └──────────────────────────────────┘   │  │
+│                                                      ▼  │
+│               ┌──────────────────────────────────┐      │
+│               │ freed slot at 0x3000              │      │
+│               │ next ──► null                     │      │
+│               └──────────────────────────────────┘      │
+│                                                          │
+│  On alloc: pop 0x1000, frees[4] now points to 0x2000    │
+│  On free:  push to front, freed ptr&#39;s first bytes = old │
+│            frees[4], then frees[4] = freed ptr          │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">When to Use SmpAllocator
+    <div id="when-to-use-smpallocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use-smpallocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ PERFECT for:                  │ Consider alternatives:  │
+├───────────────────────────────┼─────────────────────────┤
+│ ✓ Production servers          │ • Single-threaded app:  │
+│ ✓ Multi-threaded workloads    │   just use Arena        │
+│ ✓ High-throughput systems     │                         │
+│ ✓ When you need speed         │ • Debugging:            │
+│                               │   use DebugAllocator    │
+└───────────────────────────────┴─────────────────────────┘
+
+Speed: FAST (usually lock-free)
+Scalability: Excellent (per-thread freelists)
+</code></pre><hr>
+
+<h2 class="relative group">6. MemoryPool - Object Pool Pattern
+    <div id="6-memorypool---object-pool-pattern" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#6-memorypool---object-pool-pattern" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Source:</strong> <code>std/heap/memory_pool.zig</code> (223 lines)
+<strong>Access:</strong> <code>std.heap.MemoryPool</code></p>
+
+<h3 class="relative group">The Simple Idea
+    <div id="the-simple-idea-5" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-simple-idea-5" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>When you need LOTS of objects of the SAME type, a pool is faster than a general allocator.</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│            GENERAL ALLOCATOR (ArrayList, etc.)           │
+│                                                          │
+│  Each alloc: Find free space of right size              │
+│  Each free:  Update complex metadata structures         │
+│  Problem:    Overhead for each operation                 │
+│                                                          │
+│  Memory layout (fragmented):                             │
+│  ┌──┬────┬──┬──────┬─┬───┬────┬──┐                      │
+│  │A │ B  │A │  C   │A│ D │free│A │                      │
+│  └──┴────┴──┴──────┴─┴───┴────┴──┘                      │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                   MEMORY POOL                            │
+│                                                          │
+│  All objects same size = simple freelist                 │
+│  Alloc: Pop from list (O(1))                            │
+│  Free:  Push to list (O(1))                             │
+│                                                          │
+│  Memory layout (uniform):                                │
+│  ┌────┬────┬────┬────┬────┬────┬────┬────┐             │
+│  │ T  │ T  │free│ T  │free│ T  │ T  │free│             │
+│  └────┴────┴────┴────┴────┴────┴────┴────┘             │
+│  All slots exactly sizeof(T) - perfect cache behavior!  │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Internal Structure
+    <div id="internal-structure-2" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#internal-structure-2" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>MemoryPool(Entity):
+┌─────────────────────────────────────────────────────────┐
+│  arena: ArenaAllocator   ← backing storage (grows)      │
+│                                                          │
+│  free_list ──► ┌──────────────────┐                     │
+│                │ destroyed Entity │                     │
+│                │ .next ─────────────┐                   │
+│                └──────────────────┘ │                   │
+│                                     ▼                   │
+│                ┌──────────────────┐                     │
+│                │ destroyed Entity │                     │
+│                │ .next ─────────────┐                   │
+│                └──────────────────┘ │                   │
+│                                     ▼                   │
+│                               null                      │
+└─────────────────────────────────────────────────────────┘
+
+The TRICK: When an Entity is destroyed, we reuse its memory
+as a freelist node! The first bytes become a &#39;next&#39; pointer.
+
+┌──────────────────────────────────────────────────────────┐
+│            SAME MEMORY, TWO INTERPRETATIONS              │
+│                                                          │
+│  When ALIVE (Entity):        When DESTROYED (Node):      │
+│  ┌────────────────────┐      ┌────────────────────┐     │
+│  │ x: f32 = 1.5       │      │ next: *Node ───────────►  │
+│  │ y: f32 = 2.0       │      │ (garbage)          │     │
+│  │ health: u32 = 100  │      │ (garbage)          │     │
+│  │ name: []u8 = ...   │      │ (garbage)          │     │
+│  └────────────────────┘      └────────────────────┘     │
+│                                                          │
+│  Pool does @ptrCast between these views!                │
+└──────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">create() and destroy() Flow
+    <div id="create-and-destroy-flow" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#create-and-destroy-flow" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>pool.create():
+
+┌─────────────────────────────────────────────────────────┐
+│  Is free_list non-null?                                  │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ YES: Pop first node                               │  │
+│  │      ptr = free_list                              │  │
+│  │      free_list = ptr.next                         │  │
+│  │      return @ptrCast(*Entity, ptr)                │  │
+│  └───────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ NO: Allocate fresh from arena                     │  │
+│  │     ptr = arena.alloc(Entity, 1)                  │  │
+│  │     return ptr                                    │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+
+pool.destroy(entity_ptr):
+
+┌─────────────────────────────────────────────────────────┐
+│  1. Reinterpret entity memory as a freelist Node        │
+│     node = @ptrCast(*Node, entity_ptr)                  │
+│                                                          │
+│  2. Push onto freelist                                   │
+│     node.next = free_list                                │
+│     free_list = node                                     │
+│                                                          │
+│  Memory NOT returned to arena!                           │
+│  Just added to freelist for reuse.                       │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">Visual Example
+    <div id="visual-example" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#visual-example" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>Initial: Empty pool
+  arena: [empty]
+  free_list: null
+
+After create() x3:
+  arena: [Entity0][Entity1][Entity2]
+  free_list: null
+
+  returned: ptr0, ptr1, ptr2
+
+After destroy(ptr1):
+  arena: [Entity0][FREED  ][Entity2]
+  free_list ──────────►[ptr1.next=null]
+
+After destroy(ptr0):
+  arena: [FREED  ][FREED  ][Entity2]
+  free_list ──►[ptr0.next=ptr1]──►[ptr1.next=null]
+
+After create():
+  Pop ptr0 from freelist!
+  arena: [Entity0][FREED  ][Entity2]  ← ptr0 reused!
+  free_list ──►[ptr1.next=null]
+
+  returned: ptr0 (same address, fresh Entity!)
+</code></pre>
+<h3 class="relative group">Preheating for Deterministic Behavior
+    <div id="preheating-for-deterministic-behavior" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#preheating-for-deterministic-behavior" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="c1">// Pre-allocate 1000 entities at startup
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">var</span><span class="w"> </span><span class="n">pool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="nf">MemoryPool</span><span class="p">(</span><span class="n">Entity</span><span class="p">).</span><span class="nf">initPreheated</span><span class="p">(</span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="mi">1000</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Now: 1000 entities on freelist, ready to go
+</span></span></span><span class="line"><span class="cl"><span class="c1">// create() will be instant for first 1000 calls
+</span></span></span><span class="line"><span class="cl"><span class="c1">// No allocations during gameplay!
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// For hard limits (embedded/games):
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kr">var</span><span class="w"> </span><span class="n">pool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="nf">MemoryPoolExtra</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span><span class="w"> </span><span class="p">.{</span><span class="w"> </span><span class="p">.</span><span class="n">growable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">})</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">.</span><span class="nf">initPreheated</span><span class="p">(</span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// Can ONLY have 100 entities max
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 101st create() returns OutOfMemory
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 class="relative group">When to Use MemoryPool
+    <div id="when-to-use-memorypool" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use-memorypool" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ PERFECT for:                  │ AVOID for:              │
+├───────────────────────────────┼─────────────────────────┤
+│ ✓ Game entities               │ ✗ Mixed-type objects    │
+│ ✓ Network connections         │ ✗ Varying sizes         │
+│ ✓ Parser AST nodes            │ ✗ Few allocations       │
+│ ✓ ECS components              │                         │
+│ ✓ Any &#34;lots of same thing&#34;    │                         │
+└───────────────────────────────┴─────────────────────────┘
+
+Speed: VERY FAST (O(1) alloc/free, cache-friendly)
+Memory: Efficient (no per-object overhead)
+</code></pre><hr>
+
+<h2 class="relative group">7. ThreadSafeAllocator - Simple Wrapper
+    <div id="7-threadsafeallocator---simple-wrapper" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#7-threadsafeallocator---simple-wrapper" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p><strong>Source:</strong> <code>std/heap/ThreadSafeAllocator.zig</code> (56 lines)</p>
+
+<h3 class="relative group">The Simple Idea
+    <div id="the-simple-idea-6" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-simple-idea-6" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Wrap ANY allocator with a mutex. Simple but adds lock contention.</p>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                                                          │
+│   Your allocator:            ThreadSafeAllocator:       │
+│   ┌───────────────┐          ┌───────────────────────┐  │
+│   │ ArenaAllocator│          │ mutex                 │  │
+│   │ (not safe!)   │    ───►  │ child: ArenaAllocator │  │
+│   └───────────────┘          └───────────────────────┘  │
+│                                                          │
+│   Every operation now:                                   │
+│     1. Lock mutex                                        │
+│     2. Call child allocator                              │
+│     3. Unlock mutex                                      │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="relative group">The Entire Implementation
+    <div id="the-entire-implementation" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#the-entire-implementation" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="n">child_allocator</span><span class="o">:</span><span class="w"> </span><span class="n">Allocator</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="n">mutex</span><span class="o">:</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">Thread</span><span class="p">.</span><span class="n">Mutex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.{},</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">fn</span><span class="w"> </span><span class="nf">alloc</span><span class="p">(</span><span class="n">ctx</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">anyopaque</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">,</span><span class="w"> </span><span class="n">alignment</span><span class="o">:</span><span class="w"> </span><span class="n">Alignment</span><span class="p">,</span><span class="w"> </span><span class="n">ra</span><span class="o">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="p">[</span><span class="o">*</span><span class="p">]</span><span class="kt">u8</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kr">const</span><span class="w"> </span><span class="n">self</span><span class="o">:</span><span class="w"> </span><span class="o">*</span><span class="n">ThreadSafeAllocator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">@ptrCast</span><span class="p">(</span><span class="nb">@alignCast</span><span class="p">(</span><span class="n">ctx</span><span class="p">));</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="n">mutex</span><span class="p">.</span><span class="nf">lock</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">mutex</span><span class="p">.</span><span class="nf">unlock</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">self</span><span class="p">.</span><span class="n">child_allocator</span><span class="p">.</span><span class="nf">rawAlloc</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">alignment</span><span class="p">,</span><span class="w"> </span><span class="n">ra</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// resize, remap, free are identical pattern
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>That&rsquo;s it! ~50 lines total.</p>
+
+<h3 class="relative group">When to Use
+    <div id="when-to-use" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#when-to-use" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│ Use ThreadSafeAllocator when:                           │
+│   • Quick fix to make something thread-safe             │
+│   • Low-contention scenarios                            │
+│   • Wrapping a custom allocator                         │
+│                                                          │
+│ Use SmpAllocator instead when:                          │
+│   • High throughput needed                              │
+│   • Many threads allocating frequently                  │
+│   • Production server workloads                         │
+└─────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">8-11. Specialized Allocators (Brief)
+    <div id="8-11-specialized-allocators-brief" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#8-11-specialized-allocators-brief" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+
+<h3 class="relative group">WasmAllocator
+    <div id="wasmallocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#wasmallocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>For WebAssembly targets. Uses <code>@wasmMemoryGrow</code> builtin.</p>
+<pre tabindex="0"><code>Only use: When compiling to wasm32/wasm64
+</code></pre>
+<h3 class="relative group">SbrkAllocator
+    <div id="sbrkallocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#sbrkallocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>For Plan9 OS and sbrk-style memory.</p>
+<pre tabindex="0"><code>Only use: Plan9 or custom embedded with sbrk
+</code></pre>
+<h3 class="relative group">c_allocator / raw_c_allocator
+    <div id="c_allocator--raw_c_allocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#c_allocator--raw_c_allocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Wraps C&rsquo;s malloc/free.</p>
+<pre tabindex="0"><code>Use: When interfacing with C libraries
+raw_c_allocator: Faster but only supports max_align_t
+c_allocator: Full alignment support
+</code></pre>
+<h3 class="relative group">StackFallbackAllocator
+    <div id="stackfallbackallocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#stackfallbackallocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h3>
+<p>Stack buffer with heap fallback.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-zig" data-lang="zig"><span class="line"><span class="cl"><span class="kr">var</span><span class="w"> </span><span class="n">stack_alloc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">.</span><span class="n">heap</span><span class="p">.</span><span class="nf">stackFallback</span><span class="p">(</span><span class="mi">4096</span><span class="p">,</span><span class="w"> </span><span class="n">page_allocator</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">// First 4KB from stack, overflow goes to page_allocator
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><hr>
+
+<h2 class="relative group">Quick Reference: Which Allocator?
+    <div id="quick-reference-which-allocator" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#quick-reference-which-allocator" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<pre tabindex="0"><code>┌─────────────────────────────────────────────────────────┐
+│                  DECISION FLOWCHART                      │
+│                                                          │
+│  Is this for debugging?                                  │
+│  └─► YES ──► DebugAllocator                             │
+│  └─► NO ───┐                                            │
+│            ▼                                             │
+│  Do you free everything at once?                        │
+│  └─► YES ──► ArenaAllocator                             │
+│  └─► NO ───┐                                            │
+│            ▼                                             │
+│  Is it many objects of same type?                       │
+│  └─► YES ──► MemoryPool                                 │
+│  └─► NO ───┐                                            │
+│            ▼                                             │
+│  Do you have a fixed buffer?                            │
+│  └─► YES ──► FixedBufferAllocator                       │
+│  └─► NO ───┐                                            │
+│            ▼                                             │
+│  Is it multi-threaded?                                  │
+│  └─► YES ──► smp_allocator                              │
+│  └─► NO ──► page_allocator or c_allocator               │
+└─────────────────────────────────────────────────────────┘
+</code></pre><hr>
+
+<h2 class="relative group">Summary
+    <div id="summary" class="anchor"></div>
+    
+    <span
+        class="absolute top-0 w-6 transition-opacity opacity-0 -start-6 not-prose group-hover:opacity-100 select-none">
+        <a class="text-primary-300 dark:text-neutral-700 !no-underline" href="#summary" aria-label="Anchor">#</a>
+    </span>
+    
+</h2>
+<p>Each allocator has a specific purpose:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Allocator</th>
+          <th>One-Line Summary</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>PageAllocator</td>
+          <td>Direct OS syscalls, foundation for others</td>
+      </tr>
+      <tr>
+          <td>ArenaAllocator</td>
+          <td>Bump pointer, free everything at once</td>
+      </tr>
+      <tr>
+          <td>FixedBufferAllocator</td>
+          <td>Your buffer, zero heap allocations</td>
+      </tr>
+      <tr>
+          <td>DebugAllocator</td>
+          <td>Find memory bugs (leaks, double-free)</td>
+      </tr>
+      <tr>
+          <td>SmpAllocator</td>
+          <td>Multi-threaded production workloads</td>
+      </tr>
+      <tr>
+          <td>MemoryPool</td>
+          <td>Many objects of same type</td>
+      </tr>
+      <tr>
+          <td>ThreadSafeAllocator</td>
+          <td>Add mutex to any allocator</td>
+      </tr>
+  </tbody>
+</table>
+<p>The key insight: <strong>Zig gives you the building blocks to compose exactly the memory strategy you need.</strong> No hidden allocations, no one-size-fits-all garbage collector - just explicit, understandable memory management.</p>
+
+          
+          
+          
+        </div>
+        
+        
+
+        
+
+        
+
+      </div>
+
+      
+      
+        
+        
+          
+          
+        
+        
+        
+        <script
+          type="text/javascript"
+          src="/js/page.min.54b6f4371722649edbe871e431d8670d670878c22be8f36e229fe53cc9b786fe25a834def5e6de621f7a3e37b72bc8cd73839aa5ed907ed6cbd45cd3e1b0fa20.js"
+          integrity="sha512-VLb0NxciZJ7b6HHkMdhnDWcIeMIr6PNuIp/lPMm3hv4lqDTe9ebeYh96Pje3K8jNc4Oape2QftbL1FzT4bD6IA=="
+          data-oid="views_drafts/17-allocators.md"
+          data-oid-likes="likes_drafts/17-allocators.md"></script>
+      
+    </section>
+
+    
+    <footer class="pt-8 max-w-prose print:hidden">
+      
+  
+    
+    
+    
+    <div class="pt-8">
+      <hr class="border-dotted border-neutral-300 dark:border-neutral-600">
+      <div class="flex justify-between pt-3">
+        <span class="flex flex-col">
+          
+            <a
+              class="flex text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+              href="/drafts/how-to-design-a-grammar/">
+              <span class="leading-6">
+                <span class="inline-block rtl:rotate-180">&larr;</span>&ensp;How to Design a Grammar for Your Programming Language
+              </span>
+            </a>
+            
+              <span class="ms-6 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <time datetime="2025-12-20T00:00:00&#43;00:00">December 20, 2025</time>
+              </span>
+            
+          
+        </span>
+        <span class="flex flex-col items-end">
+          
+        </span>
+      </div>
+    </div>
+  
+
+
+      
+    </footer>
+  </article>
+
+        
+
+
+  
+
+
+
+
+
+
+<div
+  id="scroll-to-top"
+  class="fixed bottom-6 end-6 z-50 transform translate-y-4 opacity-0 duration-200">
+  <a
+    href="#the-top"
+    class="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400"
+    aria-label="Scroll to top"
+    title="Scroll to top">
+    &uarr;
+  </a>
+</div>
+
+      </main><footer id="site-footer" class="py-10 print:hidden">
+  
+  
+    
+  
+  <div class="flex items-center justify-between">
+    
+    
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          &copy;
+          2025
+          Yohai
+      </p>
+    
+
+    
+    
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        
+        
+        Powered by <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">Hugo</a> &amp; <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500"
+          href="https://blowfish.page/" target="_blank" rel="noopener noreferrer">Blowfish</a>
+      </p>
+    
+  </div>
+  
+    <script>
+      mediumZoom(document.querySelectorAll("img:not(.nozoom)"), {
+        margin: 24,
+        background: "rgba(0,0,0,0.5)",
+        scrollOffset: 0,
+      });
+    </script>
+  
+  
+  
+  <script
+    type="text/javascript"
+    src="/js/process.min.ee03488f19c93c2efb199e2e3014ea5f3cb2ce7d45154adb3399a158cac27ca52831db249ede5bb602700ef87eb02434139de0858af1818ab0fb4182472204a4.js"
+    integrity="sha512-7gNIjxnJPC77GZ4uMBTqXzyyzn1FFUrbM5mhWMrCfKUoMdsknt5btgJwDvh&#43;sCQ0E53ghYrxgYqw&#43;0GCRyIEpA=="></script>
+  
+  
+</footer>
+<div
+  id="search-wrapper"
+  class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh] z-500"
+  data-url="http://localhost:1313/">
+  <div
+    id="search-modal"
+    class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800">
+    <header class="relative z-10 flex items-center justify-between flex-none px-2">
+      <form class="flex items-center flex-auto min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 text-neutral-400">
+          <span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span>
+        </div>
+        <input
+          type="search"
+          id="search-query"
+          class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent"
+          placeholder="Search"
+          tabindex="0">
+      </form>
+      <button
+        id="close-search-button"
+        class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"
+        title="Close (Esc)">
+        <span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M310.6 361.4c12.5 12.5 12.5 32.75 0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3L54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75 0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-105.4 105.4L310.6 361.4z"/></svg>
+</span>
+      </button>
+    </header>
+    <section class="flex-auto px-2 overflow-auto">
+      <ul id="search-results">
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+    </div>
+  </body>
+  
+</html>

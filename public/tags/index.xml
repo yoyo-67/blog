@@ -69,5 +69,65 @@
       
     </item>
     
+    <item>
+      <title>Concurrency</title>
+      <link>http://localhost:1313/tags/concurrency/</link>
+      <pubDate>Mon, 15 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/tags/concurrency/</guid>
+      <description></description>
+      
+    </item>
+    
+    <item>
+      <title>Futex</title>
+      <link>http://localhost:1313/tags/futex/</link>
+      <pubDate>Mon, 15 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/tags/futex/</guid>
+      <description></description>
+      
+    </item>
+    
+    <item>
+      <title>Io</title>
+      <link>http://localhost:1313/tags/io/</link>
+      <pubDate>Mon, 15 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/tags/io/</guid>
+      <description></description>
+      
+    </item>
+    
+    <item>
+      <title>Io_uring</title>
+      <link>http://localhost:1313/tags/io_uring/</link>
+      <pubDate>Mon, 15 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/tags/io_uring/</guid>
+      <description></description>
+      
+    </item>
+    
+    <item>
+      <title>Mutex</title>
+      <link>http://localhost:1313/tags/mutex/</link>
+      <pubDate>Mon, 15 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/tags/mutex/</guid>
+      <description></description>
+      
+    </item>
+    
+    <item>
+      <title>Threads</title>
+      <link>http://localhost:1313/tags/threads/</link>
+      <pubDate>Mon, 15 Jan 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/tags/threads/</guid>
+      <description></description>
+      
+    </item>
+    
   </channel>
 </rss>

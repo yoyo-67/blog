@@ -175,14 +175,18 @@
   </url>
   <url>
     <loc>http://localhost:1313/drafts/</loc>
-    <lastmod>2025-12-20T00:00:00+00:00</lastmod>
+    <lastmod>2025-12-21T00:00:00+00:00</lastmod>
   </url>
   <url>
-    <loc>http://localhost:1313/drafts/how-to-design-a-grammar/</loc>
-    <lastmod>2025-12-20T00:00:00+00:00</lastmod>
+    <loc>http://localhost:1313/drafts/17-allocators/</loc>
+    <lastmod>2025-12-21T00:00:00+00:00</lastmod>
   </url>
   <url>
     <loc>http://localhost:1313/</loc>
+    <lastmod>2025-12-21T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/how-to-design-a-grammar/</loc>
     <lastmod>2025-12-20T00:00:00+00:00</lastmod>
   </url>
   <url>
@@ -292,6 +296,10 @@
   <url>
     <loc>http://localhost:1313/posts/</loc>
     <lastmod>2025-12-11T00:00:00+00:00</lastmod>
+  </url>
+  <url>
+    <loc>http://localhost:1313/drafts/18-io-concurrency/</loc>
+    <lastmod>2024-01-15T00:00:00+00:00</lastmod>
   </url>
   <url>
     <loc>http://localhost:1313/compiler-tutorial/</loc>
