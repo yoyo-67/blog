@@ -11,7 +11,7 @@ const Node = node_mod.Node;
 const createNode = node_mod.createNode;
 const Op = node_mod.Op;
 
-fn parseExpr(arena: *std.heap.ArenaAllocator, source: []const u8) !Node {
+pub fn parseExpr(arena: *std.heap.ArenaAllocator, source: []const u8) !Node {
     const allocator = arena.allocator();
     var lexer = Lexer.init(source);
     const tokens = try lexer.tokenize(allocator);
