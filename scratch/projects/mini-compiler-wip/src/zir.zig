@@ -19,10 +19,22 @@ fn init() Zir {
 
 fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
     switch (node) {
-        .int_literal => |int_decl| return try self.emit(allocator, .{ .constant = int_decl.value }),
-        .root => |root_decl| {
-        }
-
+        .int_literal => |lit| return try self.emit(allocator, .{ .constant = lit.value }),
+        .binary_op => |bin| {
+            if (bin.op == .plus) {
+                const lhs = try self.generate(allocator, bin.lhs.*);
+                const rhs = try self.generate(allocator, bin.rhs.*);
+                return try self.emit(allocator, .{ .add = .{ .lhs = lhs, .rhs = rhs } });
+            }
+            unreachable;
+        },
+        .root => |root| {
+            var last: InstructionRef = 0;
+            for (root.decls) |decl| {
+                last = try self.generate(allocator, decl);
+            }
+            return last;
+        },
         else => unreachable,
     }
 }
@@ -47,14 +59,28 @@ const InstructionRef = u32;
 
 const Instruction = union(enum) {
     constant: i32,
+    add: struct {
+        lhs: InstructionRef,
+        rhs: InstructionRef,
+    },
+    mul: struct {
+        lhs: InstructionRef,
+        rhs: InstructionRef,
+    },
 
     pub fn toString(self: Instruction, idx: usize, writer: anytype) !void {
-        try writer.print("%{d}) = ", .{idx});
+        try writer.print("%{d} = ", .{idx});
         switch (self) {
             .constant => |val| try writer.print("constant({d})", .{val}),
+            .add => |val| try writer.print("add(%{d}, %{d})", .{ val.lhs, val.rhs }),
+            .mul => |val| try writer.print("mul(%{d} %{d})", .{ val.lhs, val.rhs }),
         }
     }
 };
+
+fn deinit(self: *Zir, allocator: mem.Allocator) void {
+    self.instructions.deinit(allocator);
+}
 
 test "constant: 42" {
     const allocator = testing.allocator;
@@ -62,10 +88,10 @@ test "constant: 42" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
 
-    const tree = try ast_mod.parseExpr(&arena, "42");
+    const tree = try ast_mod.parseExpr(&arena, "1 + 2 * 3");
 
     var zir = Zir.init();
-    defer arena.deinit();
+    defer zir.deinit(allocator);
 
     _ = try zir.generate(allocator, tree);
 
@@ -73,8 +99,9 @@ test "constant: 42" {
     defer allocator.free(result);
 
     try testing.expectEqualStrings(
-        \\%0 = constant(42)
+        \\%0 = constant(1)
+        \\%1 = constant(2)
+        \\%2 = add(%0, %1)
         \\
     , result);
 }
-
