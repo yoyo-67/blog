@@ -14,7 +14,7 @@ pub const keywords = std.StaticStringMap(Type).initComptime(.{
 });
 
 // Single source of truth for char <-> Type mappings
-const char_type_map = .{
+const char_type_map: []const struct { u8, Type } = &.{
     .{ '+', .plus },
     .{ '-', .minus },
     .{ '*', .star },
