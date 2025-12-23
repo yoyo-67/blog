@@ -79,6 +79,7 @@ const Instruction = union(enum) {
         name: []const u8,
         value: InstructionRef,
     },
+    decl_ref: []const u8,
 
     pub fn toString(self: Instruction, idx: usize, writer: anytype) !void {
         try writer.print("%{d} = ", .{idx});
@@ -87,6 +88,7 @@ const Instruction = union(enum) {
             .add => |val| try writer.print("add(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .mul => |val| try writer.print("mul(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .decl => |val| try writer.print("decl(\"{s}\", %{d})", .{ val.name, val.value }),
+            .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val}),
         }
     }
 };

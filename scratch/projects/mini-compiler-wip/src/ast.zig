@@ -343,3 +343,15 @@ test "fn declaration" {
     const tree = try parseExpr(&arena, "fn add(a: i32, b: i32) { return 1 + 2; }");
     try testing.expectEqualStrings("fn(name=add, params=[param(name=a, type=i32), param(name=b, type=i32)], block=return(value=(1 + 2)))", try tree.toString(arena.allocator()));
 }
+
+test "return type" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const str =
+        \\ const x = 10;
+        \\ return x;
+    ;
+    const tree = try parseExpr(&arena, str);
+    try testing.expectEqualStrings("fn(name=add, params=[param(name=a, type=i32), param(name=b, type=i32)], block=return(value=(1 + 2)))", try tree.toString(arena.allocator()));
+}
