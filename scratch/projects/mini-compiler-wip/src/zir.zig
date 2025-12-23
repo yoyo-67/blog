@@ -10,10 +10,12 @@ const Node = node_mod.Node;
 const Zir = @This();
 
 instructions: std.ArrayListUnmanaged(Instruction),
+parameters: std.StringHashMapUnmanaged(u32),
 
 fn init() Zir {
     return .{
         .instructions = .empty,
+        .parameters = .empty,
     };
 }
 
@@ -48,6 +50,10 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
             return try self.emit(allocator, .{ .return_stmt = .{ .value = instructuion_ref } });
         },
         .identifier_ref => |val| {
+            if (self.parameters.get(val.name)) |param_idx| {
+                return try self.emit(allocator, .{ .param_ref = param_idx });
+            }
+
             return try self.emit(allocator, .{ .decl_ref = val.name });
         },
         .fn_decl => |val| {
@@ -55,8 +61,8 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
             // then emit the decleration on the block
             var last: InstructionRef = 0;
             for (val.params, 0..) |param, idx| {
-                _ = param;
-                last = try self.emit(allocator, .{ .param_ref = @intCast(idx) });
+                try self.parameters.put(allocator, param.name, @intCast(idx));
+                // .last = try self.emit(allocator, .{ .param_ref = @intCast(idx) });
             }
 
             for (val.block.decls) |decl| {
@@ -124,23 +130,20 @@ const Instruction = union(enum) {
 
 fn deinit(self: *Zir, allocator: mem.Allocator) void {
     self.instructions.deinit(allocator);
+    self.parameters.deinit(allocator);
 }
 
 test "constant: 42" {
-    const allocator = testing.allocator;
-
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
     const tree = try ast_mod.parseExpr(&arena, "1 + 2 * 3 + 3");
 
     var zir = Zir.init();
-    defer zir.deinit(allocator);
-
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
-    defer allocator.free(result);
 
     // 1 + 2 * 3  parses as  1 + (2 * 3) + 3
     try testing.expectEqualStrings(
@@ -156,20 +159,16 @@ test "constant: 42" {
 }
 
 test "variables" {
-    const allocator = testing.allocator;
-
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
     const tree = try ast_mod.parseExpr(&arena, "const x = 42;");
 
     var zir = Zir.init();
-    defer zir.deinit(allocator);
-
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
-    defer allocator.free(result);
 
     try testing.expectEqualStrings(
         \\%0 = constant(42)
@@ -179,20 +178,16 @@ test "variables" {
 }
 
 test "var with math" {
-    const allocator = testing.allocator;
-
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
     const tree = try ast_mod.parseExpr(&arena, "const x = 42 + 3;");
 
     var zir = Zir.init();
-    defer zir.deinit(allocator);
-
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
-    defer allocator.free(result);
 
     try testing.expectEqualStrings(
         \\%0 = constant(42)
@@ -204,24 +199,20 @@ test "var with math" {
 }
 
 test "return identifier ref" {
-    const allocator = testing.allocator;
-
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
     const str =
-        \\ const hello = 10;                                                                                                              
-        \\ return hello;                                                                                                                  
+        \\ const hello = 10;
+        \\ return hello;
     ;
     const tree = try ast_mod.parseExpr(&arena, str);
 
     var zir = Zir.init();
-    defer zir.deinit(allocator);
-
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
-    defer allocator.free(result);
 
     try testing.expectEqualStrings(
         \\%0 = constant(10)
@@ -233,10 +224,9 @@ test "return identifier ref" {
 }
 
 test "decl ref + math" {
-    const allocator = testing.allocator;
-
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
     const str =
         \\ x * 2 + y
@@ -244,12 +234,9 @@ test "decl ref + math" {
     const tree = try ast_mod.parseExpr(&arena, str);
 
     var zir = Zir.init();
-    defer zir.deinit(allocator);
-
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
-    defer allocator.free(result);
 
     try testing.expectEqualStrings(
         \\%0 = decl_ref("x")
@@ -262,10 +249,9 @@ test "decl ref + math" {
 }
 
 test "decl ref + math 2 " {
-    const allocator = testing.allocator;
-
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
     const str =
         \\const x  = 5;
@@ -274,12 +260,9 @@ test "decl ref + math 2 " {
     const tree = try ast_mod.parseExpr(&arena, str);
 
     var zir = Zir.init();
-    defer zir.deinit(allocator);
-
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
-    defer allocator.free(result);
 
     try testing.expectEqualStrings(
         \\%0 = constant(5)
@@ -293,21 +276,17 @@ test "decl ref + math 2 " {
 }
 
 test "fn parameters" {
-    const allocator = testing.allocator;
-
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
     const str = "fn square(x: i32) { return x * x; }";
     const tree = try ast_mod.parseExpr(&arena, str);
 
     var zir = Zir.init();
-    defer zir.deinit(allocator);
-
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
-    defer allocator.free(result);
 
     try testing.expectEqualStrings(
         \\%0 = param_ref(0)
