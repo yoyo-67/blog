@@ -157,9 +157,9 @@ const Program = struct {
     pub fn toString(self: *Program, allocator: mem.Allocator) ![]const u8 {
         var buffer: std.ArrayListUnmanaged(u8) = .empty;
         const writer = buffer.writer(allocator);
-        for (self.functions) |function| {
-            function.toString(allocator, writer);
-            writer.writeAll("\n");
+        for (self.functions.items, 0..) |*function, i| {
+            if (i > 0) try writer.writeAll("\n");
+            try function.toString(allocator, writer);
         }
         return try buffer.toOwnedSlice(allocator);
     }
@@ -168,16 +168,16 @@ const Program = struct {
 const Function = struct {
     name: []const u8,
     params: []const Node.Param,
-    instructions: []const Instruction,
+    zir: Zir,
 
     pub fn init() Function {
         return .{};
     }
 
-    pub fn toString(self: *Function, writer: anytype) ![]const u8 {
+    pub fn toString(self: *Function, allocator: mem.Allocator, writer: anytype) !void {
+        _ = allocator;
         try writer.print("function \"{s}\":\n", .{self.name});
-        try writer.writeAll("params: ");
-        try writer.writeAll("[");
+        try writer.writeAll("  params: [");
         for (self.params, 0..) |param, idx| {
             if (idx > 0) {
                 try writer.writeAll(", ");
@@ -185,9 +185,11 @@ const Function = struct {
             try writer.print("(\"{s}\", {s})", .{ param.name, param.type });
         }
         try writer.writeAll("]\n");
-        try writer.writeAll("body: ");
-        for (self.instructions, 0..) |instruction, idx| {
+        try writer.writeAll("  body:\n");
+        for (self.zir.instructions.items, 0..) |instruction, idx| {
+            try writer.writeAll("    ");
             try instruction.toString(idx, writer);
+            try writer.writeAll("\n");
         }
     }
 };
@@ -198,7 +200,7 @@ fn generateProgram(allocator: mem.Allocator, node: Node) !Program {
     for (node.root.decls) |decl| {
         if (decl == .fn_decl) {
             const fn_decl = try generateFunction(allocator, decl);
-            functions.append(allocator, fn_decl);
+            try functions.append(allocator, fn_decl);
         }
     }
 
@@ -212,7 +214,7 @@ fn generateFunction(allocator: mem.Allocator, node: Node) !Function {
     return .{
         .name = node.fn_decl.name,
         .params = node.fn_decl.params,
-        .instructions = try zir.instructions.toOwnedSlice(allocator),
+        .zir = zir,
     };
 }
 // 2. the generateProgram will call to generate function for each function he see.
@@ -447,23 +449,41 @@ test "parse program" {
 
     const input =
         \\fn calc(n: i32) {
-        \\const result = n + 1;
-        \\return result;
+        \\  const result = n + 1;
+        \\  return result;
+        \\}
+        \\
+        \\fn calc2(n: i32) {
+        \\  const result = n + 1;
+        \\  return result;
         \\}
     ;
 
     const tree = try ast_mod.parseExpr(&arena, input);
 
     var program = try generateProgram(allocator, tree);
-    const result = program.toString(allocator);
+    const result = try program.toString(allocator);
 
     try testing.expectEqualStrings(
-        \\%0 = param_ref(0)
-        \\%1 = constant(1)
-        \\%2 = add(%0, %1)
-        \\%3 = decl("result", %2)
-        \\%4 = decl_ref("result")
-        \\%5 = ret(%4)
+        \\function "calc":
+        \\  params: [("n", i32)]
+        \\  body:
+        \\    %0 = param_ref(0)
+        \\    %1 = constant(1)
+        \\    %2 = add(%0, %1)
+        \\    %3 = decl("result", %2)
+        \\    %4 = decl_ref("result")
+        \\    %5 = ret(%4)
+        \\
+        \\function "calc2":
+        \\  params: [("n", i32)]
+        \\  body:
+        \\    %0 = param_ref(0)
+        \\    %1 = constant(1)
+        \\    %2 = add(%0, %1)
+        \\    %3 = decl("result", %2)
+        \\    %4 = decl_ref("result")
+        \\    %5 = ret(%4)
         \\
     , result);
 }
