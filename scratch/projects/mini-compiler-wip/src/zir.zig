@@ -27,8 +27,9 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
             const rhs = try self.generate(allocator, bin.rhs.*);
             return switch (bin.op) {
                 .plus => try self.emit(allocator, .{ .add = .{ .lhs = lhs, .rhs = rhs } }),
+                .minus => try self.emit(allocator, .{ .sub = .{ .lhs = lhs, .rhs = rhs } }),
                 .mul => try self.emit(allocator, .{ .mul = .{ .lhs = lhs, .rhs = rhs } }),
-                else => unreachable,
+                .div => try self.emit(allocator, .{ .div = .{ .lhs = lhs, .rhs = rhs } }),
             };
         },
         .root => |root| {
@@ -100,7 +101,15 @@ const Instruction = union(enum) {
         lhs: InstructionRef,
         rhs: InstructionRef,
     },
+    sub: struct {
+        lhs: InstructionRef,
+        rhs: InstructionRef,
+    },
     mul: struct {
+        lhs: InstructionRef,
+        rhs: InstructionRef,
+    },
+    div: struct {
         lhs: InstructionRef,
         rhs: InstructionRef,
     },
@@ -119,7 +128,9 @@ const Instruction = union(enum) {
         switch (self) {
             .constant => |val| try writer.print("constant({d})", .{val}),
             .add => |val| try writer.print("add(%{d}, %{d})", .{ val.lhs, val.rhs }),
+            .sub => |val| try writer.print("sub(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .mul => |val| try writer.print("mul(%{d}, %{d})", .{ val.lhs, val.rhs }),
+            .div => |val| try writer.print("div(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .decl => |val| try writer.print("decl(\"{s}\", %{d})", .{ val.name, val.value }),
             .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val}),
             .return_stmt => |val| try writer.print("ret(%{d})", .{val.value}),
@@ -293,6 +304,58 @@ test "fn parameters" {
         \\%1 = param_ref(0)
         \\%2 = mul(%0, %1)
         \\%3 = ret(%2)
+        \\
+    , result);
+}
+
+test "fn 2 parameters" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const str = "fn square(a: i32, b: i32) { return  b - a; }";
+    const tree = try ast_mod.parseExpr(&arena, str);
+
+    var zir = Zir.init();
+    _ = try zir.generate(allocator, tree);
+
+    const result = try zir.toString(allocator);
+
+    try testing.expectEqualStrings(
+        \\%0 = param_ref(1)
+        \\%1 = param_ref(0)
+        \\%2 = sub(%0, %1)
+        \\%3 = ret(%2)
+        \\
+    , result);
+}
+
+test "fn 2 parameters + locals" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn calc(n: i32) {
+        \\const result = n + 1;
+        \\return result;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+
+    var zir = Zir.init();
+    _ = try zir.generate(allocator, tree);
+
+    const result = try zir.toString(allocator);
+
+    try testing.expectEqualStrings(
+        \\%0 = param_ref(0)
+        \\%1 = decl("n", %0)
+        \\%2 = constant(1)
+        \\%3 = add(%1, %2)
+        \\%4 = decl("result", %3)
+        \\%5 = ret(%4)
         \\
     , result);
 }
