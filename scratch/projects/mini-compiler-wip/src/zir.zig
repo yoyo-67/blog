@@ -351,10 +351,10 @@ test "fn 2 parameters + locals" {
 
     try testing.expectEqualStrings(
         \\%0 = param_ref(0)
-        \\%1 = decl("n", %0)
-        \\%2 = constant(1)
-        \\%3 = add(%1, %2)
-        \\%4 = decl("result", %3)
+        \\%1 = constant(1)
+        \\%2 = add(%0, %1)
+        \\%3 = decl("result", %2)
+        \\%4 = decl_ref("result")
         \\%5 = ret(%4)
         \\
     , result);
