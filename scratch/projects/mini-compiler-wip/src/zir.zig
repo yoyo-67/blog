@@ -50,6 +50,22 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
         .identifier_ref => |val| {
             return try self.emit(allocator, .{ .decl_ref = val.name });
         },
+        .fn_decl => |val| {
+            // loop on the parameters and emit them.
+            // then emit the decleration on the block
+            var last: InstructionRef = 0;
+            for (val.params, 0..) |param, idx| {
+                _ = param;
+                last = try self.emit(allocator, .{ .param_ref = @intCast(idx) });
+            }
+
+            for (val.block.decls) |decl| {
+                last = try self.generate(allocator, decl);
+            }
+
+            return last;
+        },
+
         else => unreachable,
     }
 }
@@ -90,6 +106,7 @@ const Instruction = union(enum) {
     return_stmt: struct {
         value: InstructionRef,
     },
+    param_ref: u32,
 
     pub fn toString(self: Instruction, idx: usize, writer: anytype) !void {
         try writer.print("%{d} = ", .{idx});
@@ -100,6 +117,7 @@ const Instruction = union(enum) {
             .decl => |val| try writer.print("decl(\"{s}\", %{d})", .{ val.name, val.value }),
             .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val}),
             .return_stmt => |val| try writer.print("ret(%{d})", .{val.value}),
+            .param_ref => |val| try writer.print("param_ref({d})", .{val}),
         }
     }
 };
@@ -270,6 +288,32 @@ test "decl ref + math 2 " {
         \\%3 = constant(2)
         \\%4 = mul(%2, %3)
         \\%5 = decl("y", %4)
+        \\
+    , result);
+}
+
+test "fn parameters" {
+    const allocator = testing.allocator;
+
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const str = "fn square(x: i32) { return x * x; }";
+    const tree = try ast_mod.parseExpr(&arena, str);
+
+    var zir = Zir.init();
+    defer zir.deinit(allocator);
+
+    _ = try zir.generate(allocator, tree);
+
+    const result = try zir.toString(allocator);
+    defer allocator.free(result);
+
+    try testing.expectEqualStrings(
+        \\%0 = param_ref(0)
+        \\%1 = param_ref(0)
+        \\%2 = mul(%0, %1)
+        \\%3 = ret(%2)
         \\
     , result);
 }
