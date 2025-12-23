@@ -147,6 +147,83 @@ fn deinit(self: *Zir, allocator: mem.Allocator) void {
     self.parameters.deinit(allocator);
 }
 
+const Program = struct {
+    functions: std.ArrayListUnmanaged(Function),
+
+    pub fn init() Program {
+        return .{ .functions = .empty };
+    }
+
+    pub fn toString(self: *Program, allocator: mem.Allocator) ![]const u8 {
+        var buffer: std.ArrayListUnmanaged(u8) = .empty;
+        const writer = buffer.writer(allocator);
+        for (self.functions) |function| {
+            function.toString(allocator, writer);
+            writer.writeAll("\n");
+        }
+        return try buffer.toOwnedSlice(allocator);
+    }
+};
+
+const Function = struct {
+    name: []const u8,
+    params: []const Node.Param,
+    instructions: []const Instruction,
+
+    pub fn init() Function {
+        return .{};
+    }
+
+    pub fn toString(self: *Function, writer: anytype) ![]const u8 {
+        try writer.print("function \"{s}\":\n", .{self.name});
+        try writer.writeAll("params: ");
+        try writer.writeAll("[");
+        for (self.params, 0..) |param, idx| {
+            if (idx > 0) {
+                try writer.writeAll(", ");
+            }
+            try writer.print("(\"{s}\", {s})", .{ param.name, param.type });
+        }
+        try writer.writeAll("]\n");
+        try writer.writeAll("body: ");
+        for (self.instructions, 0..) |instruction, idx| {
+            try instruction.toString(idx, writer);
+        }
+    }
+};
+
+// 1. i need to create generateProgram
+fn generateProgram(allocator: mem.Allocator, node: Node) !Program {
+    var functions: std.ArrayListUnmanaged(Function) = .empty;
+    for (node.root.decls) |decl| {
+        if (decl == .fn_decl) {
+            const fn_decl = try generateFunction(allocator, decl);
+            functions.append(allocator, fn_decl);
+        }
+    }
+
+    return .{ .functions = functions };
+}
+
+fn generateFunction(allocator: mem.Allocator, node: Node) !Function {
+    var zir = Zir.init();
+    _ = try zir.generate(allocator, node);
+
+    return .{
+        .name = node.fn_decl.name,
+        .params = node.fn_decl.params,
+        .instructions = try zir.instructions.toOwnedSlice(allocator),
+    };
+}
+// 2. the generateProgram will call to generate function for each function he see.
+// 3. the generate functon will have name , params -> [name,type], instructions.
+// 4. the toString on the generateProgram will call to each function and call toString on it and add new line.
+// 5. the toString for each function will print:
+//    function "<name>":
+//      params: [],
+//      body:
+//       ...instructions
+
 test "constant: 42" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
@@ -340,7 +417,7 @@ test "fn 2 parameters + locals" {
 
     const input =
         \\fn calc(n: i32) {
-        \\const result = 1;
+        \\const result = n + 1;
         \\return result;
         \\}
     ;
@@ -351,6 +428,34 @@ test "fn 2 parameters + locals" {
     _ = try zir.generate(allocator, tree);
 
     const result = try zir.toString(allocator);
+
+    try testing.expectEqualStrings(
+        \\%0 = param_ref(0)
+        \\%1 = constant(1)
+        \\%2 = add(%0, %1)
+        \\%3 = decl("result", %2)
+        \\%4 = decl_ref("result")
+        \\%5 = ret(%4)
+        \\
+    , result);
+}
+
+test "parse program" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn calc(n: i32) {
+        \\const result = n + 1;
+        \\return result;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+
+    var program = try generateProgram(allocator, tree);
+    const result = program.toString(allocator);
 
     try testing.expectEqualStrings(
         \\%0 = param_ref(0)
