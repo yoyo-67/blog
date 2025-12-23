@@ -40,6 +40,9 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
             return last;
         },
         .identifier => |val| {
+            if (self.parameters.contains(val.name)) {
+                @panic("cannot re declare parameter");
+            }
             const instruction_ref = try self.generate(allocator, val.value.*);
             return try self.emit(allocator, .{ .decl = .{
                 .name = val.name,
@@ -337,7 +340,7 @@ test "fn 2 parameters + locals" {
 
     const input =
         \\fn calc(n: i32) {
-        \\const result = n + 1;
+        \\const result = 1;
         \\return result;
         \\}
     ;
