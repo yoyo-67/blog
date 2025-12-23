@@ -143,6 +143,11 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
         return node;
     }
 
+    if (self.see(.identifier)) {
+        const name = self.consume().lexeme;
+        return .{ .identifier_ref = .{ .name = name } };
+    }
+
     if (self.see(.integer)) {
         const token = self.consume();
         const value = std.fmt.parseInt(i32, token.lexeme, 10) catch unreachable;
@@ -162,7 +167,7 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 // expression: term (+|- term)*
 // term: unary (*|/ unary)*
 // unary: - unary | primary
-// primary: number | ( expression )
+// primary: number | identifier | ( expression )
 //
 //
 // statments - e.g.  do staff
@@ -344,14 +349,14 @@ test "fn declaration" {
     try testing.expectEqualStrings("fn(name=add, params=[param(name=a, type=i32), param(name=b, type=i32)], block=return(value=(1 + 2)))", try tree.toString(arena.allocator()));
 }
 
-test "return type" {
+test "return identifier ref" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
 
     const str =
-        \\ const x = 10;
-        \\ return x;
+        \\ const x = 10;                                                                                                              
+        \\ return x;                                                                                                                  
     ;
     const tree = try parseExpr(&arena, str);
-    try testing.expectEqualStrings("fn(name=add, params=[param(name=a, type=i32), param(name=b, type=i32)], block=return(value=(1 + 2)))", try tree.toString(arena.allocator()));
+    try testing.expectEqualStrings("identifier(name=x, value=10), return(value=x)", try tree.toString(arena.allocator()));
 }

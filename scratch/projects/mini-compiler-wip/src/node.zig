@@ -37,6 +37,10 @@ pub const Node = union(enum) {
         value: *const Node,
     },
 
+    identifier_ref: struct {
+        name: []const u8,
+    },
+
     unary_op: struct {
         op: Op,
         operand: *const Node,
@@ -120,6 +124,9 @@ pub const Node = union(enum) {
                     try decl.write(writer);
                 }
                 try writer.writeAll(")");
+            },
+            .identifier_ref => |val| {
+                try writer.print("{s}", .{val.name});
             },
         }
     }

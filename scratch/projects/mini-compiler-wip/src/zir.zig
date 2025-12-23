@@ -43,6 +43,13 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
                 .value = instruction_ref,
             } });
         },
+        .return_stmt => |val| {
+            const instructuion_ref = try self.generate(allocator, val.value.*);
+            return try self.emit(allocator, .{ .return_stmt = .{ .value = instructuion_ref } });
+        },
+        .identifier_ref => |val| {
+            return try self.emit(allocator, .{ .decl_ref = val.name });
+        },
         else => unreachable,
     }
 }
@@ -80,6 +87,9 @@ const Instruction = union(enum) {
         value: InstructionRef,
     },
     decl_ref: []const u8,
+    return_stmt: struct {
+        value: InstructionRef,
+    },
 
     pub fn toString(self: Instruction, idx: usize, writer: anytype) !void {
         try writer.print("%{d} = ", .{idx});
@@ -89,6 +99,7 @@ const Instruction = union(enum) {
             .mul => |val| try writer.print("mul(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .decl => |val| try writer.print("decl(\"{s}\", %{d})", .{ val.name, val.value }),
             .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val}),
+            .return_stmt => |val| try writer.print("ret(%{d})", .{val.value}),
         }
     }
 };
@@ -170,6 +181,95 @@ test "var with math" {
         \\%1 = constant(3)
         \\%2 = add(%0, %1)
         \\%3 = decl("x", %2)
+        \\
+    , result);
+}
+
+test "return identifier ref" {
+    const allocator = testing.allocator;
+
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const str =
+        \\ const hello = 10;                                                                                                              
+        \\ return hello;                                                                                                                  
+    ;
+    const tree = try ast_mod.parseExpr(&arena, str);
+
+    var zir = Zir.init();
+    defer zir.deinit(allocator);
+
+    _ = try zir.generate(allocator, tree);
+
+    const result = try zir.toString(allocator);
+    defer allocator.free(result);
+
+    try testing.expectEqualStrings(
+        \\%0 = constant(10)
+        \\%1 = decl("hello", %0)
+        \\%2 = decl_ref("hello")
+        \\%3 = ret(%2)
+        \\
+    , result);
+}
+
+test "decl ref + math" {
+    const allocator = testing.allocator;
+
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const str =
+        \\ x * 2 + y
+    ;
+    const tree = try ast_mod.parseExpr(&arena, str);
+
+    var zir = Zir.init();
+    defer zir.deinit(allocator);
+
+    _ = try zir.generate(allocator, tree);
+
+    const result = try zir.toString(allocator);
+    defer allocator.free(result);
+
+    try testing.expectEqualStrings(
+        \\%0 = decl_ref("x")
+        \\%1 = constant(2)
+        \\%2 = mul(%0, %1)
+        \\%3 = decl_ref("y")
+        \\%4 = add(%2, %3)
+        \\
+    , result);
+}
+
+test "decl ref + math 2 " {
+    const allocator = testing.allocator;
+
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const str =
+        \\const x  = 5;
+        \\const y  = x * 2;
+    ;
+    const tree = try ast_mod.parseExpr(&arena, str);
+
+    var zir = Zir.init();
+    defer zir.deinit(allocator);
+
+    _ = try zir.generate(allocator, tree);
+
+    const result = try zir.toString(allocator);
+    defer allocator.free(result);
+
+    try testing.expectEqualStrings(
+        \\%0 = constant(5)
+        \\%1 = decl("x", %0)
+        \\%2 = decl_ref("x")
+        \\%3 = constant(2)
+        \\%4 = mul(%2, %3)
+        \\%5 = decl("y", %4)
         \\
     , result);
 }
