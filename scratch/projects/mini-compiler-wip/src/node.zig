@@ -1,6 +1,8 @@
 const std = @import("std");
 const mem = std.mem;
 
+const Token = @import("token.zig");
+
 pub const Op = enum {
     plus,
     minus,
@@ -30,15 +32,18 @@ pub const Node = union(enum) {
         lhs: *const Node,
         op: Op,
         rhs: *const Node,
+        token: *const Token,
     },
 
     identifier: struct {
         name: []const u8,
         value: *const Node,
+        token: *const Token,
     },
 
     identifier_ref: struct {
         name: []const u8,
+        token: *const Token,
     },
 
     unary_op: struct {

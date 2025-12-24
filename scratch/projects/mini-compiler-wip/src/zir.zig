@@ -5,36 +5,36 @@ const testing = std.testing;
 const token_mod = @import("token.zig");
 const ast_mod = @import("ast.zig");
 const node_mod = @import("node.zig");
-const Node = node_mod.Node;
+pub const Node = node_mod.Node;
 
-const Zir = @This();
+pub const Zir = @This();
 
 instructions: std.ArrayListUnmanaged(Instruction),
 parameters: std.StringHashMapUnmanaged(u32),
 
-fn init() Zir {
+pub fn init() Zir {
     return .{
         .instructions = .empty,
         .parameters = .empty,
     };
 }
 
-fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
-    switch (node) {
+pub fn generate(self: *Zir, allocator: mem.Allocator, node: *const Node) !InstructionRef {
+    switch (node.*) {
         .int_literal => |lit| return try self.emit(allocator, .{ .constant = lit.value }),
         .binary_op => |bin| {
-            const lhs = try self.generate(allocator, bin.lhs.*);
-            const rhs = try self.generate(allocator, bin.rhs.*);
+            const lhs = try self.generate(allocator, bin.lhs);
+            const rhs = try self.generate(allocator, bin.rhs);
             return switch (bin.op) {
-                .plus => try self.emit(allocator, .{ .add = .{ .lhs = lhs, .rhs = rhs } }),
-                .minus => try self.emit(allocator, .{ .sub = .{ .lhs = lhs, .rhs = rhs } }),
-                .mul => try self.emit(allocator, .{ .mul = .{ .lhs = lhs, .rhs = rhs } }),
-                .div => try self.emit(allocator, .{ .div = .{ .lhs = lhs, .rhs = rhs } }),
+                .plus => try self.emit(allocator, .{ .add = .{ .lhs = lhs, .rhs = rhs, .node = node } }),
+                .minus => try self.emit(allocator, .{ .sub = .{ .lhs = lhs, .rhs = rhs, .node = node } }),
+                .mul => try self.emit(allocator, .{ .mul = .{ .lhs = lhs, .rhs = rhs, .node = node } }),
+                .div => try self.emit(allocator, .{ .div = .{ .lhs = lhs, .rhs = rhs, .node = node } }),
             };
         },
         .root => |root| {
             var last: InstructionRef = 0;
-            for (root.decls) |decl| {
+            for (root.decls) |*decl| {
                 last = try self.generate(allocator, decl);
             }
             return last;
@@ -43,14 +43,15 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
             if (self.parameters.contains(val.name)) {
                 @panic("cannot re declare parameter");
             }
-            const instruction_ref = try self.generate(allocator, val.value.*);
+            const instruction_ref = try self.generate(allocator, val.value);
             return try self.emit(allocator, .{ .decl = .{
                 .name = val.name,
                 .value = instruction_ref,
+                .node = node,
             } });
         },
         .return_stmt => |val| {
-            const instructuion_ref = try self.generate(allocator, val.value.*);
+            const instructuion_ref = try self.generate(allocator, val.value);
             return try self.emit(allocator, .{ .return_stmt = .{ .value = instructuion_ref } });
         },
         .identifier_ref => |val| {
@@ -58,7 +59,7 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
                 return try self.emit(allocator, .{ .param_ref = param_idx });
             }
 
-            return try self.emit(allocator, .{ .decl_ref = val.name });
+            return try self.emit(allocator, .{ .decl_ref = .{ .name = val.name, .node = node } });
         },
         .fn_decl => |val| {
             // loop on the parameters and emit them.
@@ -66,10 +67,9 @@ fn generate(self: *Zir, allocator: mem.Allocator, node: Node) !InstructionRef {
             var last: InstructionRef = 0;
             for (val.params, 0..) |param, idx| {
                 try self.parameters.put(allocator, param.name, @intCast(idx));
-                // .last = try self.emit(allocator, .{ .param_ref = @intCast(idx) });
             }
 
-            for (val.block.decls) |decl| {
+            for (val.block.decls) |*decl| {
                 last = try self.generate(allocator, decl);
             }
 
@@ -98,29 +98,37 @@ fn toString(self: *Zir, allocator: mem.Allocator) ![]const u8 {
 
 const InstructionRef = u32;
 
-const Instruction = union(enum) {
+pub const Instruction = union(enum) {
     constant: i32,
     add: struct {
         lhs: InstructionRef,
         rhs: InstructionRef,
+        node: *const Node,
     },
     sub: struct {
         lhs: InstructionRef,
         rhs: InstructionRef,
+        node: *const Node,
     },
     mul: struct {
         lhs: InstructionRef,
         rhs: InstructionRef,
+        node: *const Node,
     },
     div: struct {
         lhs: InstructionRef,
         rhs: InstructionRef,
+        node: *const Node,
     },
     decl: struct {
         name: []const u8,
         value: InstructionRef,
+        node: *const Node,
     },
-    decl_ref: []const u8,
+    decl_ref: struct {
+        name: []const u8,
+        node: *const Node,
+    },
     return_stmt: struct {
         value: InstructionRef,
     },
@@ -135,7 +143,7 @@ const Instruction = union(enum) {
             .mul => |val| try writer.print("mul(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .div => |val| try writer.print("div(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .decl => |val| try writer.print("decl(\"{s}\", %{d})", .{ val.name, val.value }),
-            .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val}),
+            .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val.name}),
             .return_stmt => |val| try writer.print("ret(%{d})", .{val.value}),
             .param_ref => |val| try writer.print("param_ref({d})", .{val}),
         }
@@ -147,17 +155,21 @@ fn deinit(self: *Zir, allocator: mem.Allocator) void {
     self.parameters.deinit(allocator);
 }
 
-const Program = struct {
-    functions: std.ArrayListUnmanaged(Function),
+pub const Program = struct {
+    functions_list: std.ArrayListUnmanaged(Function),
 
     pub fn init() Program {
-        return .{ .functions = .empty };
+        return .{ .functions_list = .empty };
+    }
+
+    pub fn functions(self: *const Program) []const Function {
+        return self.functions_list.items;
     }
 
     pub fn toString(self: *Program, allocator: mem.Allocator) ![]const u8 {
         var buffer: std.ArrayListUnmanaged(u8) = .empty;
         const writer = buffer.writer(allocator);
-        for (self.functions.items, 0..) |*function, i| {
+        for (self.functions_list.items, 0..) |*function, i| {
             if (i > 0) try writer.writeAll("\n");
             try function.toString(allocator, writer);
         }
@@ -165,13 +177,21 @@ const Program = struct {
     }
 };
 
-const Function = struct {
+pub const Function = struct {
     name: []const u8,
     params: []const Node.Param,
     zir: Zir,
 
-    pub fn init() Function {
-        return .{};
+    pub fn instructions(self: *const Function) []const Instruction {
+        return self.zir.instructions.items;
+    }
+
+    pub fn instructionAt(self: *const Function, idx: usize) *const Instruction {
+        return &self.zir.instructions.items[idx];
+    }
+
+    pub fn instructionCount(self: *const Function) usize {
+        return self.zir.instructions.items.len;
     }
 
     pub fn toString(self: *Function, allocator: mem.Allocator, writer: anytype) !void {
@@ -195,19 +215,19 @@ const Function = struct {
 };
 
 // 1. i need to create generateProgram
-fn generateProgram(allocator: mem.Allocator, node: Node) !Program {
+pub fn generateProgram(allocator: mem.Allocator, node: *const Node) !Program {
     var functions: std.ArrayListUnmanaged(Function) = .empty;
-    for (node.root.decls) |decl| {
-        if (decl == .fn_decl) {
+    for (node.root.decls) |*decl| {
+        if (decl.* == .fn_decl) {
             const fn_decl = try generateFunction(allocator, decl);
             try functions.append(allocator, fn_decl);
         }
     }
 
-    return .{ .functions = functions };
+    return .{ .functions_list = functions };
 }
 
-fn generateFunction(allocator: mem.Allocator, node: Node) !Function {
+pub fn generateFunction(allocator: mem.Allocator, node: *const Node) !Function {
     var zir = Zir.init();
     _ = try zir.generate(allocator, node);
 
@@ -226,15 +246,22 @@ fn generateFunction(allocator: mem.Allocator, node: Node) !Function {
 //      body:
 //       ...instructions
 
+fn allocTree(allocator: mem.Allocator, tree: Node) !*const Node {
+    const ptr = try allocator.create(Node);
+    ptr.* = tree;
+    return ptr;
+}
+
 test "constant: 42" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
     const tree = try ast_mod.parseExpr(&arena, "1 + 2 * 3 + 3");
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -257,9 +284,10 @@ test "variables" {
     const allocator = arena.allocator();
 
     const tree = try ast_mod.parseExpr(&arena, "const x = 42;");
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -276,9 +304,10 @@ test "var with math" {
     const allocator = arena.allocator();
 
     const tree = try ast_mod.parseExpr(&arena, "const x = 42 + 3;");
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -301,9 +330,10 @@ test "return identifier ref" {
         \\ return hello;
     ;
     const tree = try ast_mod.parseExpr(&arena, str);
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -325,9 +355,10 @@ test "decl ref + math" {
         \\ x * 2 + y
     ;
     const tree = try ast_mod.parseExpr(&arena, str);
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -351,9 +382,10 @@ test "decl ref + math 2 " {
         \\const y  = x * 2;
     ;
     const tree = try ast_mod.parseExpr(&arena, str);
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -375,9 +407,10 @@ test "fn parameters" {
 
     const str = "fn square(x: i32) { return x * x; }";
     const tree = try ast_mod.parseExpr(&arena, str);
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -397,9 +430,10 @@ test "fn 2 parameters" {
 
     const str = "fn square(a: i32, b: i32) { return  b - a; }";
     const tree = try ast_mod.parseExpr(&arena, str);
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -425,9 +459,10 @@ test "fn 2 parameters + locals" {
     ;
 
     const tree = try ast_mod.parseExpr(&arena, input);
+    const tree_ptr = try allocTree(allocator, tree);
 
     var zir = Zir.init();
-    _ = try zir.generate(allocator, tree);
+    _ = try zir.generate(allocator, tree_ptr);
 
     const result = try zir.toString(allocator);
 
@@ -460,8 +495,9 @@ test "parse program" {
     ;
 
     const tree = try ast_mod.parseExpr(&arena, input);
+    const tree_ptr = try allocTree(allocator, tree);
 
-    var program = try generateProgram(allocator, tree);
+    var program = try generateProgram(allocator, tree_ptr);
     const result = try program.toString(allocator);
 
     try testing.expectEqualStrings(

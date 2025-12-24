@@ -4,6 +4,13 @@ pub const Token = @This();
 
 type: Type,
 lexeme: []const u8,
+line: usize = 0,
+col: usize = 0,
+
+pub const Loc = struct {
+    line: usize,
+    col: usize,
+};
 
 pub const keywords = std.StaticStringMap(Type).initComptime(.{
     .{ "fn", .kw_fn },

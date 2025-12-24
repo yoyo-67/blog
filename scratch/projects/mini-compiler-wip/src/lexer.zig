@@ -48,6 +48,12 @@ fn peek(self: *Lexer) u8 {
 }
 
 fn advance(self: *Lexer) void {
+    if (self.pos < self.source.len and self.source[self.pos] == '\n') {
+        self.line += 1;
+        self.column = 1;
+    } else {
+        self.column += 1;
+    }
     self.pos += 1;
 }
 
@@ -71,6 +77,8 @@ fn makeToken(self: *Lexer, startPos: usize, tokenType: Token.Type) Token {
     return .{
         .lexeme = self.getText(startPos),
         .type = tokenType,
+        .line = self.line,
+        .col = self.column - (self.pos - startPos),
     };
 }
 
@@ -122,6 +130,8 @@ fn nextToken(self: *Lexer) Token {
         return Token{
             .type = .eof,
             .lexeme = "",
+            .line = self.line,
+            .col = self.column,
         };
     }
     const c = self.peek();

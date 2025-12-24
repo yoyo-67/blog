@@ -54,17 +54,17 @@ pub fn parse(self: *Ast, arena: *std.heap.ArenaAllocator) !Node {
     } };
 }
 
-fn current(self: *Ast) Token {
-    return self.tokens[self.pos];
+fn current(self: *Ast) *const Token {
+    return &self.tokens[self.pos];
 }
 
 fn see(self: *Ast, token_type: Token.Type) bool {
     return self.current().type == token_type;
 }
 
-fn expect(self: *Ast, token_type: Token.Type) Token {
+fn expect(self: *Ast, token_type: Token.Type) *const Token {
     const token = self.current();
-    if (token.type == token_type) {
+    if (token.*.type == token_type) {
         self.advance();
     } else {
         assert(false);
@@ -73,7 +73,7 @@ fn expect(self: *Ast, token_type: Token.Type) Token {
     return token;
 }
 
-fn consume(self: *Ast) Token {
+fn consume(self: *Ast) *const Token {
     const token = self.current();
     self.advance();
     return token;
@@ -96,12 +96,12 @@ fn parseNode(self: *Ast, allocator: mem.Allocator) !Node {
 fn parseExpression(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     var left = try self.parseTerm(allocator);
     while (self.see(.plus) or self.see(.minus)) {
-        const op_token = self.consume();
-        const op: Op = if (op_token.type == .plus) .plus else .minus;
+        const token = self.consume();
+        const op: Op = if (token.type == .plus) .plus else .minus;
         const right = try self.parseTerm(allocator);
         const left_ptr = try createNode(allocator, left);
         const right_ptr = try createNode(allocator, right);
-        left = .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
+        left = .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr, .token = token } };
     }
 
     return left;
@@ -110,12 +110,12 @@ fn parseExpression(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 fn parseTerm(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     var left = try self.parseUnary(allocator);
     while (self.see(.star) or self.see(.slash)) {
-        const op_token = self.consume();
-        const op: Op = if (op_token.type == .star) .mul else .div;
+        const token = self.consume();
+        const op: Op = if (token.type == .star) .mul else .div;
         const right = try self.parseUnary(allocator);
         const left_ptr = try createNode(allocator, left);
         const right_ptr = try createNode(allocator, right);
-        left = .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr } };
+        left = .{ .binary_op = .{ .op = op, .lhs = left_ptr, .rhs = right_ptr, .token = token } };
     }
 
     return left;
@@ -144,8 +144,8 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
     }
 
     if (self.see(.identifier)) {
-        const name = self.consume().lexeme;
-        return .{ .identifier_ref = .{ .name = name } };
+        const token = self.consume();
+        return .{ .identifier_ref = .{ .name = token.lexeme, .token = token } };
     }
 
     if (self.see(.integer)) {
@@ -188,12 +188,12 @@ fn parseStatements(self: *Ast, allocator: mem.Allocator) !Node {
 
 fn parseVarDecl(self: *Ast, allocator: mem.Allocator) !Node {
     _ = self.expect(.kw_const);
-    const name = self.consume().lexeme;
+    const token = self.consume();
     _ = self.expect(.equal);
     const value = try self.parseExpression(allocator);
     const value_ptr = try createNode(allocator, value);
     _ = self.expect(.semicolon);
-    return .{ .identifier = .{ .name = name, .value = value_ptr } };
+    return .{ .identifier = .{ .name = token.lexeme, .value = value_ptr, .token = token } };
 }
 
 fn parseReturnStmt(self: *Ast, allocator: mem.Allocator) !Node {
