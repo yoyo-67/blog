@@ -1,382 +1,429 @@
 ---
-title: "4.8: Complete Sema"
+title: "4.8: Putting It Together"
 weight: 8
 ---
 
-# Lesson 4.8: Putting It All Together
+# Lesson 4.8: Putting It Together
 
-Let's assemble the complete semantic analyzer.
-
----
-
-## Goal
-
-Create an `analyze(zir)` function that validates and transforms ZIR into AIR.
+Complete semantic analyzer implementation.
 
 ---
 
-## Complete Sema Structure
+## What We've Built
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                         COMPLETE SEMA                                        │
+│                         SEMA CHECKS                                          │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   Sema {                                                                     │
-│       errors: ErrorCollector                                                │
-│       symbol_table: SymbolTable                                             │
-│       param_types: Type[]                                                   │
-│       return_type: Type                                                     │
-│       type_of: Type[]          // Type of each instruction                 │
-│                                                                              │
-│       // Analysis                                                            │
-│       analyzeFunction(fn_zir) → FunctionAIR                                 │
-│       analyzeInstruction(instr) → AIRInstruction                            │
-│                                                                              │
-│       // Type checking                                                       │
-│       inferType(instr) → Type                                               │
-│       checkBinaryOp(op, lhs, rhs) → Type                                   │
-│       checkReturn(type)                                                      │
-│                                                                              │
-│       // Name resolution                                                     │
-│       resolveReference(name) → Symbol                                       │
-│   }                                                                          │
-│                                                                              │
-│   function analyze(program_zir) → ProgramAIR:                               │
-│       functions = []                                                         │
-│       for fn in program_zir.functions:                                      │
-│           functions.append(analyzeFunction(fn))                             │
-│       return ProgramAIR { functions }                                        │
+│   ✓ Undefined Variables    - decl_ref to unknown name                       │
+│   ✓ Duplicate Declarations - decl with existing name                        │
+│   ✓ Return Type Mismatch   - return expr doesn't match signature            │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Complete Code Summary
+## The Error Type
 
-### Data Structures
 ```
-enum Type { I32, I64, BOOL, VOID, ERROR }
+Error = union {
+    undefined_variable: struct {
+        name: []const u8,
+        inst: *const Instruction,
+    },
 
-Symbol {
-    name: string,
-    type: Type,
-    kind: SymbolKind,  // PARAM or LOCAL
-    index: integer
+    duplicate_declaration: struct {
+        name: []const u8,
+        inst: *const Instruction,
+    },
+
+    return_type_mismatch: struct {
+        expected: []const u8,
+        actual: []const u8,
+        inst: *const Instruction,
+    },
 }
-
-SymbolTable {
-    symbols: Map<string, Symbol>,
-    next_local_slot: integer
-}
-```
-
-### Analyze Function
-```
-function analyzeFunction(fn_zir) → FunctionAIR:
-    // Initialize
-    symbol_table = SymbolTable()
-    errors = ErrorCollector()
-
-    // Resolve parameter types and add to symbol table
-    param_types = []
-    for i, param in enumerate(fn_zir.params):
-        type = resolveType(param.type)
-        param_types.append(type)
-        symbol_table.declareParam(param.name, type, i)
-
-    return_type = resolveType(fn_zir.return_type)
-
-    // First pass: infer types
-    type_of = []
-    for instr in fn_zir.instructions:
-        type_of.append(inferType(instr, type_of, symbol_table))
-
-    // Second pass: generate AIR
-    air_instructions = []
-    for i, instr in enumerate(fn_zir.instructions):
-        air = generateAIR(instr, type_of, symbol_table)
-        air_instructions.append(air)
-
-    return FunctionAIR {
-        name: fn_zir.name,
-        param_types: param_types,
-        return_type: return_type,
-        local_count: symbol_table.next_local_slot,
-        instructions: air_instructions
-    }
-```
-
-### Type Inference
-```
-function inferType(instr, type_of, symbol_table) → Type:
-    switch instr.tag:
-        CONSTANT:
-            return I32
-
-        PARAM_REF:
-            return param_types[instr.data.param_index]
-
-        DECL_REF:
-            symbol = symbol_table.lookup(instr.data.name)
-            if symbol == null:
-                errors.report("Undefined variable: " + instr.data.name)
-                return ERROR
-            return symbol.type
-
-        DECL:
-            value_type = type_of[instr.data.value]
-            symbol_table.declareLocal(instr.data.name, value_type, true)
-            return VOID
-
-        ADD, SUB, MUL, DIV:
-            lhs = type_of[instr.data.lhs]
-            rhs = type_of[instr.data.rhs]
-            return checkBinaryOp(instr.tag, lhs, rhs)
-
-        NEGATE:
-            operand = type_of[instr.data.operand]
-            return checkUnary(operand)
-
-        RET:
-            value_type = type_of[instr.data.value]
-            checkReturn(value_type, return_type)
-            return value_type
-
-        RET_VOID:
-            checkReturn(VOID, return_type)
-            return VOID
-```
-
-### Type Checking
-```
-function checkBinaryOp(op, lhs, rhs) → Type:
-    if lhs == ERROR or rhs == ERROR:
-        return ERROR
-
-    if lhs != rhs:
-        errors.report("Type mismatch: " + typeName(lhs) + " vs " + typeName(rhs))
-        return ERROR
-
-    if lhs != I32 and lhs != I64:
-        errors.report("Cannot perform arithmetic on " + typeName(lhs))
-        return ERROR
-
-    return lhs
-
-function checkReturn(actual, expected):
-    if actual == ERROR:
-        return
-    if actual != expected:
-        errors.report("Return type mismatch: expected " +
-                      typeName(expected) + ", got " + typeName(actual))
-```
-
-### AIR Generation
-```
-function generateAIR(instr, type_of, symbol_table) → AIRInstruction:
-    switch instr.tag:
-        CONSTANT:
-            return ConstI32 { value: instr.data.value }
-
-        PARAM_REF:
-            return ParamGet {
-                index: instr.data.param_index,
-                type: param_types[instr.data.param_index]
-            }
-
-        DECL_REF:
-            symbol = symbol_table.lookup(instr.data.name)
-            if symbol.kind == PARAM:
-                return ParamGet { index: symbol.index, type: symbol.type }
-            else:
-                return LocalGet { slot: symbol.index, type: symbol.type }
-
-        DECL:
-            symbol = symbol_table.lookup(instr.data.name)
-            return LocalSet {
-                slot: symbol.index,
-                value: instr.data.value
-            }
-
-        ADD, SUB, MUL, DIV:
-            result_type = type_of[current_index]
-            tag = selectBinaryTag(instr.tag, result_type)
-            return BinaryOp { tag, lhs: instr.data.lhs, rhs: instr.data.rhs }
-
-        NEGATE:
-            result_type = type_of[current_index]
-            tag = (result_type == I32) ? NEG_I32 : NEG_I64
-            return UnaryOp { tag, operand: instr.data.operand }
-
-        RET:
-            return Ret { value: instr.data.value }
-
-        RET_VOID:
-            return RetVoid {}
 ```
 
 ---
 
-## Full Test Suite
+## Error Formatting
 
-### Test 1: Simple function
 ```
-Input:
-fn main() i32 {
-    return 42;
-}
+function toString(error, source) → string:
+    token = getToken(error)
+    message = getMessage(error)
+    line_content = getLine(source, token.line)
+    caret = makeCaretLine(token.col)
 
-AIR:
-    function "main":
-      param_types: []
-      return_type: i32
-      local_count: 0
-      instructions:
-        %0 = const_i32(42)
-        %1 = ret(%0)
-```
+    return "{line}:{col}: error: {message}\n{line_content}\n{caret}\n"
 
-### Test 2: With parameters
-```
-Input:
-fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
 
-AIR:
-    function "add":
-      param_types: [i32, i32]
-      return_type: i32
-      local_count: 0
-      instructions:
-        %0 = param_get(0)
-        %1 = param_get(1)
-        %2 = add_i32(%0, %1)
-        %3 = ret(%2)
+function getToken(error) → Token:
+    switch error:
+        undefined_variable:
+            return error.inst.decl_ref.node.identifier_ref.token
+
+        duplicate_declaration:
+            return error.inst.decl.node.identifier.token
+
+        return_type_mismatch:
+            return error.inst.return_stmt.node.return_stmt.token
+
+
+function getMessage(error) → string:
+    switch error:
+        undefined_variable:
+            return "undefined variable \"{name}\""
+
+        duplicate_declaration:
+            return "duplicate declaration \"{name}\""
+
+        return_type_mismatch:
+            return "return type mismatch: expected {expected}, got {actual}"
 ```
 
-### Test 3: With locals
-```
-Input:
-fn calc() i32 {
-    const x: i32 = 5;
-    const y: i32 = 3;
-    return x + y;
-}
+---
 
-AIR:
-    function "calc":
-      param_types: []
-      return_type: i32
-      local_count: 2
-      instructions:
-        %0 = const_i32(5)
-        %1 = local_set(0, %0)
-        %2 = const_i32(3)
-        %3 = local_set(1, %2)
-        %4 = local_get(0)
-        %5 = local_get(1)
-        %6 = add_i32(%4, %5)
-        %7 = ret(%6)
+## Helper Functions
+
+```
+function getLine(source, line_num) → string:
+    lines = source.split('\n')
+    for i in 1..(line_num - 1):
+        skip lines.next()
+    return lines.next() or ""
+
+
+function makeCaretLine(col) → string:
+    spaces = " " * (col - 1)
+    return spaces + "^"
 ```
 
-### Test 4: Type error
-```
-Input:
-fn foo(a: i32, b: i64) i32 {
-    return a + b;
-}
+---
 
-Result: Error "Type mismatch: i32 vs i64"
+## The Main Analysis Loop
+
+```
+function analyzeProgram(program) → []Error:
+    all_errors = []
+
+    for func in program.functions():
+        errors = analyzeFunction(func)
+        all_errors.append(errors)
+
+    return all_errors
 ```
 
-### Test 5: Undefined variable
+---
+
+## Complete analyzeFunction
+
 ```
-Input:
+function analyzeFunction(func) → []Error:
+    errors = []
+
+    // Track: name → type
+    names = HashMap<string, string>
+
+    // Track: instruction index → result type
+    inst_types = []
+
+    // Register parameters
+    for param in func.params:
+        names.put(param.name, param.type)
+
+    // Analyze each instruction
+    for i in 0..func.instructionCount():
+        inst = func.instructionAt(i)
+
+        result_type = switch inst:
+
+            .constant:
+                "i32"
+
+            .param_ref(idx):
+                func.params[idx].type
+
+            .decl(d):
+                if names.contains(d.name):
+                    errors.append({
+                        duplicate_declaration: {
+                            name: d.name,
+                            inst: inst
+                        }
+                    })
+                else:
+                    // Infer type from value
+                    value_type = inst_types[d.value] or "i32"
+                    names.put(d.name, value_type)
+                null
+
+            .decl_ref(d):
+                names.get(d.name) or {
+                    errors.append({
+                        undefined_variable: {
+                            name: d.name,
+                            inst: inst
+                        }
+                    })
+                    null
+                }
+
+            .add, .sub, .mul, .div:
+                null    // Skip type checking for binary ops
+
+            .return_stmt(r):
+                actual_type = inst_types[r.value] or "i32"
+                expected_type = func.return_type or "void"
+
+                if actual_type != expected_type:
+                    errors.append({
+                        return_type_mismatch: {
+                            expected: expected_type,
+                            actual: actual_type,
+                            inst: inst
+                        }
+                    })
+                null
+
+        inst_types.append(result_type)
+
+    return errors
+```
+
+---
+
+## Converting Errors to String
+
+```
+function errorsToString(errors, source) → string:
+    result = ""
+
+    for error in errors:
+        result = result + error.toString(source)
+
+    return result
+```
+
+---
+
+## Complete Example
+
+```
+Source:
 fn foo() i32 {
-    return x;
+    const x = 10;
+    const x = 20;
+    return y;
 }
 
-Result: Error "Undefined variable: x"
+ZIR:
+    function "foo":
+        return_type: i32
+        %0 = constant(10)
+        %1 = decl("x", %0)
+        %2 = constant(20)
+        %3 = decl("x", %2)      ← duplicate!
+        %4 = decl_ref("y")       ← undefined!
+        %5 = ret(%4)
 ```
 
-### Test 6: Complex function
+Analysis:
 ```
-Input:
-fn compute(n: i32) i32 {
-    const doubled: i32 = n * 2;
-    const result: i32 = doubled + 1;
-    return result;
-}
+Step 1: names = {}
 
-AIR:
-    function "compute":
-      param_types: [i32]
-      return_type: i32
-      local_count: 2
-      instructions:
-        %0 = param_get(0)
-        %1 = const_i32(2)
-        %2 = mul_i32(%0, %1)
-        %3 = local_set(0, %2)
-        %4 = local_get(0)
-        %5 = const_i32(1)
-        %6 = add_i32(%4, %5)
-        %7 = local_set(1, %6)
-        %8 = local_get(1)
-        %9 = ret(%8)
+Step 2: %0 = constant(10) → i32
+        inst_types = [i32]
+
+Step 3: %1 = decl("x", %0)
+        names.contains("x") → false
+        names.put("x", i32)
+        names = {"x": i32}
+        inst_types = [i32, null]
+
+Step 4: %2 = constant(20) → i32
+        inst_types = [i32, null, i32]
+
+Step 5: %3 = decl("x", %2)
+        names.contains("x") → true
+        ERROR: duplicate declaration "x"
+        inst_types = [i32, null, i32, null]
+
+Step 6: %4 = decl_ref("y")
+        names.get("y") → null
+        ERROR: undefined variable "y"
+        inst_types = [i32, null, i32, null, null]
+
+Step 7: %5 = ret(%4)
+        actual_type = inst_types[4] = null → "i32" (default)
+        expected_type = "i32"
+        No error (types match)
+        inst_types = [i32, null, i32, null, null, null]
+```
+
+Output:
+```
+1:22: error: duplicate declaration "x"
+fn foo() i32 { const x = 10; const x = 20; return y; }
+                                   ^
+1:42: error: undefined variable "y"
+fn foo() i32 { const x = 10; const x = 20; return y; }
+                                                  ^
 ```
 
 ---
 
-## Integration: Full Pipeline
+## Test Suite
 
+### Test 1: Undefined variable
 ```
-function compile(source):
-    tokens = tokenize(source)       // Lexer
-    ast = parse(tokens)             // Parser
-    zir = generateZIR(ast)          // ZIR Generator
-    air = analyze(zir)              // Sema
-    return air
+Source: fn foo() i32 { return x; }
+Expected:
+    1:23: error: undefined variable "x"
+    fn foo() i32 { return x; }
+                          ^
+```
 
-// Test
-source = "fn main() i32 { return 42; }"
-air = compile(source)
-assert air.functions[0].instructions[0].tag == CONST_I32
+### Test 2: Duplicate declaration
+```
+Source: fn foo() i32 { const x = 1; const x = 2; return x; }
+Expected:
+    1:35: error: duplicate declaration "x"
+    fn foo() i32 { const x = 1; const x = 2; return x; }
+                                      ^
+```
+
+### Test 3: Valid code - no errors
+```
+Source: fn foo() i32 { const x = 10; return x; }
+Expected: (no errors)
+```
+
+### Test 4: Parameter usage is valid
+```
+Source: fn square(x: i32) i32 { return x * x; }
+Expected: (no errors)
+```
+
+### Test 5: Multiple errors
+```
+Source: fn foo() i32 { return a + b; }
+Expected:
+    1:23: error: undefined variable "a"
+    1:27: error: undefined variable "b"
+```
+
+### Test 6: Return type mismatch
+```
+Source: fn foo(a: i32, b: i64) i32 { return b; }
+Expected:
+    error: return type mismatch: expected i32, got i64
 ```
 
 ---
 
-## Summary
+## The Pointer Chain in Action
+
+```
+Source: fn foo() i32 { return x; }
+
+Error.undefined_variable
+  │
+  └── inst: *const Instruction
+        │
+        └── Instruction.decl_ref
+              │
+              └── node: *const Node
+                    │
+                    └── Node.identifier_ref
+                          │
+                          └── token: *const Token
+                                │
+                                └── Token { line: 1, col: 23 }
+
+Following the chain:
+  error.inst.decl_ref.node.identifier_ref.token
+    → Token { line: 1, col: 23 }
+```
+
+---
+
+## Architecture Summary
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                         SEMA SUMMARY                                         │
+│                              SEMA ARCHITECTURE                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   1. TYPE SYSTEM      Define types: i32, i64, bool, void                   │
-│   2. TYPE INFERENCE   Determine expression types                            │
-│   3. SYMBOL TABLE     Track declared names                                  │
-│   4. NAME RESOLUTION  Convert strings to locations                         │
-│   5. TYPE CHECKING    Verify types match                                    │
-│   6. AIR OUTPUT       Generate typed instructions                          │
-│   7. ERROR HANDLING   Report meaningful messages                            │
-│   8. INTEGRATION      Put it all together                                   │
+│   Input: ZIR Program                                                         │
+│     └── Function[]                                                           │
+│           └── name, params, return_type, instructions                        │
 │                                                                              │
-│   Lines of code: ~150-200 depending on language                             │
+│   State per function:                                                        │
+│     └── names: HashMap<string, type>                                         │
+│     └── inst_types: []?type                                                  │
+│     └── errors: []Error                                                      │
 │                                                                              │
-│   Input:  ZIR (untyped, string names)                                       │
-│   Output: AIR (typed, resolved locations)                                   │
+│   Output: []Error                                                            │
+│     └── Each error points to its instruction                                 │
+│     └── Instruction points to AST node                                       │
+│     └── AST node points to token                                             │
+│     └── Token has line/col                                                   │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## What's Next
+## What You've Learned
 
-We have typed IR! Time to generate actual code.
+1. **Error structure** - Union type with different error kinds
+2. **Pointer chains** - Errors point back to source through instruction → node → token
+3. **Name tracking** - HashMap for declared names
+4. **Type tracking** - Array for instruction result types
+5. **Error recovery** - Continue analysis after errors
+6. **Error formatting** - Line numbers, source snippets, carets
+
+---
+
+## Future Extensions
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           FUTURE WORK                                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Type checking binary ops                                                   │
+│     i32 + i64 → error                                                        │
+│                                                                              │
+│   Nested scopes                                                              │
+│     { const x = 1; { const x = 2; } }  // shadowing                         │
+│                                                                              │
+│   Function calls                                                             │
+│     fn foo(a: i32) i32 { return bar(a); }                                   │
+│     Check: does bar exist? are arg types correct?                            │
+│                                                                              │
+│   Missing return                                                             │
+│     fn foo() i32 { const x = 1; }  // Error: no return                       │
+│                                                                              │
+│   Dead code                                                                  │
+│     fn foo() i32 { return 1; const x = 2; }  // Warning: dead code          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Next Steps
+
+Congratulations! You've built a complete semantic analyzer that:
+- Detects undefined variables
+- Detects duplicate declarations
+- Checks return types
+
+In the next section, we'll generate machine code from our analyzed program.
 
 Next: [Section 5: Code Generation](../../05-codegen/) →
