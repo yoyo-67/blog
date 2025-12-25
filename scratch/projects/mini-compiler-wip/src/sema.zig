@@ -32,7 +32,7 @@ fn testAnalyze(self: *Sema, arena: *std.heap.ArenaAllocator, input: []const u8) 
     const tree = try ast_mod.parseExpr(arena, input);
     const zir = try zir_mod.generateProgram(allocator, &tree);
 
-    const declerationSet = std.StringArrayHashMap(void).init(allocator);
+    var declerationSet = std.StringArrayHashMap(u32).init(allocator);
 
     for (zir.functions()) |func| {
         const instructions = func.instructions();
@@ -41,6 +41,8 @@ fn testAnalyze(self: *Sema, arena: *std.heap.ArenaAllocator, input: []const u8) 
                 .decl => |val| {
                     if (declerationSet.contains(val.name)) {
                         try self.errors.append(allocator, .{ .duplicate_declaration = .{ .name = val.name, .instruction = instruction } });
+                    } else {
+                        try declerationSet.put(val.name, 1);
                     }
                 },
                 .decl_ref => |val| {
@@ -80,13 +82,33 @@ test "undefined variable" {
         \\error: undefined variable "x"
         \\
     , result);
+}
 
-    // try testing.expectEqualStrings(
-    //     \\1:19: error: undefined variable "x"
-    //     \\fn foo() { return x; }
-    //     \\                  ^
-    //     \\
-    // , result);
+test "undefined variable psas" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    var sema = Sema{ .errors = .empty };
+
+    const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; return x; }");
+
+    try testing.expectEqualStrings(
+        \\
+    , result);
+}
+
+test "declaration" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    var sema = Sema{ .errors = .empty };
+
+    const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; const  x = 3; }");
+
+    try testing.expectEqualStrings(
+        \\error: duplicate declaration "x"
+        \\
+    , result);
 }
 
 // test "duplicate declaration" {
