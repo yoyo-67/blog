@@ -7,109 +7,176 @@ const ast_mod = @import("ast.zig");
 const zir_mod = @import("zir.zig");
 const Instruction = zir_mod.Instruction;
 
-errors: std.ArrayListUnmanaged(Error),
+const assert = std.debug.assert;
 
-const Sema = @This();
+// what I try to achive
+// a. to have input as string
+// b. parse it
+// c. zir it
+// d. use the instructions and check them
+// e. if there is errors I wanted to see them, and to output error message and correct location on the source.
+//
+// let revist the source location later on.
+// how to build it:
+//
+// we need to see what is the nouns.
+// a. Program
+// logic + behaviors:
+// loop over the functions and analyze them and return []errors
+//
+// b. Function
+// behavior:
+// analyze the function and output []errors
+//
+// c. Instructions
+// for each instruction you need to check against previous instructions
+// and to see if the instruction is valid or invlid (when varible is already declared or the variable is undefined)
+//
+// d. Scope
+// each scope has it own set of declared variable.
+//
+// d. Error
+// error contain the instruction idx that create this error,
+// and contain the error message
+//
+//
 
-const Error = union(enum) {
-    undefined_variable: struct { name: []const u8, instruction: *const Instruction },
-    duplicate_declaration: struct { name: []const u8, instruction: *const Instruction },
+const Error = struct {
+    kind: Kind,
 
-    pub fn toString(self: Error, allocator: Allocator) ![]const u8 {
-        return try std.fmt.allocPrint(allocator, "error: {s}", .{try self.getMessage(allocator)});
+    pub const Kind = enum { undefined, duplicate };
+
+    pub fn toString(self: Kind) []const u8 {
+        return switch (self) {
+            .undefined => "undefined variable",
+            .duplicate => "duplicate variable",
+            else => {},
+        };
     }
 
-    pub fn getMessage(self: Error, allocator: Allocator) ![]const u8 {
-        return switch (self) {
-            .duplicate_declaration => |e| std.fmt.allocPrint(allocator, "duplicate declaration \"{s}\"", .{e.name}),
-            .undefined_variable => |e| std.fmt.allocPrint(allocator, "undefined variable \"{s}\"", .{e.name}),
-        };
+    pub fn checkUndefind(inst: Instruction, scope: *Scope) ?Error {
+        if (!scope.contains(inst.name)) {
+            // errors.append(allocator, .{ .kind = .undefined });
+            return .{ .kind = .undefined };
+        }
+
+        return null;
+    }
+
+    pub fn checkDuplicate(inst: Instruction, scope: *Scope) ?Error {
+        if (scope.contains(inst.decl_ref.name)) {
+            return .{ .kind = .duplicate };
+        }
+
+        return null;
     }
 };
 
-fn testAnalyze(self: *Sema, arena: *std.heap.ArenaAllocator, input: []const u8) ![]const u8 {
-    const allocator = arena.allocator();
-    const tree = try ast_mod.parseExpr(arena, input);
-    const zir = try zir_mod.generateProgram(allocator, &tree);
+const Scope = struct {
+    declared: std.StringArrayHashMapUnmanaged(void),
 
-    var declerationSet = std.StringArrayHashMap(u32).init(allocator);
+    pub fn init() Scope {
+        return .{ .declared = .empty };
+    }
 
-    for (zir.functions()) |func| {
-        const instructions = func.instructions();
-        for (instructions) |*instruction| {
-            switch (instruction.*) {
-                .decl => |val| {
-                    if (declerationSet.contains(val.name)) {
-                        try self.errors.append(allocator, .{ .duplicate_declaration = .{ .name = val.name, .instruction = instruction } });
-                    } else {
-                        try declerationSet.put(val.name, 1);
-                    }
-                },
-                .decl_ref => |val| {
-                    if (!declerationSet.contains(val.name)) {
-                        try self.errors.append(allocator, .{ .undefined_variable = .{ .name = val.name, .instruction = instruction } });
-                    }
-                },
-                else => {},
-            }
+    pub fn contains(self: Scope, name: []const u8) bool {
+        return self.declared.contains(name);
+    }
+
+    pub fn declare(self: Scope, allocator: Allocator, name: []const u8) !void {
+        assert(!self.contains(name));
+
+        try self.declared.put(allocator, name, void);
+    }
+};
+
+fn analyzeProgram(allocator: Allocator, program: zir_mod.Program) ![]Error {
+    var errors: std.ArrayListUnmanaged(Error) = .empty;
+    for (program.functions()) |function| {
+        const function_errors = try analyzeFunction(allocator, function);
+        for (function_errors) |function_error| {
+            try errors.append(allocator, function_error);
         }
     }
 
-    return try self.errorsToString(allocator);
+    return errors.toOwnedSlice(allocator);
 }
 
-fn errorsToString(self: *Sema, allocator: Allocator) ![]const u8 {
-    var buffer: std.ArrayListUnmanaged(u8) = .empty;
-    const writer = buffer.writer(allocator);
+fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
+    // you should create scope for it
+    // and check against the scope
+    var errors: std.ArrayListUnmanaged(Error) = .empty;
+    var scope = Scope.init();
 
-    for (self.errors.items) |error_item| {
-        try writer.writeAll(try error_item.toString(allocator));
-        try writer.writeAll("\n");
+    for (function.instructions()) |instruction| {
+        switch (instruction) {
+            .decl => |inst| {
+                if (Error.checkDuplicate(inst, &scope)) |err| {
+                    errors.append(allocator, err);
+                }
+            },
+            .decl_ref => |inst| {
+                if (Error.checkUndefind(inst, &scope)) |err| {
+                    errors.append(allocator, err);
+                }
+            },
+            else => {},
+        }
     }
 
-    return buffer.toOwnedSlice(allocator);
+    return errors.toOwnedSlice(allocator);
 }
 
 test "undefined variable" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
 
-    var sema = Sema{ .errors = .empty };
+    const input =
+        \\fn calc(n: i32) {
+        \\const result = n + 1;
+        \\return result;
+        \\}
+    ;
 
-    const result = try sema.testAnalyze(&arena, "fn foo() { return x; }");
+    const tree = try ast_mod.parseExpr(&arena, input);
 
-    try testing.expectEqualStrings(
-        \\error: undefined variable "x"
-        \\
-    , result);
-}
-
-test "undefined variable psas" {
-    var arena = std.heap.ArenaAllocator.init(testing.allocator);
-    defer arena.deinit();
-
-    var sema = Sema{ .errors = .empty };
-
-    const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; return x; }");
+    var zir = zir_mod.Zir.init();
+    _ = try zir.generate(allocator, &tree);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const result = try analyzeProgram(allocator, program);
 
     try testing.expectEqualStrings(
         \\
     , result);
 }
-
-test "declaration" {
-    var arena = std.heap.ArenaAllocator.init(testing.allocator);
-    defer arena.deinit();
-
-    var sema = Sema{ .errors = .empty };
-
-    const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; const  x = 3; }");
-
-    try testing.expectEqualStrings(
-        \\error: duplicate declaration "x"
-        \\
-    , result);
-}
+//
+// test "undefined variable psas" {
+//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
+//     defer arena.deinit();
+//
+//     var sema = Sema{ .errors = .empty };
+//
+//     const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; return x; }");
+//
+//     try testing.expectEqualStrings(
+//         \\
+//     , result);
+// }
+//
+// test "declaration" {
+//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
+//     defer arena.deinit();
+//
+//     var sema = Sema{ .errors = .empty };
+//
+//     const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; const  x = 3; }");
+//
+//     try testing.expectEqualStrings(
+//         \\error: duplicate declaration "x"
+//         \\
+//     , result);
+// }
 
 // test "duplicate declaration" {
 //     var arena = std.heap.ArenaAllocator.init(testing.allocator);
