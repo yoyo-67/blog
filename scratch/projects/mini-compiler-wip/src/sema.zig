@@ -65,12 +65,20 @@ const Error = union(enum) {
         return try std.fmt.allocPrint(allocator, "{d}:{d}", .{ token.line, token.col });
     }
 
-    pub fn getSourceLine(self: Error, allocator: Allocator, source: []const u8) ![]const u8 {
-        _ = allocator; // autofix
+    pub fn getSourceLine(self: Error, source: []const u8) ![]const u8 {
         const line_num = self.getToken().line;
-        const lines = mem.splitScalar(u8, source, "\n");
+        var lines = mem.splitScalar(u8, source, '\n');
         for (1..line_num) |_| _ = lines.next();
         return lines.next() orelse "";
+    }
+
+    pub fn getCaret(self: Error, allocator: Allocator) ![]const u8 {
+        var buffer: std.ArrayListUnmanaged(u8) = .empty;
+        const writer = buffer.writer(allocator);
+        const col_num = self.getToken().col;
+        try writer.writeByteNTimes(' ', col_num - 1);
+        try writer.writeAll("^");
+        return buffer.toOwnedSlice(allocator);
     }
 
     pub fn getToken(self: Error) *const Token {
@@ -94,14 +102,18 @@ const Error = union(enum) {
         return false;
     }
 
-    pub fn toString(self: Error, allocator: Allocator) ![]const u8 {
+    pub fn toString(self: Error, allocator: Allocator, source: []const u8) ![]const u8 {
         var buffer: std.ArrayListUnmanaged(u8) = .empty;
         const writer = buffer.writer(allocator);
 
         const message = try self.getMessage(allocator);
+        const source_line = try self.getSourceLine(source);
+        const caretLine = try self.getCaret(allocator);
 
         try writer.writeAll("error: ");
-        try writer.print("{s}", .{message});
+        try writer.print("{s}\n", .{message});
+        try writer.print("{s}\n", .{source_line});
+        try writer.print("{s}\n", .{caretLine});
 
         return try buffer.toOwnedSlice(allocator);
     }
@@ -160,12 +172,12 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
     return errors.toOwnedSlice(allocator);
 }
 
-fn errorsToString(allocator: Allocator, errors: []Error) ![]const u8 {
+fn errorsToString(allocator: Allocator, errors: []Error, source: []const u8) ![]const u8 {
     var buffer: std.ArrayListUnmanaged(u8) = .empty;
     const writer = buffer.writer(allocator);
 
     for (errors) |_error| {
-        const message = try _error.toString(allocator);
+        const message = try _error.toString(allocator, source);
         try writer.writeAll(message);
         try writer.writeAll("\n");
     }
@@ -188,7 +200,7 @@ test "valid code - no errors" {
     const tree = try ast_mod.parseExpr(&arena, input);
     const program = try zir_mod.generateProgram(allocator, &tree);
     const errors = try analyzeProgram(allocator, program);
-    const result = try errorsToString(allocator, errors);
+    const result = try errorsToString(allocator, errors, input);
     try testing.expectEqualStrings(
         \\
     , result);
@@ -204,9 +216,12 @@ test "undefined variable" {
     const tree = try ast_mod.parseExpr(&arena, input);
     const program = try zir_mod.generateProgram(allocator, &tree);
     const errors = try analyzeProgram(allocator, program);
-    const result = try errorsToString(allocator, errors);
+    const result = try errorsToString(allocator, errors, input);
     try testing.expectEqualStrings(
         \\error: 1:19 undefined variable "x"
+        \\fn foo() { return x; }
+        \\                  ^
+        \\
         \\
     , result);
 }
@@ -221,9 +236,71 @@ test "duplicate declaration" {
     const tree = try ast_mod.parseExpr(&arena, input);
     const program = try zir_mod.generateProgram(allocator, &tree);
     const errors = try analyzeProgram(allocator, program);
-    const result = try errorsToString(allocator, errors);
+    const result = try errorsToString(allocator, errors, input);
     try testing.expectEqualStrings(
         \\error: 1:31 duplicate declaration "x"
+        \\fn foo() { const x = 1; const x = 2; }
+        \\                              ^
+        \\
+        \\
+    , result);
+}
+
+test "multiline - undefined on line 3" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn foo() {
+        \\  const x = 1;
+        \\  return y;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const errors = try analyzeProgram(allocator, program);
+    const result = try errorsToString(allocator, errors, input);
+    try testing.expectEqualStrings(
+        \\error: 3:10 undefined variable "y"
+        \\  return y;
+        \\         ^
+        \\
+        \\
+    , result);
+}
+
+test "multiline - multiple errors on different lines" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn foo() {
+        \\  const x = a;
+        \\  const x = 2;
+        \\  return b;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const errors = try analyzeProgram(allocator, program);
+    const result = try errorsToString(allocator, errors, input);
+    try testing.expectEqualStrings(
+        \\error: 2:13 undefined variable "a"
+        \\  const x = a;
+        \\            ^
+        \\
+        \\error: 3:9 duplicate declaration "x"
+        \\  const x = 2;
+        \\        ^
+        \\
+        \\error: 4:10 undefined variable "b"
+        \\  return b;
+        \\         ^
+        \\
         \\
     , result);
 }
