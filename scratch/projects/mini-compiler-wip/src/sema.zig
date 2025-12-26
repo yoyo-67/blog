@@ -55,19 +55,19 @@ const Error = struct {
     }
 
     /// Returns error if name is NOT in scope (undefined)
-    pub fn checkUndefined(name: []const u8, scope: *const Scope) ?Error {
+    pub fn checkUndefined(name: []const u8, scope: *const Scope) bool {
         if (!scope.contains(name)) {
-            return .{ .kind = .undefined, .name = name };
+            return true;
         }
-        return null;
+        return false;
     }
 
     /// Returns error if name IS already in scope (duplicate)
-    pub fn checkDuplicate(name: []const u8, scope: *const Scope) ?Error {
+    pub fn checkDuplicate(name: []const u8, scope: *const Scope) bool {
         if (scope.contains(name)) {
-            return .{ .kind = .duplicate, .name = name };
+            return true;
         }
-        return null;
+        return false;
     }
 
     pub fn toString(self: Error, allocator: Allocator) ![]const u8 {
@@ -119,14 +119,16 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
     for (function.instructions()) |instruction| {
         switch (instruction) {
             .decl => |inst| {
-                if (Error.checkDuplicate(inst.name, &scope)) |err| {
-                    try errors.append(allocator, err);
+                if (Error.checkDuplicate(inst.name, &scope)) {
+                    try errors.append(allocator, Error.buildError(
+                        // ,inst.name, inst.node
+                    ));
                 } else {
                     try scope.declare(allocator, inst.name);
                 }
             },
             .decl_ref => |inst| {
-                if (Error.checkUndefined(inst.name, &scope)) |err| {
+                if (Error.checkUndefined(inst.name, &scope)) {
                     try errors.append(allocator, err);
                 }
             },
