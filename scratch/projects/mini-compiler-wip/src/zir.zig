@@ -21,7 +21,7 @@ pub fn init() Zir {
 
 pub fn generate(self: *Zir, allocator: mem.Allocator, node: *const Node) !InstructionRef {
     switch (node.*) {
-        .int_literal => |lit| return try self.emit(allocator, .{ .constant = lit.value }),
+        .int_literal => |lit| return try self.emit(allocator, .{ .constant = .{ .value = lit.value, .node = node } }),
         .binary_op => |bin| {
             const lhs = try self.generate(allocator, bin.lhs);
             const rhs = try self.generate(allocator, bin.rhs);
@@ -52,11 +52,13 @@ pub fn generate(self: *Zir, allocator: mem.Allocator, node: *const Node) !Instru
         },
         .return_stmt => |val| {
             const instructuion_ref = try self.generate(allocator, val.value);
-            return try self.emit(allocator, .{ .return_stmt = .{ .value = instructuion_ref } });
+            return try self.emit(allocator, .{ .return_stmt = .{ .value = instructuion_ref, .node = node } });
         },
         .identifier_ref => |val| {
             if (self.parameters.get(val.name)) |param_idx| {
-                return try self.emit(allocator, .{ .param_ref = param_idx });
+                return try self.emit(allocator, .{
+                    .param_ref = .{ .value = param_idx, .node = node },
+                });
             }
 
             return try self.emit(allocator, .{ .decl_ref = .{ .name = val.name, .node = node } });
@@ -99,7 +101,10 @@ fn toString(self: *Zir, allocator: mem.Allocator) ![]const u8 {
 const InstructionRef = u32;
 
 pub const Instruction = union(enum) {
-    constant: i32,
+    constant: struct {
+        value: i32,
+        node: *const Node,
+    },
     add: struct {
         lhs: InstructionRef,
         rhs: InstructionRef,
@@ -131,13 +136,17 @@ pub const Instruction = union(enum) {
     },
     return_stmt: struct {
         value: InstructionRef,
+        node: *const Node,
     },
-    param_ref: u32,
+    param_ref: struct {
+        value: u32,
+        node: *const Node,
+    },
 
     pub fn toString(self: Instruction, idx: usize, writer: anytype) !void {
         try writer.print("%{d} = ", .{idx});
         switch (self) {
-            .constant => |val| try writer.print("constant({d})", .{val}),
+            .constant => |val| try writer.print("constant({d})", .{val.value}),
             .add => |val| try writer.print("add(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .sub => |val| try writer.print("sub(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .mul => |val| try writer.print("mul(%{d}, %{d})", .{ val.lhs, val.rhs }),
@@ -145,7 +154,7 @@ pub const Instruction = union(enum) {
             .decl => |val| try writer.print("decl(\"{s}\", %{d})", .{ val.name, val.value }),
             .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val.name}),
             .return_stmt => |val| try writer.print("ret(%{d})", .{val.value}),
-            .param_ref => |val| try writer.print("param_ref({d})", .{val}),
+            .param_ref => |val| try writer.print("param_ref({d})", .{val.value}),
         }
     }
 };

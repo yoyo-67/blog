@@ -144,6 +144,7 @@ fn errorsToString(allocator: Allocator, errors: []Error) ![]const u8 {
     for (errors) |_error| {
         const message = try _error.toString(allocator);
         try writer.writeAll(message);
+        try writer.writeAll("\n");
     }
 
     return buffer.toOwnedSlice(allocator);
@@ -203,20 +204,7 @@ test "duplicate declaration" {
         \\
     , result);
 }
-//
-// test "undefined variable psas" {
-//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-//     defer arena.deinit();
-//
-//     var sema = Sema{ .errors = .empty };
-//
-//     const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; return x; }");
-//
-//     try testing.expectEqualStrings(
-//         \\
-//     , result);
-// }
-//
+
 // test "declaration" {
 //     var arena = std.heap.ArenaAllocator.init(testing.allocator);
 //     defer arena.deinit();
