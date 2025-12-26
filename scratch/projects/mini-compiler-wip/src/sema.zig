@@ -43,32 +43,44 @@ const assert = std.debug.assert;
 
 const Error = struct {
     kind: Kind,
+    name: []const u8,
 
     pub const Kind = enum { undefined, duplicate };
 
-    pub fn toString(self: Kind) []const u8 {
-        return switch (self) {
+    pub fn getMessage(self: Error) []const u8 {
+        return switch (self.kind) {
             .undefined => "undefined variable",
-            .duplicate => "duplicate variable",
-            else => {},
+            .duplicate => "duplicate declaration",
         };
     }
 
-    pub fn checkUndefind(inst: Instruction, scope: *Scope) ?Error {
-        if (!scope.contains(inst.name)) {
-            // errors.append(allocator, .{ .kind = .undefined });
-            return .{ .kind = .undefined };
+    /// Returns error if name is NOT in scope (undefined)
+    pub fn checkUndefined(name: []const u8, scope: *const Scope) ?Error {
+        if (!scope.contains(name)) {
+            return .{ .kind = .undefined, .name = name };
         }
-
         return null;
     }
 
-    pub fn checkDuplicate(inst: Instruction, scope: *Scope) ?Error {
-        if (scope.contains(inst.decl_ref.name)) {
-            return .{ .kind = .duplicate };
+    /// Returns error if name IS already in scope (duplicate)
+    pub fn checkDuplicate(name: []const u8, scope: *const Scope) ?Error {
+        if (scope.contains(name)) {
+            return .{ .kind = .duplicate, .name = name };
         }
-
         return null;
+    }
+
+    pub fn toString(self: Error, allocator: Allocator) ![]const u8 {
+        var buffer: std.ArrayListUnmanaged(u8) = .empty;
+        const writer = buffer.writer(allocator);
+
+        const message = self.getMessage();
+
+        try writer.writeAll("error: ");
+        try writer.print("{s} ", .{message});
+        try writer.print("\"{s}\"", .{self.name});
+
+        return try buffer.toOwnedSlice(allocator);
     }
 };
 
@@ -79,14 +91,12 @@ const Scope = struct {
         return .{ .declared = .empty };
     }
 
-    pub fn contains(self: Scope, name: []const u8) bool {
+    pub fn contains(self: *const Scope, name: []const u8) bool {
         return self.declared.contains(name);
     }
 
-    pub fn declare(self: Scope, allocator: Allocator, name: []const u8) !void {
-        assert(!self.contains(name));
-
-        try self.declared.put(allocator, name, void);
+    pub fn declare(self: *Scope, allocator: Allocator, name: []const u8) !void {
+        try self.declared.put(allocator, name, {});
     }
 };
 
@@ -103,21 +113,21 @@ fn analyzeProgram(allocator: Allocator, program: zir_mod.Program) ![]Error {
 }
 
 fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
-    // you should create scope for it
-    // and check against the scope
     var errors: std.ArrayListUnmanaged(Error) = .empty;
     var scope = Scope.init();
 
     for (function.instructions()) |instruction| {
         switch (instruction) {
             .decl => |inst| {
-                if (Error.checkDuplicate(inst, &scope)) |err| {
-                    errors.append(allocator, err);
+                if (Error.checkDuplicate(inst.name, &scope)) |err| {
+                    try errors.append(allocator, err);
+                } else {
+                    try scope.declare(allocator, inst.name);
                 }
             },
             .decl_ref => |inst| {
-                if (Error.checkUndefind(inst, &scope)) |err| {
-                    errors.append(allocator, err);
+                if (Error.checkUndefined(inst.name, &scope)) |err| {
+                    try errors.append(allocator, err);
                 }
             },
             else => {},
@@ -127,7 +137,19 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
     return errors.toOwnedSlice(allocator);
 }
 
-test "undefined variable" {
+fn errorsToString(allocator: Allocator, errors: []Error) ![]const u8 {
+    var buffer: std.ArrayListUnmanaged(u8) = .empty;
+    const writer = buffer.writer(allocator);
+
+    for (errors) |_error| {
+        const message = try _error.toString(allocator);
+        try writer.writeAll(message);
+    }
+
+    return buffer.toOwnedSlice(allocator);
+}
+
+test "valid code - no errors" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
@@ -140,13 +162,44 @@ test "undefined variable" {
     ;
 
     const tree = try ast_mod.parseExpr(&arena, input);
-
-    var zir = zir_mod.Zir.init();
-    _ = try zir.generate(allocator, &tree);
     const program = try zir_mod.generateProgram(allocator, &tree);
-    const result = try analyzeProgram(allocator, program);
-
+    const errors = try analyzeProgram(allocator, program);
+    const result = try errorsToString(allocator, errors);
     try testing.expectEqualStrings(
+        \\
+    , result);
+}
+
+test "undefined variable" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo() { return x; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const errors = try analyzeProgram(allocator, program);
+    const result = try errorsToString(allocator, errors);
+    try testing.expectEqualStrings(
+        \\error: undefined variable "x"
+        \\
+    , result);
+}
+
+test "duplicate declaration" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo() { const x = 1; const x = 2; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const errors = try analyzeProgram(allocator, program);
+    const result = try errorsToString(allocator, errors);
+    try testing.expectEqualStrings(
+        \\error: duplicate declaration "x"
         \\
     , result);
 }
