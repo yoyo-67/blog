@@ -6,6 +6,8 @@ const Allocator = mem.Allocator;
 const ast_mod = @import("ast.zig");
 const zir_mod = @import("zir.zig");
 const Instruction = zir_mod.Instruction;
+const Node = zir_mod.Node;
+const Token = @import("token.zig");
 
 const assert = std.debug.assert;
 
@@ -41,20 +43,43 @@ const assert = std.debug.assert;
 //
 //
 
-const Error = struct {
-    kind: Kind,
-    name: []const u8,
+const Error = union(enum) {
+    undefined: struct {
+        name: []const u8,
+        node: *const Node,
+    },
+    duplicate: struct {
+        name: []const u8,
+        node: *const Node,
+    },
 
-    pub const Kind = enum { undefined, duplicate };
-
-    pub fn getMessage(self: Error) []const u8 {
-        return switch (self.kind) {
-            .undefined => "undefined variable",
-            .duplicate => "duplicate declaration",
+    pub fn getMessage(self: Error, allocator: Allocator) ![]const u8 {
+        return switch (self) {
+            .undefined => |err| try std.fmt.allocPrint(allocator, "{s} undefined variable \"{s}\"", .{ try self.getLocation(allocator), err.name }),
+            .duplicate => |err| try std.fmt.allocPrint(allocator, "{s} duplicate declaration \"{s}\"", .{ try self.getLocation(allocator), err.name }),
         };
     }
 
-    /// Returns error if name is NOT in scope (undefined)
+    pub fn getLocation(self: Error, allocator: Allocator) ![]const u8 {
+        const token = self.getToken();
+        return try std.fmt.allocPrint(allocator, "{d}:{d}", .{ token.line, token.col });
+    }
+
+    pub fn getSourceLine(self: Error, allocator: Allocator, source: []const u8) ![]const u8 {
+        _ = allocator; // autofix
+        const line_num = self.getToken().line;
+        const lines = mem.splitScalar(u8, source, "\n");
+        for (1..line_num) |_| _ = lines.next();
+        return lines.next() orelse "";
+    }
+
+    pub fn getToken(self: Error) *const Token {
+        return switch (self) {
+            .undefined => |val| val.node.*.identifier_ref.token,
+            .duplicate => |val| val.node.*.identifier.token,
+        };
+    }
+
     pub fn checkUndefined(name: []const u8, scope: *const Scope) bool {
         if (!scope.contains(name)) {
             return true;
@@ -62,7 +87,6 @@ const Error = struct {
         return false;
     }
 
-    /// Returns error if name IS already in scope (duplicate)
     pub fn checkDuplicate(name: []const u8, scope: *const Scope) bool {
         if (scope.contains(name)) {
             return true;
@@ -74,11 +98,10 @@ const Error = struct {
         var buffer: std.ArrayListUnmanaged(u8) = .empty;
         const writer = buffer.writer(allocator);
 
-        const message = self.getMessage();
+        const message = try self.getMessage(allocator);
 
         try writer.writeAll("error: ");
-        try writer.print("{s} ", .{message});
-        try writer.print("\"{s}\"", .{self.name});
+        try writer.print("{s}", .{message});
 
         return try buffer.toOwnedSlice(allocator);
     }
@@ -120,16 +143,14 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
         switch (instruction) {
             .decl => |inst| {
                 if (Error.checkDuplicate(inst.name, &scope)) {
-                    try errors.append(allocator, Error.buildError(
-                        // ,inst.name, inst.node
-                    ));
+                    try errors.append(allocator, .{ .duplicate = .{ .name = inst.name, .node = inst.node } });
                 } else {
                     try scope.declare(allocator, inst.name);
                 }
             },
             .decl_ref => |inst| {
                 if (Error.checkUndefined(inst.name, &scope)) {
-                    try errors.append(allocator, err);
+                    try errors.append(allocator, .{ .undefined = .{ .name = inst.name, .node = inst.node } });
                 }
             },
             else => {},
@@ -185,7 +206,7 @@ test "undefined variable" {
     const errors = try analyzeProgram(allocator, program);
     const result = try errorsToString(allocator, errors);
     try testing.expectEqualStrings(
-        \\error: undefined variable "x"
+        \\error: 1:19 undefined variable "x"
         \\
     , result);
 }
@@ -202,7 +223,7 @@ test "duplicate declaration" {
     const errors = try analyzeProgram(allocator, program);
     const result = try errorsToString(allocator, errors);
     try testing.expectEqualStrings(
-        \\error: duplicate declaration "x"
+        \\error: 1:31 duplicate declaration "x"
         \\
     , result);
 }
