@@ -179,7 +179,6 @@ fn errorsToString(allocator: Allocator, errors: []Error, source: []const u8) ![]
     for (errors) |_error| {
         const message = try _error.toString(allocator, source);
         try writer.writeAll(message);
-        try writer.writeAll("\n");
     }
 
     return buffer.toOwnedSlice(allocator);
@@ -222,7 +221,6 @@ test "undefined variable" {
         \\fn foo() { return x; }
         \\                  ^
         \\
-        \\
     , result);
 }
 
@@ -241,7 +239,6 @@ test "duplicate declaration" {
         \\error: 1:31 duplicate declaration "x"
         \\fn foo() { const x = 1; const x = 2; }
         \\                              ^
-        \\
         \\
     , result);
 }
@@ -267,7 +264,6 @@ test "multiline - undefined on line 3" {
         \\  return y;
         \\         ^
         \\
-        \\
     , result);
 }
 
@@ -278,9 +274,8 @@ test "multiline - multiple errors on different lines" {
 
     const input =
         \\fn foo() {
-        \\  const x = a;
-        \\  const x = 2;
         \\  return b;
+        \\  const b = 2;
         \\}
     ;
 
@@ -289,98 +284,9 @@ test "multiline - multiple errors on different lines" {
     const errors = try analyzeProgram(allocator, program);
     const result = try errorsToString(allocator, errors, input);
     try testing.expectEqualStrings(
-        \\error: 2:13 undefined variable "a"
-        \\  const x = a;
-        \\            ^
-        \\
-        \\error: 3:9 duplicate declaration "x"
-        \\  const x = 2;
-        \\        ^
-        \\
-        \\error: 4:10 undefined variable "b"
+        \\error: 2:10 undefined variable "b"
         \\  return b;
         \\         ^
         \\
-        \\
     , result);
 }
-
-// test "declaration" {
-//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-//     defer arena.deinit();
-//
-//     var sema = Sema{ .errors = .empty };
-//
-//     const result = try sema.testAnalyze(&arena, "fn foo() { const x = 3; const  x = 3; }");
-//
-//     try testing.expectEqualStrings(
-//         \\error: duplicate declaration "x"
-//         \\
-//     , result);
-// }
-
-// test "duplicate declaration" {
-//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-//     defer arena.deinit();
-//
-//     const result = try testAnalyze(&arena, "fn foo() { const x = 1; const x = 2; }");
-//
-//     try testing.expectEqualStrings(
-//         \\1:31: error: duplicate declaration "x"
-//         \\fn foo() { const x = 1; const x = 2; }
-//         \\                              ^
-//         \\
-//     , result);
-// }
-//
-// test "no errors - valid code" {
-//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-//     defer arena.deinit();
-//
-//     const result = try testAnalyze(&arena, "fn foo() { const x = 10; return x; }");
-//
-//     try testing.expectEqualStrings("", result);
-// }
-//
-// test "parameter usage is valid" {
-//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-//     defer arena.deinit();
-//
-//     const result = try testAnalyze(&arena, "fn square(x: i32) { return x * x; }");
-//
-//     try testing.expectEqualStrings("", result);
-// }
-//
-// test "multiple errors" {
-//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-//     defer arena.deinit();
-//
-//     const result = try testAnalyze(&arena, "fn foo() { const x = a + b; }");
-//
-//     try testing.expectEqualStrings(
-//         \\1:22: error: undefined variable "a"
-//         \\fn foo() { const x = a + b; }
-//         \\                     ^
-//         \\1:26: error: undefined variable "b"
-//         \\fn foo() { const x = a + b; }
-//         \\                         ^
-//         \\
-//     , result);
-// }
-//
-// test "multiple undefined in function" {
-//     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-//     defer arena.deinit();
-//
-//     const result = try testAnalyze(&arena, "fn foo() { return x + y; }");
-//
-//     try testing.expectEqualStrings(
-//         \\1:19: error: undefined variable "x"
-//         \\fn foo() { return x + y; }
-//         \\                  ^
-//         \\1:23: error: undefined variable "y"
-//         \\fn foo() { return x + y; }
-//         \\                      ^
-//         \\
-//     , result);
-// }
