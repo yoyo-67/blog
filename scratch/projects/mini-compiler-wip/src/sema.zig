@@ -8,6 +8,7 @@ const zir_mod = @import("zir.zig");
 const Instruction = zir_mod.Instruction;
 const Node = zir_mod.Node;
 const Token = @import("token.zig");
+const Type = @import("types.zig").Type;
 
 const assert = std.debug.assert;
 
@@ -132,9 +133,10 @@ const Error = union(enum) {
 
 const Scope = struct {
     declared: std.StringArrayHashMapUnmanaged(void),
+    types: std.ArrayListUnmanaged(Type),
 
     pub fn init() Scope {
-        return .{ .declared = .empty };
+        return .{ .declared = .empty, .types = .empty };
     }
 
     pub fn contains(self: *const Scope, name: []const u8) bool {
@@ -162,21 +164,41 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
     var errors: std.ArrayListUnmanaged(Error) = .empty;
     var scope = Scope.init();
 
-    for (function.instructions()) |instruction| {
+    for (function.instructions(), 0..) |instruction, idx| {
+        _ = idx; // autofix
         switch (instruction) {
             .decl => |inst| {
                 if (Error.checkDuplicate(inst.name, &scope)) {
                     try errors.append(allocator, .{ .duplicate = .{ .name = inst.name, .node = inst.node } });
                 } else {
                     try scope.declare(allocator, inst.name);
+
+                    const value_type = scope.types.items[inst.value];
+                    try scope.types.append(allocator, value_type);
                 }
             },
             .decl_ref => |inst| {
                 if (Error.checkUndefined(inst.name, &scope)) {
                     try errors.append(allocator, .{ .undefined = .{ .name = inst.name, .node = inst.node } });
                 }
+
+                const value_type = scope.types.items[inst.value];
+                try scope.types.append(allocator, value_type);
             },
-            else => {},
+            .constant => {
+                try scope.types.append(allocator, .i32);
+            },
+            .add, .div, .mul, .sub => {
+                try scope.types.append(allocator, .i32);
+            },
+            .param_ref => |inst| {
+                const param = function.params[inst.value];
+                try scope.types.append(allocator, param.type);
+            },
+            .return_stmt => |inst| {
+                const return_type = scope.types.items[inst.value];
+                try scope.types.append(allocator, return_type);
+            },
         }
     }
 
