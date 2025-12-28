@@ -157,6 +157,12 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
         return .{ .literal = .{ .value = .{ .int = int_value }, .token = token } };
     }
 
+    if (self.see(.float)) {
+        const token = self.consume();
+        const float_value = std.fmt.parseFloat(f64, token.lexeme) catch unreachable;
+        return .{ .literal = .{ .value = .{ .float = float_value }, .token = token } };
+    }
+
     if (self.see(.kw_true)) {
         const token = self.consume();
         return .{ .literal = .{ .value = .{ .boolean = true }, .token = token } };

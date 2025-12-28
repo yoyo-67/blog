@@ -18,6 +18,7 @@ pub const keywords = std.StaticStringMap(Type).initComptime(.{
     .{ "return", .kw_return },
     .{ "bool", .kw_bool },
     .{ "i32", .kw_i32 },
+    .{ "f64", .kw_f64 },
     .{ "true", .kw_true },
     .{ "false", .kw_false },
 });
@@ -42,6 +43,7 @@ const char_type_map: []const struct { u8, Type } = &.{
 
 pub const Type = enum {
     integer,
+    float,
     plus,
     eof,
     invalid,
@@ -64,6 +66,7 @@ pub const Type = enum {
     kw_return,
     kw_const,
     kw_i32,
+    kw_f64,
     kw_bool,
     kw_true,
     kw_false,

@@ -161,6 +161,16 @@ fn scanNumber(self: *Lexer) Token {
     while (checkIsDigit(self.peek())) {
         self.advance();
     }
+
+    // Check for float (has decimal point)
+    if (self.peek() == '.' and self.pos + 1 < self.source.len and checkIsDigit(self.source[self.pos + 1])) {
+        self.advance(); // consume '.'
+        while (checkIsDigit(self.peek())) {
+            self.advance();
+        }
+        return self.makeToken(startPos, .float);
+    }
+
     return self.makeToken(startPos, .integer);
 }
 

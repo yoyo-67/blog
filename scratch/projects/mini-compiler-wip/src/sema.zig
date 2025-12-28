@@ -567,3 +567,30 @@ test "typed zir - undefined variable shows undefined type" {
         \\
     , typed_zir);
 }
+
+test "typed zir - float literal" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn foo() {
+        \\  const x = 3.14;
+        \\  return x;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+    const typed_zir = try typedZirToString(allocator, function, result.types);
+
+    try testing.expectEqualStrings(
+        \\%0 = literal(3.14) : f64
+        \\%1 = decl("x", %0) : f64
+        \\%2 = decl_ref("x") : f64
+        \\%3 = ret(%2) : f64
+        \\
+    , typed_zir);
+}
