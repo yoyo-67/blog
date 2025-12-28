@@ -2,7 +2,9 @@ const std = @import("std");
 const mem = std.mem;
 
 const Token = @import("token.zig");
-const Type = @import("types.zig").Type;
+const types = @import("types.zig");
+const Type = types.Type;
+const Value = types.Value;
 
 pub const Op = enum {
     plus,
@@ -25,8 +27,9 @@ pub const Node = union(enum) {
         decls: []Node,
     },
 
-    int_literal: struct {
-        value: i32,
+    literal: struct {
+        value: Value,
+        token: *const Token,
     },
 
     binary_op: struct {
@@ -39,11 +42,6 @@ pub const Node = union(enum) {
     identifier: struct {
         name: []const u8,
         value: *const Node,
-        token: *const Token,
-    },
-
-    bool: struct {
-        value: enum { true, false },
         token: *const Token,
     },
 
@@ -84,7 +82,7 @@ pub const Node = union(enum) {
 
     fn write(self: Node, writer: anytype) !void {
         switch (self) {
-            .int_literal => |ltr| try writer.print("{d}", .{ltr.value}),
+            .literal => |lit| try lit.value.format(writer),
             .binary_op => |bin| {
                 try writer.writeAll("(");
                 try bin.lhs.write(writer);
@@ -105,9 +103,6 @@ pub const Node = union(enum) {
                 try writer.writeAll(", value=");
                 try iden.value.write(writer);
                 try writer.writeAll(")");
-            },
-            .bool => |b| {
-                try writer.print("{}", .{b.value == .true});
             },
             .unary_op => |unary| {
                 try writer.print("{s}", .{unary.op.symbol()});

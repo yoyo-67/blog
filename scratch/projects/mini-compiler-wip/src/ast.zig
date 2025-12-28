@@ -5,7 +5,9 @@ const assert = std.debug.assert;
 
 const Token = @import("token.zig").Token;
 const Lexer = @import("lexer.zig").Lexer;
-const Type = @import("types.zig").Type;
+const types = @import("types.zig");
+const Type = types.Type;
+const Value = types.Value;
 
 const node_mod = @import("node.zig");
 const Node = node_mod.Node;
@@ -151,18 +153,18 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 
     if (self.see(.integer)) {
         const token = self.consume();
-        const value = std.fmt.parseInt(i32, token.lexeme, 10) catch unreachable;
-        return .{ .int_literal = .{ .value = value } };
+        const int_value = std.fmt.parseInt(i32, token.lexeme, 10) catch unreachable;
+        return .{ .literal = .{ .value = .{ .int = int_value }, .token = token } };
     }
 
     if (self.see(.kw_true)) {
         const token = self.consume();
-        return .{ .bool = .{ .value = .true, .token = token } };
+        return .{ .literal = .{ .value = .{ .boolean = true }, .token = token } };
     }
 
     if (self.see(.kw_false)) {
         const token = self.consume();
-        return .{ .bool = .{ .value = .false, .token = token } };
+        return .{ .literal = .{ .value = .{ .boolean = false }, .token = token } };
     }
 
     unreachable;

@@ -5,7 +5,9 @@ const testing = std.testing;
 const token_mod = @import("token.zig");
 const ast_mod = @import("ast.zig");
 const node_mod = @import("node.zig");
-const Type = @import("types.zig").Type;
+const types = @import("types.zig");
+const Type = types.Type;
+const Value = types.Value;
 pub const Node = node_mod.Node;
 
 pub const Zir = @This();
@@ -22,7 +24,7 @@ pub fn init() Zir {
 
 pub fn generate(self: *Zir, allocator: mem.Allocator, node: *const Node) !InstructionRef {
     switch (node.*) {
-        .int_literal => |lit| return try self.emit(allocator, .{ .constant = .{ .value = lit.value, .node = node } }),
+        .literal => |lit| return try self.emit(allocator, .{ .literal = .{ .value = lit.value, .node = node } }),
         .binary_op => |bin| {
             const lhs = try self.generate(allocator, bin.lhs);
             const rhs = try self.generate(allocator, bin.rhs);
@@ -32,10 +34,6 @@ pub fn generate(self: *Zir, allocator: mem.Allocator, node: *const Node) !Instru
                 .mul => try self.emit(allocator, .{ .mul = .{ .lhs = lhs, .rhs = rhs, .node = node } }),
                 .div => try self.emit(allocator, .{ .div = .{ .lhs = lhs, .rhs = rhs, .node = node } }),
             };
-        },
-        .bool => |val| {
-            const bool_value = val.value == .true;
-            return try self.emit(allocator, .{ .bool = .{ .value = bool_value, .node = node } });
         },
         .root => |root| {
             var last: InstructionRef = 0;
@@ -106,12 +104,8 @@ fn toString(self: *Zir, allocator: mem.Allocator) ![]const u8 {
 const InstructionRef = u32;
 
 pub const Instruction = union(enum) {
-    constant: struct {
-        value: i32,
-        node: *const Node,
-    },
-    bool: struct {
-        value: bool,
+    literal: struct {
+        value: Value,
         node: *const Node,
     },
     add: struct {
@@ -155,8 +149,11 @@ pub const Instruction = union(enum) {
     pub fn toString(self: Instruction, idx: usize, writer: anytype) !void {
         try writer.print("%{d} = ", .{idx});
         switch (self) {
-            .constant => |val| try writer.print("constant({d})", .{val.value}),
-            .bool => |val| try writer.print("boolean({s})", .{if (val.value) "true" else "false"}),
+            .literal => |val| {
+                try writer.writeAll("literal(");
+                try val.value.format(writer);
+                try writer.writeAll(")");
+            },
             .add => |val| try writer.print("add(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .sub => |val| try writer.print("sub(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .mul => |val| try writer.print("mul(%{d}, %{d})", .{ val.lhs, val.rhs }),
@@ -291,12 +288,12 @@ test "constant: 42" {
 
     // 1 + 2 * 3  parses as  1 + (2 * 3) + 3
     try testing.expectEqualStrings(
-        \\%0 = constant(1)
-        \\%1 = constant(2)
-        \\%2 = constant(3)
+        \\%0 = literal(1)
+        \\%1 = literal(2)
+        \\%2 = literal(3)
         \\%3 = mul(%1, %2)
         \\%4 = add(%0, %3)
-        \\%5 = constant(3)
+        \\%5 = literal(3)
         \\%6 = add(%4, %5)
         \\
     , result);
@@ -316,7 +313,7 @@ test "variables" {
     const result = try zir.toString(allocator);
 
     try testing.expectEqualStrings(
-        \\%0 = constant(42)
+        \\%0 = literal(42)
         \\%1 = decl("x", %0)
         \\
     , result);
@@ -336,8 +333,8 @@ test "var with math" {
     const result = try zir.toString(allocator);
 
     try testing.expectEqualStrings(
-        \\%0 = constant(42)
-        \\%1 = constant(3)
+        \\%0 = literal(42)
+        \\%1 = literal(3)
         \\%2 = add(%0, %1)
         \\%3 = decl("x", %2)
         \\
@@ -362,7 +359,7 @@ test "return identifier ref" {
     const result = try zir.toString(allocator);
 
     try testing.expectEqualStrings(
-        \\%0 = constant(10)
+        \\%0 = literal(10)
         \\%1 = decl("hello", %0)
         \\%2 = decl_ref("hello")
         \\%3 = ret(%2)
@@ -388,7 +385,7 @@ test "decl ref + math" {
 
     try testing.expectEqualStrings(
         \\%0 = decl_ref("x")
-        \\%1 = constant(2)
+        \\%1 = literal(2)
         \\%2 = mul(%0, %1)
         \\%3 = decl_ref("y")
         \\%4 = add(%2, %3)
@@ -414,10 +411,10 @@ test "decl ref + math 2 " {
     const result = try zir.toString(allocator);
 
     try testing.expectEqualStrings(
-        \\%0 = constant(5)
+        \\%0 = literal(5)
         \\%1 = decl("x", %0)
         \\%2 = decl_ref("x")
-        \\%3 = constant(2)
+        \\%3 = literal(2)
         \\%4 = mul(%2, %3)
         \\%5 = decl("y", %4)
         \\
@@ -492,7 +489,7 @@ test "fn 2 parameters + locals" {
 
     try testing.expectEqualStrings(
         \\%0 = param_ref(0)
-        \\%1 = constant(1)
+        \\%1 = literal(1)
         \\%2 = add(%0, %1)
         \\%3 = decl("result", %2)
         \\%4 = decl_ref("result")
@@ -530,7 +527,7 @@ test "parse program" {
         \\  return_type: ?
         \\  body:
         \\    %0 = param_ref(0)
-        \\    %1 = constant(1)
+        \\    %1 = literal(1)
         \\    %2 = add(%0, %1)
         \\    %3 = decl("result", %2)
         \\    %4 = decl_ref("result")

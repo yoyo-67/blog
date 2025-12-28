@@ -193,11 +193,8 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) !AnalyzeFun
                 const value_type = scope.getType(inst.name) orelse .undefined;
                 try scope.types.append(allocator, value_type);
             },
-            .constant => {
-                try scope.types.append(allocator, .i32);
-            },
-            .bool => {
-                try scope.types.append(allocator, .bool);
+            .literal => |lit| {
+                try scope.types.append(allocator, lit.value.getType());
             },
             .add, .div, .mul, .sub => {
                 try scope.types.append(allocator, .i32);
@@ -371,7 +368,7 @@ test "infer type - constant is i32" {
     const function = program.functions()[0];
     const result = try analyzeFunction(allocator, function);
 
-    // %0 = constant(42) -> i32
+    // %0 = literal(42) -> i32
     // %1 = ret(%0)      -> i32
     try testing.expectEqual(@as(usize, 2), result.types.len);
     try testing.expectEqual(.i32, result.types[0]); // constant
@@ -411,7 +408,7 @@ test "infer type - arithmetic expressions are i32" {
 
     // %0 = param_ref(0)    -> i32
     // %1 = param_ref(1)    -> i32
-    // %2 = constant(2)     -> i32
+    // %2 = literal(2)     -> i32
     // %3 = mul(%1, %2)     -> i32
     // %4 = add(%0, %3)     -> i32
     // %5 = ret(%4)         -> i32
@@ -438,7 +435,7 @@ test "infer type - variable declaration inherits value type" {
     const function = program.functions()[0];
     const result = try analyzeFunction(allocator, function);
 
-    // %0 = constant(10)    -> i32
+    // %0 = literal(10)    -> i32
     // %1 = decl("x", %0)   -> i32 (inherits from constant)
     // %2 = decl_ref("x")   -> i32 (looks up from scope)
     // %3 = ret(%2)         -> i32
@@ -493,7 +490,7 @@ test "typed zir - constant returns i32" {
     const typed_zir = try typedZirToString(allocator, function, result.types);
 
     try testing.expectEqualStrings(
-        \\%0 = constant(42) : i32
+        \\%0 = literal(42) : i32
         \\%1 = ret(%0) : i32
         \\
     , typed_zir);
@@ -541,9 +538,9 @@ test "typed zir - variable declaration and reference" {
     const typed_zir = try typedZirToString(allocator, function, result.types);
 
     try testing.expectEqualStrings(
-        \\%0 = constant(10) : i32
+        \\%0 = literal(10) : i32
         \\%1 = decl("x", %0) : i32
-        \\%2 = boolean(false) : bool
+        \\%2 = literal(false) : bool
         \\%3 = decl("y", %2) : bool
         \\%4 = decl_ref("y") : bool
         \\%5 = ret(%4) : bool
