@@ -206,25 +206,33 @@ fn parseReturnStmt(self: *Ast, allocator: mem.Allocator) !Node {
 }
 
 // "fn add(a: i32, b: i32) { return a + b; }"
-// fn: 'fn' IDENTIFIER '(' parameters? ')' '{' block '}'
+// fn: 'fn' IDENTIFIER '(' parameters? ')' return_type? '{' block '}'
 // parameters: parameter (, parameter)*
 // parameter: IDENTIFIER ':' IDENTIFIER
+// return_type: Type
 // block: statement*
 //
 fn parseFn(self: *Ast, allocator: mem.Allocator) !Node {
     var params: std.ArrayListUnmanaged(Node.Param) = .empty;
-    _ = self.expect(.kw_fn);
+    const kw_fn = self.expect(.kw_fn);
     const name = self.expect(.identifier).lexeme;
     _ = self.expect(.lpren);
     if (!self.see(.rpren)) {
         try self.parseParams(allocator, &params);
     }
     _ = self.expect(.rpren);
+    const return_type: ?[]const u8 = if (!self.see(.lbrace)) self.parseType() else null;
     _ = self.expect(.lbrace);
     const block = try self.parseBlock(allocator);
     _ = self.expect(.rbrace);
 
-    return .{ .fn_decl = .{ .name = name, .params = try params.toOwnedSlice(allocator), .block = block } };
+    return .{ .fn_decl = .{
+        .name = name,
+        .params = try params.toOwnedSlice(allocator),
+        .block = block,
+        .return_type = return_type,
+        .token = kw_fn,
+    } };
 }
 
 fn parseParams(self: *Ast, allocator: mem.Allocator, params: *std.ArrayListUnmanaged(Node.Param)) !void {

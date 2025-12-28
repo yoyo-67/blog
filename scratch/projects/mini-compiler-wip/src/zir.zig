@@ -188,6 +188,7 @@ pub const Program = struct {
 
 pub const Function = struct {
     name: []const u8,
+    return_type: ?[]const u8,
     params: []const Node.Param,
     zir: Zir,
 
@@ -214,6 +215,8 @@ pub const Function = struct {
             try writer.print("(\"{s}\", {s})", .{ param.name, param.type });
         }
         try writer.writeAll("]\n");
+        try writer.print("  return_type: {s}", .{self.return_type orelse "?"});
+        try writer.writeAll("\n");
         try writer.writeAll("  body:\n");
         for (self.zir.instructions.items, 0..) |instruction, idx| {
             try writer.writeAll("    ");
@@ -243,6 +246,7 @@ pub fn generateFunction(allocator: mem.Allocator, node: *const Node) !Function {
     return .{
         .name = node.fn_decl.name,
         .params = node.fn_decl.params,
+        .return_type = node.fn_decl.return_type,
         .zir = zir,
     };
 }
@@ -497,8 +501,8 @@ test "parse program" {
         \\  return result;
         \\}
         \\
-        \\fn calc2(n: i32) {
-        \\  const result = n + 1;
+        \\fn calc2(n: i32) i32 {
+        \\  const result = n;
         \\  return result;
         \\}
     ;
@@ -512,6 +516,7 @@ test "parse program" {
     try testing.expectEqualStrings(
         \\function "calc":
         \\  params: [("n", i32)]
+        \\  return_type: ?
         \\  body:
         \\    %0 = param_ref(0)
         \\    %1 = constant(1)
@@ -522,13 +527,12 @@ test "parse program" {
         \\
         \\function "calc2":
         \\  params: [("n", i32)]
+        \\  return_type: i32
         \\  body:
         \\    %0 = param_ref(0)
-        \\    %1 = constant(1)
-        \\    %2 = add(%0, %1)
-        \\    %3 = decl("result", %2)
-        \\    %4 = decl_ref("result")
-        \\    %5 = ret(%4)
+        \\    %1 = decl("result", %0)
+        \\    %2 = decl_ref("result")
+        \\    %3 = ret(%2)
         \\
     , result);
 }

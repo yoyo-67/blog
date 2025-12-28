@@ -37,9 +37,20 @@ const assert = std.debug.assert;
 // d. Scope
 // each scope has it own set of declared variable.
 //
-// d. Error
+// e. Error
 // error contain the instruction idx that create this error,
 // and contain the error message
+//
+// f. function return type
+// I should add return type to the ast for the function
+// and also to add it to the sema
+// and when the return type of the function exist i should compare the defined with the actual
+// how to find the actual
+// i should take the instref from the return type and look into that ref and find the type for it
+// which mean i need to loop on all the zir and add them one by one type to some list and then to referece them
+//
+// nouns: Type
+//
 //
 //
 
@@ -287,6 +298,26 @@ test "multiline - multiple errors on different lines" {
         \\error: 2:10 undefined variable "b"
         \\  return b;
         \\         ^
+        \\
+    , result);
+}
+
+test "function return type" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn foo() i32 {
+        \\  return 1;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const errors = try analyzeProgram(allocator, program);
+    const result = try errorsToString(allocator, errors, input);
+    try testing.expectEqualStrings(
         \\
     , result);
 }

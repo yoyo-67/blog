@@ -19,6 +19,8 @@ pub const Op = enum {
     }
 };
 
+pub const Type = ?[]const u8;
+
 pub const Node = union(enum) {
     root: struct {
         decls: []Node,
@@ -55,7 +57,13 @@ pub const Node = union(enum) {
         value: *const Node,
     },
 
-    fn_decl: struct { name: []const u8, params: []Param, block: Block },
+    fn_decl: struct {
+        name: []const u8,
+        params: []Param,
+        block: Block,
+        return_type: ?[]const u8,
+        token: *const Token,
+    },
 
     pub const Param = struct {
         name: []const u8,
