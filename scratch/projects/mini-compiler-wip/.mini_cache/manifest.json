@@ -1,0 +1,11 @@
+{
+  "files": [
+    {
+      "path": "tests/main.mini",
+      "mtime": 1766955078676381933,
+      "compiled_at": 1766956216671926000,
+      "hash": 10124399460796257042,
+      "dependencies": ["tests/math_utils.mini", "tests/string_utils.mini"]
+    }
+  ]
+}

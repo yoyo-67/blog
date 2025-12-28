@@ -87,6 +87,9 @@ fn advance(self: *Ast) void {
 }
 
 fn parseNode(self: *Ast, allocator: mem.Allocator) !Node {
+    if (self.see(.kw_import)) {
+        return try self.parseImport(allocator);
+    }
     if (self.see(.kw_fn)) {
         return try self.parseFn(allocator);
     }
@@ -148,6 +151,21 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
 
     if (self.see(.identifier)) {
         const token = self.consume();
+        // Check for namespace.function() syntax
+        if (self.see(.dot)) {
+            _ = self.consume(); // consume the dot
+            const fn_token = self.expect(.identifier);
+            // Create a combined name: namespace_function
+            const combined_name = try std.fmt.allocPrint(allocator, "{s}_{s}", .{ token.lexeme, fn_token.lexeme });
+            if (self.see(.lpren)) {
+                return try self.parseFnCallWithName(allocator, combined_name, token);
+            }
+            return .{ .identifier_ref = .{ .name = combined_name, .token = token } };
+        }
+        // Check if it's a function call
+        if (self.see(.lpren)) {
+            return try self.parseFnCall(allocator, token);
+        }
         return .{ .identifier_ref = .{ .name = token.lexeme, .token = token } };
     }
 
@@ -288,6 +306,73 @@ fn parseBlock(self: *Ast, allocator: mem.Allocator) ParseError!Node.Block {
     return .{ .decls = try decls.toOwnedSlice(allocator) };
 }
 
+fn parseFnCall(self: *Ast, allocator: mem.Allocator, name_token: *const Token) ParseError!Node {
+    return self.parseFnCallWithName(allocator, name_token.lexeme, name_token);
+}
+
+fn parseFnCallWithName(self: *Ast, allocator: mem.Allocator, name: []const u8, token: *const Token) ParseError!Node {
+    _ = self.expect(.lpren);
+    var args: std.ArrayListUnmanaged(*const Node) = .empty;
+
+    if (!self.see(.rpren)) {
+        while (true) {
+            const arg = try self.parseExpression(allocator);
+            const arg_ptr = try createNode(allocator, arg);
+            try args.append(allocator, arg_ptr);
+            if (!self.see(.comma)) break;
+            _ = self.consume(); // consume comma
+        }
+    }
+    _ = self.expect(.rpren);
+
+    return .{ .fn_call = .{
+        .name = name,
+        .args = try args.toOwnedSlice(allocator),
+        .token = token,
+    } };
+}
+
+// import "path/to/file.mini" as namespace;
+// or: import "path/to/file.mini";  (namespace derived from filename)
+fn parseImport(self: *Ast, allocator: mem.Allocator) ParseError!Node {
+    _ = allocator;
+    const token = self.expect(.kw_import);
+    const path_token = self.expect(.string);
+
+    // Strip quotes from the path
+    const path = path_token.lexeme[1 .. path_token.lexeme.len - 1];
+
+    // Check for optional 'as namespace'
+    const namespace = if (self.see(.kw_as)) blk: {
+        _ = self.consume(); // consume 'as'
+        break :blk self.expect(.identifier).lexeme;
+    } else blk: {
+        // Derive namespace from filename
+        break :blk deriveNamespace(path);
+    };
+
+    _ = self.expect(.semicolon);
+
+    return .{ .import_decl = .{
+        .path = path,
+        .namespace = namespace,
+        .token = token,
+    } };
+}
+
+pub fn deriveNamespace(path: []const u8) []const u8 {
+    // Get filename from path (after last /)
+    var filename = path;
+    if (mem.lastIndexOf(u8, path, "/")) |idx| {
+        filename = path[idx + 1 ..];
+    }
+    // Remove .mini extension if present
+    if (mem.endsWith(u8, filename, ".mini")) {
+        return filename[0 .. filename.len - 5];
+    }
+    return filename;
+}
+
 test "simple addition: 1 + 2" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
@@ -381,9 +466,69 @@ test "return identifier ref" {
     defer arena.deinit();
 
     const str =
-        \\ const x = 10;                                                                                                              
-        \\ return x;                                                                                                                  
+        \\ const x = 10;
+        \\ return x;
     ;
     const tree = try parseExpr(&arena, str);
     try testing.expectEqualStrings("identifier(name=x, value=10), return(value=x)", try tree.toString(arena.allocator()));
+}
+
+test "function call no args" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "foo()");
+    try testing.expectEqualStrings("foo()", try tree.toString(arena.allocator()));
+}
+
+test "function call with args" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "add(1, 2)");
+    try testing.expectEqualStrings("add(1, 2)", try tree.toString(arena.allocator()));
+}
+
+test "function call with expression args" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "calc(1 + 2, 3 * 4)");
+    try testing.expectEqualStrings("calc((1 + 2), (3 * 4))", try tree.toString(arena.allocator()));
+}
+
+test "nested function calls" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "add(square(2), square(3))");
+    try testing.expectEqualStrings("add(square(2), square(3))", try tree.toString(arena.allocator()));
+}
+
+test "import statement with derived namespace" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "import \"math.mini\";");
+    try testing.expectEqualStrings("import(\"math.mini\" as math)", try tree.toString(arena.allocator()));
+}
+
+test "import statement with explicit namespace" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const tree = try parseExpr(&arena, "import \"math.mini\" as m;");
+    try testing.expectEqualStrings("import(\"math.mini\" as m)", try tree.toString(arena.allocator()));
+}
+
+test "import with function" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+
+    const str =
+        \\import "utils.mini";
+        \\fn main() i32 { return 0; }
+    ;
+    const tree = try parseExpr(&arena, str);
+    try testing.expectEqualStrings("import(\"utils.mini\" as utils), fn(name=main, params=[], block=return(value=0))", try tree.toString(arena.allocator()));
 }

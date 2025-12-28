@@ -1,0 +1,10 @@
+import "math_utils.mini" as math;
+import "string_utils.mini" as str;
+
+fn main() i32 {
+    const a = math.add(10, 5);
+    const b = math.multiply(3, 4);
+    const c = math.square(a);
+    const d = str.double(b);
+    return c + d;
+}

@@ -66,6 +66,18 @@ pub fn generate(self: *Zir, allocator: mem.Allocator, node: *const Node) !Instru
 
             return try self.emit(allocator, .{ .decl_ref = .{ .name = val.name, .node = node } });
         },
+        .fn_call => |call| {
+            var arg_refs: std.ArrayListUnmanaged(InstructionRef) = .empty;
+            for (call.args) |arg| {
+                const ref = try self.generate(allocator, arg);
+                try arg_refs.append(allocator, ref);
+            }
+            return try self.emit(allocator, .{ .call = .{
+                .name = call.name,
+                .args = try arg_refs.toOwnedSlice(allocator),
+                .node = node,
+            } });
+        },
         .fn_decl => |val| {
             // loop on the parameters and emit them.
             // then emit the decleration on the block
@@ -145,6 +157,11 @@ pub const Instruction = union(enum) {
         value: u32,
         node: *const Node,
     },
+    call: struct {
+        name: []const u8,
+        args: []const InstructionRef,
+        node: *const Node,
+    },
 
     pub fn toString(self: Instruction, idx: usize, writer: anytype) !void {
         try writer.print("%{d} = ", .{idx});
@@ -162,6 +179,14 @@ pub const Instruction = union(enum) {
             .decl_ref => |val| try writer.print("decl_ref(\"{s}\")", .{val.name}),
             .return_stmt => |val| try writer.print("ret(%{d})", .{val.value}),
             .param_ref => |val| try writer.print("param_ref({d})", .{val.value}),
+            .call => |c| {
+                try writer.print("call(\"{s}\", [", .{c.name});
+                for (c.args, 0..) |arg, i| {
+                    if (i > 0) try writer.writeAll(", ");
+                    try writer.print("%{d}", .{arg});
+                }
+                try writer.writeAll("])");
+            },
         }
     }
 };
@@ -541,6 +566,74 @@ test "parse program" {
         \\    %1 = decl("result", %0)
         \\    %2 = decl_ref("result")
         \\    %3 = ret(%2)
+        \\
+    , result);
+}
+
+test "function call no args" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn main() i32 { return foo(); }";
+    const tree = try ast_mod.parseExpr(&arena, input);
+    var program = try generateProgram(allocator, &tree);
+    const result = try program.toString(allocator);
+
+    try testing.expectEqualStrings(
+        \\function "main":
+        \\  params: []
+        \\  return_type: i32
+        \\  body:
+        \\    %0 = call("foo", [])
+        \\    %1 = ret(%0)
+        \\
+    , result);
+}
+
+test "function call with args" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn main() i32 { return add(1, 2); }";
+    const tree = try ast_mod.parseExpr(&arena, input);
+    var program = try generateProgram(allocator, &tree);
+    const result = try program.toString(allocator);
+
+    try testing.expectEqualStrings(
+        \\function "main":
+        \\  params: []
+        \\  return_type: i32
+        \\  body:
+        \\    %0 = literal(1)
+        \\    %1 = literal(2)
+        \\    %2 = call("add", [%0, %1])
+        \\    %3 = ret(%2)
+        \\
+    , result);
+}
+
+test "nested function calls" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn main() i32 { return add(square(2), 3); }";
+    const tree = try ast_mod.parseExpr(&arena, input);
+    var program = try generateProgram(allocator, &tree);
+    const result = try program.toString(allocator);
+
+    try testing.expectEqualStrings(
+        \\function "main":
+        \\  params: []
+        \\  return_type: i32
+        \\  body:
+        \\    %0 = literal(2)
+        \\    %1 = call("square", [%0])
+        \\    %2 = literal(3)
+        \\    %3 = call("add", [%1, %2])
+        \\    %4 = ret(%3)
         \\
     , result);
 }

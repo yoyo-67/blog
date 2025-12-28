@@ -50,6 +50,12 @@ pub const Node = union(enum) {
         token: *const Token,
     },
 
+    fn_call: struct {
+        name: []const u8,
+        args: []const *const Node,
+        token: *const Token,
+    },
+
     unary_op: struct {
         op: Op,
         operand: *const Node,
@@ -64,6 +70,12 @@ pub const Node = union(enum) {
         params: []Param,
         block: Block,
         return_type: ?Type,
+        token: *const Token,
+    },
+
+    import_decl: struct {
+        path: []const u8,
+        namespace: []const u8,
         token: *const Token,
     },
 
@@ -142,6 +154,17 @@ pub const Node = union(enum) {
             },
             .identifier_ref => |val| {
                 try writer.print("{s}", .{val.name});
+            },
+            .fn_call => |call| {
+                try writer.print("{s}(", .{call.name});
+                for (call.args, 0..) |arg, i| {
+                    if (i > 0) try writer.writeAll(", ");
+                    try arg.write(writer);
+                }
+                try writer.writeAll(")");
+            },
+            .import_decl => |imp| {
+                try writer.print("import(\"{s}\" as {s})", .{ imp.path, imp.namespace });
             },
         }
     }

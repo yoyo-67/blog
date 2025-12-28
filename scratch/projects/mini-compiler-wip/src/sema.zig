@@ -207,6 +207,11 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) !AnalyzeFun
                 const return_type = scope.types.items[inst.value];
                 try scope.types.append(allocator, return_type);
             },
+            .call => {
+                // For now, assume all function calls return i32
+                // TODO: look up function return type from program
+                try scope.types.append(allocator, .i32);
+            },
         }
     }
 

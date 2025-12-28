@@ -1,0 +1,34 @@
+{
+  "functions": [
+    {
+      "key": "tests/main.mini:math_multiply",
+      "zir_hash": 3329313502962928641,
+      "llvm_ir": "define i32 @math_multiply(i32 %p0, i32 %p1) {\nentry:\n    %2 = mul i32 %p0, %p1\n    ret i32 %2\n}\n"
+    },
+    {
+      "key": "tests/main.mini:str_double",
+      "zir_hash": 4214029864961917112,
+      "llvm_ir": "define i32 @str_double(i32 %p0) {\nentry:\n    %2 = mul i32 %p0, 2\n    ret i32 %2\n}\n"
+    },
+    {
+      "key": "tests/main.mini:math_add",
+      "zir_hash": 15937109928104551188,
+      "llvm_ir": "define i32 @math_add(i32 %p0, i32 %p1) {\nentry:\n    %2 = add i32 %p0, %p1\n    ret i32 %2\n}\n"
+    },
+    {
+      "key": "tests/main.mini:str_length",
+      "zir_hash": 16447763860885332384,
+      "llvm_ir": "define i32 @str_length(i32 %p0) {\nentry:\n    %2 = add i32 %p0, 1\n    ret i32 %2\n}\n"
+    },
+    {
+      "key": "tests/main.mini:math_square",
+      "zir_hash": 10584766329127041477,
+      "llvm_ir": "define i32 @math_square(i32 %p0) {\nentry:\n    %2 = mul i32 %p0, %p0\n    ret i32 %2\n}\n"
+    },
+    {
+      "key": "tests/main.mini:main",
+      "zir_hash": 9517088428652747180,
+      "llvm_ir": "define i32 @main() {\nentry:\n    %2 = call i32 @math_add(i32 10, i32 5)\n    %6 = call i32 @math_multiply(i32 3, i32 4)\n    %9 = call i32 @math_square(i32 %2)\n    %12 = call i32 @str_double(i32 %6)\n    %16 = add i32 %9, %12\n    ret i32 %16\n}\n"
+    }
+  ]
+}

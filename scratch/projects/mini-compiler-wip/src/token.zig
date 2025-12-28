@@ -21,6 +21,8 @@ pub const keywords = std.StaticStringMap(Type).initComptime(.{
     .{ "f64", .kw_f64 },
     .{ "true", .kw_true },
     .{ "false", .kw_false },
+    .{ "import", .kw_import },
+    .{ "as", .kw_as },
 });
 
 // Single source of truth for char <-> Type mappings
@@ -39,6 +41,7 @@ const char_type_map: []const struct { u8, Type } = &.{
     .{ '\'', .single_quote },
     .{ '"', .double_quote },
     .{ '=', .equal },
+    .{ '.', .dot },
 };
 
 pub const Type = enum {
@@ -62,6 +65,7 @@ pub const Type = enum {
     double_quote,
     identifier,
     equal,
+    dot,
     kw_fn,
     kw_return,
     kw_const,
@@ -70,6 +74,8 @@ pub const Type = enum {
     kw_bool,
     kw_true,
     kw_false,
+    kw_import,
+    kw_as,
 
     pub fn toChar(self: Type) ?u8 {
         inline for (char_type_map) |entry| {
