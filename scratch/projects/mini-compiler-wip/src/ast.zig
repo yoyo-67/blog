@@ -155,6 +155,16 @@ fn parsePrimary(self: *Ast, allocator: mem.Allocator) ParseError!Node {
         return .{ .int_literal = .{ .value = value } };
     }
 
+    if (self.see(.kw_true)) {
+        const token = self.consume();
+        return .{ .bool = .{ .value = .true, .token = token } };
+    }
+
+    if (self.see(.kw_false)) {
+        const token = self.consume();
+        return .{ .bool = .{ .value = .false, .token = token } };
+    }
+
     unreachable;
 }
 

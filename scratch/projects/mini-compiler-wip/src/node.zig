@@ -42,6 +42,11 @@ pub const Node = union(enum) {
         token: *const Token,
     },
 
+    bool: struct {
+        value: enum { true, false },
+        token: *const Token,
+    },
+
     identifier_ref: struct {
         name: []const u8,
         token: *const Token,
@@ -100,6 +105,9 @@ pub const Node = union(enum) {
                 try writer.writeAll(", value=");
                 try iden.value.write(writer);
                 try writer.writeAll(")");
+            },
+            .bool => |b| {
+                try writer.print("{}", .{b.value == .true});
             },
             .unary_op => |unary| {
                 try writer.print("{s}", .{unary.op.symbol()});

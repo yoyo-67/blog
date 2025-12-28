@@ -33,6 +33,10 @@ pub fn generate(self: *Zir, allocator: mem.Allocator, node: *const Node) !Instru
                 .div => try self.emit(allocator, .{ .div = .{ .lhs = lhs, .rhs = rhs, .node = node } }),
             };
         },
+        .bool => |val| {
+            const bool_value = val.value == .true;
+            return try self.emit(allocator, .{ .bool = .{ .value = bool_value, .node = node } });
+        },
         .root => |root| {
             var last: InstructionRef = 0;
             for (root.decls) |*decl| {
@@ -106,6 +110,10 @@ pub const Instruction = union(enum) {
         value: i32,
         node: *const Node,
     },
+    bool: struct {
+        value: bool,
+        node: *const Node,
+    },
     add: struct {
         lhs: InstructionRef,
         rhs: InstructionRef,
@@ -148,6 +156,7 @@ pub const Instruction = union(enum) {
         try writer.print("%{d} = ", .{idx});
         switch (self) {
             .constant => |val| try writer.print("constant({d})", .{val.value}),
+            .bool => |val| try writer.print("boolean({s})", .{if (val.value) "true" else "false"}),
             .add => |val| try writer.print("add(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .sub => |val| try writer.print("sub(%{d}, %{d})", .{ val.lhs, val.rhs }),
             .mul => |val| try writer.print("mul(%{d}, %{d})", .{ val.lhs, val.rhs }),

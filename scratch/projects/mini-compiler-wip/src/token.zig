@@ -18,6 +18,8 @@ pub const keywords = std.StaticStringMap(Type).initComptime(.{
     .{ "return", .kw_return },
     .{ "bool", .kw_bool },
     .{ "i32", .kw_i32 },
+    .{ "true", .kw_true },
+    .{ "false", .kw_false },
 });
 
 // Single source of truth for char <-> Type mappings
@@ -63,6 +65,8 @@ pub const Type = enum {
     kw_const,
     kw_i32,
     kw_bool,
+    kw_true,
+    kw_false,
 
     pub fn toChar(self: Type) ?u8 {
         inline for (char_type_map) |entry| {

@@ -196,6 +196,9 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) !AnalyzeFun
             .constant => {
                 try scope.types.append(allocator, .i32);
             },
+            .bool => {
+                try scope.types.append(allocator, .bool);
+            },
             .add, .div, .mul, .sub => {
                 try scope.types.append(allocator, .i32);
             },
@@ -463,4 +466,107 @@ test "infer type - undefined variable has type_error" {
     try testing.expectEqual(@as(usize, 2), result.types.len);
     try testing.expectEqual(.undefined, result.types[0]); // undefined decl_ref
     try testing.expectEqual(.undefined, result.types[1]); // return inherits type_error
+}
+
+fn typedZirToString(allocator: Allocator, function: zir_mod.Function, types: []const Type) ![]const u8 {
+    var buffer: std.ArrayListUnmanaged(u8) = .empty;
+    const writer = buffer.writer(allocator);
+    for (function.instructions(), 0..) |inst, idx| {
+        try inst.toString(idx, writer);
+        try writer.print(" : {s}\n", .{@tagName(types[idx])});
+    }
+
+    return buffer.toOwnedSlice(allocator);
+}
+
+test "typed zir - constant returns i32" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo() { return 42; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+    const typed_zir = try typedZirToString(allocator, function, result.types);
+
+    try testing.expectEqualStrings(
+        \\%0 = constant(42) : i32
+        \\%1 = ret(%0) : i32
+        \\
+    , typed_zir);
+}
+
+test "typed zir - param and arithmetic" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn add(a: i32, b: i32) { return a + b; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+    const typed_zir = try typedZirToString(allocator, function, result.types);
+
+    try testing.expectEqualStrings(
+        \\%0 = param_ref(0) : i32
+        \\%1 = param_ref(1) : i32
+        \\%2 = add(%0, %1) : i32
+        \\%3 = ret(%2) : i32
+        \\
+    , typed_zir);
+}
+
+test "typed zir - variable declaration and reference" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn foo() {
+        \\  const x = 10;
+        \\  const y = false;
+        \\  return y;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+    const typed_zir = try typedZirToString(allocator, function, result.types);
+
+    try testing.expectEqualStrings(
+        \\%0 = constant(10) : i32
+        \\%1 = decl("x", %0) : i32
+        \\%2 = boolean(false) : bool
+        \\%3 = decl("y", %2) : bool
+        \\%4 = decl_ref("y") : bool
+        \\%5 = ret(%4) : bool
+        \\
+    , typed_zir);
+}
+
+test "typed zir - undefined variable shows undefined type" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo() { return unknown_var; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+    const typed_zir = try typedZirToString(allocator, function, result.types);
+
+    try testing.expectEqualStrings(
+        \\%0 = decl_ref("unknown_var") : undefined
+        \\%1 = ret(%0) : undefined
+        \\
+    , typed_zir);
 }
