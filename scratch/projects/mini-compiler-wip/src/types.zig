@@ -6,6 +6,7 @@ pub const Type = enum {
     bool,
     void,
     identifer,
+    undefined,
 
     pub fn fromString(s: []const u8) Type {
         if (mem.eql(u8, s, "i32")) return .i32;

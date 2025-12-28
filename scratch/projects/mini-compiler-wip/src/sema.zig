@@ -132,7 +132,7 @@ const Error = union(enum) {
 };
 
 const Scope = struct {
-    declared: std.StringArrayHashMapUnmanaged(void),
+    declared: std.StringArrayHashMapUnmanaged(Type),
     types: std.ArrayListUnmanaged(Type),
 
     pub fn init() Scope {
@@ -143,15 +143,20 @@ const Scope = struct {
         return self.declared.contains(name);
     }
 
-    pub fn declare(self: *Scope, allocator: Allocator, name: []const u8) !void {
-        try self.declared.put(allocator, name, {});
+    pub fn declare(self: *Scope, allocator: Allocator, name: []const u8, type_value: Type) !void {
+        try self.declared.put(allocator, name, type_value);
+    }
+
+    pub fn getType(self: *Scope, name: []const u8) ?Type {
+        return self.declared.get(name);
     }
 };
 
 fn analyzeProgram(allocator: Allocator, program: zir_mod.Program) ![]Error {
     var errors: std.ArrayListUnmanaged(Error) = .empty;
     for (program.functions()) |function| {
-        const function_errors = try analyzeFunction(allocator, function);
+        const result = try analyzeFunction(allocator, function);
+        const function_errors = result.errors;
         for (function_errors) |function_error| {
             try errors.append(allocator, function_error);
         }
@@ -160,20 +165,23 @@ fn analyzeProgram(allocator: Allocator, program: zir_mod.Program) ![]Error {
     return errors.toOwnedSlice(allocator);
 }
 
-fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
+const AnalyzeFunctionResult = struct {
+    errors: []Error,
+    types: []Type,
+};
+
+fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) !AnalyzeFunctionResult {
     var errors: std.ArrayListUnmanaged(Error) = .empty;
     var scope = Scope.init();
 
-    for (function.instructions(), 0..) |instruction, idx| {
-        _ = idx; // autofix
+    for (function.instructions()) |instruction| {
         switch (instruction) {
             .decl => |inst| {
                 if (Error.checkDuplicate(inst.name, &scope)) {
                     try errors.append(allocator, .{ .duplicate = .{ .name = inst.name, .node = inst.node } });
                 } else {
-                    try scope.declare(allocator, inst.name);
-
                     const value_type = scope.types.items[inst.value];
+                    try scope.declare(allocator, inst.name, value_type);
                     try scope.types.append(allocator, value_type);
                 }
             },
@@ -182,7 +190,7 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
                     try errors.append(allocator, .{ .undefined = .{ .name = inst.name, .node = inst.node } });
                 }
 
-                const value_type = scope.types.items[inst.value];
+                const value_type = scope.getType(inst.name) orelse .undefined;
                 try scope.types.append(allocator, value_type);
             },
             .constant => {
@@ -202,7 +210,7 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) ![]Error {
         }
     }
 
-    return errors.toOwnedSlice(allocator);
+    return .{ .errors = try errors.toOwnedSlice(allocator), .types = try scope.types.toOwnedSlice(allocator) };
 }
 
 fn errorsToString(allocator: Allocator, errors: []Error, source: []const u8) ![]const u8 {
@@ -346,4 +354,113 @@ test "function return type" {
     // Assert the return type is i32
     try testing.expectEqual(@as(usize, 1), program.functions().len);
     try testing.expectEqual(.i32, program.functions()[0].return_type.?);
+}
+
+test "infer type - constant is i32" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo() { return 42; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+
+    // %0 = constant(42) -> i32
+    // %1 = ret(%0)      -> i32
+    try testing.expectEqual(@as(usize, 2), result.types.len);
+    try testing.expectEqual(.i32, result.types[0]); // constant
+    try testing.expectEqual(.i32, result.types[1]); // return
+}
+
+test "infer type - param_ref uses param type" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo(x: i32) { return x; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+
+    // %0 = param_ref(0) -> i32 (from param x: i32)
+    // %1 = ret(%0)      -> i32
+    try testing.expectEqual(@as(usize, 2), result.types.len);
+    try testing.expectEqual(.i32, result.types[0]); // param_ref
+    try testing.expectEqual(.i32, result.types[1]); // return
+}
+
+test "infer type - arithmetic expressions are i32" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo(a: i32, b: i32) { return a + b * 2; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+
+    // %0 = param_ref(0)    -> i32
+    // %1 = param_ref(1)    -> i32
+    // %2 = constant(2)     -> i32
+    // %3 = mul(%1, %2)     -> i32
+    // %4 = add(%0, %3)     -> i32
+    // %5 = ret(%4)         -> i32
+    try testing.expectEqual(@as(usize, 6), result.types.len);
+    for (result.types) |t| {
+        try testing.expectEqual(.i32, t);
+    }
+}
+
+test "infer type - variable declaration inherits value type" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input =
+        \\fn foo() {
+        \\  const x = 10;
+        \\  return x;
+        \\}
+    ;
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+
+    // %0 = constant(10)    -> i32
+    // %1 = decl("x", %0)   -> i32 (inherits from constant)
+    // %2 = decl_ref("x")   -> i32 (looks up from scope)
+    // %3 = ret(%2)         -> i32
+    try testing.expectEqual(@as(usize, 4), result.types.len);
+    try testing.expectEqual(.i32, result.types[0]); // constant
+    try testing.expectEqual(.i32, result.types[1]); // decl
+    try testing.expectEqual(.i32, result.types[2]); // decl_ref
+    try testing.expectEqual(.i32, result.types[3]); // return
+}
+
+test "infer type - undefined variable has type_error" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const input = "fn foo() { return x; }";
+
+    const tree = try ast_mod.parseExpr(&arena, input);
+    const program = try zir_mod.generateProgram(allocator, &tree);
+    const function = program.functions()[0];
+    const result = try analyzeFunction(allocator, function);
+
+    // %0 = decl_ref("x")   -> undefined (undefined)
+    // %1 = ret(%0)         ->undefined
+    try testing.expectEqual(@as(usize, 2), result.types.len);
+    try testing.expectEqual(.undefined, result.types[0]); // undefined decl_ref
+    try testing.expectEqual(.undefined, result.types[1]); // return inherits type_error
 }
