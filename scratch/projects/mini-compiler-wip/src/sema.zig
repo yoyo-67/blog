@@ -320,4 +320,8 @@ test "function return type" {
     try testing.expectEqualStrings(
         \\
     , result);
+
+    // Assert the return type is i32
+    try testing.expectEqual(@as(usize, 1), program.functions().len);
+    try testing.expectEqual(.i32, program.functions()[0].return_type.?);
 }

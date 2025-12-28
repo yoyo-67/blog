@@ -5,6 +5,7 @@ const assert = std.debug.assert;
 
 const Token = @import("token.zig").Token;
 const Lexer = @import("lexer.zig").Lexer;
+const Type = @import("types.zig").Type;
 
 const node_mod = @import("node.zig");
 const Node = node_mod.Node;
@@ -221,7 +222,7 @@ fn parseFn(self: *Ast, allocator: mem.Allocator) !Node {
         try self.parseParams(allocator, &params);
     }
     _ = self.expect(.rpren);
-    const return_type: ?[]const u8 = if (!self.see(.lbrace)) self.parseType() else null;
+    const return_type: ?Type = if (!self.see(.lbrace)) self.parseType() else null;
     _ = self.expect(.lbrace);
     const block = try self.parseBlock(allocator);
     _ = self.expect(.rbrace);
@@ -247,15 +248,15 @@ fn parseParams(self: *Ast, allocator: mem.Allocator, params: *std.ArrayListUnman
     }
 }
 
-fn parseType(self: *Ast) []const u8 {
+fn parseType(self: *Ast) Type {
     if (self.see(.kw_i32)) {
-        return self.consume().lexeme;
+        return Type.fromString(self.consume().lexeme);
     }
     if (self.see(.kw_bool)) {
-        return self.consume().lexeme;
+        return Type.fromString(self.consume().lexeme);
     }
     if (self.see(.identifier)) {
-        return self.consume().lexeme;
+        return Type.fromString(self.consume().lexeme);
     }
     unreachable;
 }

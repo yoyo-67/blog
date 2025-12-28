@@ -5,6 +5,7 @@ const testing = std.testing;
 const token_mod = @import("token.zig");
 const ast_mod = @import("ast.zig");
 const node_mod = @import("node.zig");
+const Type = @import("types.zig").Type;
 pub const Node = node_mod.Node;
 
 pub const Zir = @This();
@@ -188,7 +189,7 @@ pub const Program = struct {
 
 pub const Function = struct {
     name: []const u8,
-    return_type: ?[]const u8,
+    return_type: ?Type,
     params: []const Node.Param,
     zir: Zir,
 
@@ -212,10 +213,11 @@ pub const Function = struct {
             if (idx > 0) {
                 try writer.writeAll(", ");
             }
-            try writer.print("(\"{s}\", {s})", .{ param.name, param.type });
+            try writer.print("(\"{s}\", {s})", .{ param.name, @tagName(param.type) });
         }
         try writer.writeAll("]\n");
-        try writer.print("  return_type: {s}", .{self.return_type orelse "?"});
+        const return_type_str = if (self.return_type) |t| @tagName(t) else "?";
+        try writer.print("  return_type: {s}", .{return_type_str});
         try writer.writeAll("\n");
         try writer.writeAll("  body:\n");
         for (self.zir.instructions.items, 0..) |instruction, idx| {

@@ -2,6 +2,7 @@ const std = @import("std");
 const mem = std.mem;
 
 const Token = @import("token.zig");
+const Type = @import("types.zig").Type;
 
 pub const Op = enum {
     plus,
@@ -18,8 +19,6 @@ pub const Op = enum {
         };
     }
 };
-
-pub const Type = ?[]const u8;
 
 pub const Node = union(enum) {
     root: struct {
@@ -61,13 +60,13 @@ pub const Node = union(enum) {
         name: []const u8,
         params: []Param,
         block: Block,
-        return_type: ?[]const u8,
+        return_type: ?Type,
         token: *const Token,
     },
 
     pub const Param = struct {
         name: []const u8,
-        type: []const u8,
+        type: Type,
     };
 
     pub const Block = struct { decls: []const Node };
@@ -127,7 +126,7 @@ pub const Node = union(enum) {
                         try writer.writeAll("name=");
                         try writer.print("{s}", .{param.name});
                         try writer.writeAll(", type=");
-                        try writer.print("{s}", .{param.type});
+                        try writer.print("{s}", .{@tagName(param.type)});
                         try writer.writeAll(")");
                     }
                     try writer.writeAll("]");
