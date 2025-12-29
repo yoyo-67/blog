@@ -2,9 +2,9 @@
   "files": [
     {
       "path": "tests/main.mini",
-      "mtime": 1766955078676381933,
-      "compiled_at": 1766956216671926000,
-      "hash": 10124399460796257042,
+      "mtime": 1767001278255366000,
+      "compiled_at": 1767001449944511000,
+      "hash": 9692429137608085784,
       "dependencies": ["tests/math_utils.mini", "tests/string_utils.mini"]
     }
   ]

@@ -48,8 +48,11 @@ pub fn main() !void {
             std.debug.print("Error: 'build' requires a file argument\n", .{});
             return;
         }
-        const verbose = args.len > 3 and mem.eql(u8, args[3], "-v");
-        try incrementalBuild(allocator, args[2], verbose);
+        const verbosity: u8 = if (args.len > 3)
+            if (mem.eql(u8, args[3], "-vv")) 2 else if (mem.eql(u8, args[3], "-v")) 1 else 0
+        else
+            0;
+        try incrementalBuild(allocator, args[2], verbosity);
     } else if (mem.eql(u8, command, "clean")) {
         try cleanCache(allocator);
     } else {
@@ -63,17 +66,22 @@ fn printUsage() void {
         \\Usage: comp <command> [args]
         \\
         \\Commands:
-        \\  run <file>       Compile and run the file
-        \\  emit <file>      Emit LLVM IR to stdout
-        \\  eval <code>      Compile and run code string
-        \\  build <file> -v  Incremental build (with optional verbose)
-        \\  clean            Clean the build cache
+        \\  run <file>        Compile and run the file
+        \\  emit <file>       Emit LLVM IR to stdout
+        \\  eval <code>       Compile and run code string
+        \\  build <file> [-v] Incremental build
+        \\  clean             Clean the build cache
+        \\
+        \\Verbosity:
+        \\  -v   Show cache status and function counts
+        \\  -vv  Show detailed hashes, timing, and per-function info
         \\
         \\Examples:
         \\  comp run example.mini
         \\  comp emit example.mini > output.ll
         \\  comp eval "fn main() i32 {{ return 42; }}"
         \\  comp build main.mini -v
+        \\  comp build main.mini -vv
         \\
     , .{});
 }
@@ -187,28 +195,33 @@ fn runLLVM(allocator: mem.Allocator, llvm_ir: []const u8) !void {
 
 const CACHE_DIR = ".mini_cache";
 
-fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbose: bool) !void {
+fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !void {
+    const start_time = std.time.nanoTimestamp();
+
     // Initialize multi-level cache
     var multi_cache = cache_mod.MultiLevelCache.init(allocator, CACHE_DIR);
     defer multi_cache.deinit();
 
-    // Load all caches (file cache + AIR cache)
+    // Load all caches (file cache + AIR cache + ZIR cache)
     try multi_cache.load();
 
-    if (verbose) {
-        std.debug.print("[cache] Loaded AIR cache with {d} functions\n", .{multi_cache.air_cache.entries.count()});
+    if (verbosity >= 1) {
+        std.debug.print("[cache] Loaded: {d} files (ZIR), {d} functions (AIR)\n", .{
+            multi_cache.zir_cache.entries.count(),
+            multi_cache.air_cache.entries.count(),
+        });
     }
 
     // Check if file needs recompilation
     const needs_recompile = try multi_cache.file_cache.needsRecompile(path);
 
     if (needs_recompile) {
-        if (verbose) {
+        if (verbosity >= 1) {
             std.debug.print("[build] File changed, recompiling: {s}\n", .{path});
         }
 
         // Compile using multi-level cache
-        const result = try compileWithCache(allocator, path, &multi_cache, verbose);
+        const result = try compileWithCache(allocator, path, &multi_cache, verbosity);
         defer allocator.free(result.llvm_ir);
 
         // Get dependencies from compilation unit
@@ -224,7 +237,7 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbose: bool) !
         // Save all caches (file cache + AIR cache)
         try multi_cache.save();
 
-        if (verbose) {
+        if (verbosity >= 1) {
             std.debug.print("[build] Cache stats - ZIR: {d} files, AIR: {d} functions\n", .{
                 multi_cache.zir_cache.entries.count(),
                 multi_cache.air_cache.entries.count(),
@@ -235,7 +248,13 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbose: bool) !
             });
         }
 
+        const end_time = std.time.nanoTimestamp();
+        const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time)) / 1_000_000.0;
+
         std.debug.print("[build] Compiled: {s}\n", .{path});
+        if (verbosity >= 2) {
+            std.debug.print("[time] Total: {d:.2}ms\n", .{elapsed_ms});
+        }
 
         // Write output
         const output_path = try getOutputPath(allocator, path);
@@ -247,7 +266,7 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbose: bool) !
 
         std.debug.print("[build] Output: {s}\n", .{output_path});
     } else {
-        if (verbose) {
+        if (verbosity >= 1) {
             std.debug.print("[build] No changes, using cache: {s}\n", .{path});
         }
 
@@ -264,7 +283,7 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbose: bool) !
         } else {
             std.debug.print("[build] Cache miss, recompiling...\n", .{});
             // Fallback to full compile
-            try incrementalBuild(allocator, path, verbose);
+            try incrementalBuild(allocator, path, verbosity);
         }
     }
 }
@@ -280,7 +299,7 @@ fn compileWithCache(
     allocator: mem.Allocator,
     path: []const u8,
     multi_cache: *cache_mod.MultiLevelCache,
-    verbose: bool,
+    verbosity: u8,
 ) !CompileCacheResult {
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
@@ -290,13 +309,44 @@ fn compileWithCache(
     const source = try readFile(arena_alloc, path);
     const source_hash = cache_mod.hashSource(source);
 
-    // Check ZIR cache for this file
-    if (multi_cache.zir_cache.get(path, source_hash)) |_| {
-        if (verbose) {
-            std.debug.print("[cache] ZIR cache hit: {s}\n", .{path});
+    // Compute combined hash: source content + all dependency contents
+    const import_paths = try extractImportPaths(arena_alloc, source);
+    defer {
+        for (import_paths) |p| arena_alloc.free(p);
+        arena_alloc.free(import_paths);
+    }
+
+    if (verbosity >= 1 and import_paths.len > 0) {
+        std.debug.print("[deps] Found {d} imports: ", .{import_paths.len});
+        for (import_paths, 0..) |imp, i| {
+            if (i > 0) std.debug.print(", ", .{});
+            std.debug.print("{s}", .{imp});
         }
-        // ZIR cache hit - but we still need to parse to get the AST for codegen
-        // In a full implementation, we would serialize/deserialize ZIR
+        std.debug.print("\n", .{});
+    }
+
+    const combined_hash = try computeCombinedHashFromPaths(arena_alloc, path, source, import_paths);
+
+    if (verbosity >= 2) {
+        std.debug.print("[hash] Source: {x:0>16}, Combined: {x:0>16}\n", .{ source_hash, combined_hash });
+    }
+
+    // Check file-level LLVM IR cache first - skip all stages if hit
+    if (multi_cache.zir_cache.getLlvmIr(path, combined_hash)) |cached_ir| {
+        if (verbosity >= 1) {
+            std.debug.print("[cache] File-level HIT: {s} (skipping lexer/parser/ZIR/codegen)\n", .{path});
+        }
+        // Copy to caller's allocator since arena will be freed
+        const ir_copy = try allocator.dupe(u8, cached_ir);
+        return .{
+            .llvm_ir = ir_copy,
+            .functions_cached = 0,
+            .functions_compiled = 0,
+        };
+    } else {
+        if (verbosity >= 1) {
+            std.debug.print("[cache] File-level MISS: {s} (running full pipeline)\n", .{path});
+        }
     }
 
     // Create compilation unit
@@ -310,22 +360,83 @@ fn compileWithCache(
     // Generate program with all imported functions
     const program = try unit.generateProgram(arena_alloc);
 
-    // Update ZIR cache with function names
+    if (verbosity >= 2) {
+        std.debug.print("[zir] Generated {d} functions\n", .{program.functions().len});
+    }
+
+    // Generate LLVM IR using per-function AIR cache
+    var cached_gen = cache_mod.CachedCodegen.init(allocator, &multi_cache.air_cache, path, verbosity);
+    const llvm_ir = try cached_gen.generate(program);
+
+    // Update ZIR cache with function names and LLVM IR for file-level caching
     var func_names: std.ArrayListUnmanaged([]const u8) = .empty;
     for (program.functions()) |func| {
         try func_names.append(arena_alloc, func.name);
     }
-    try multi_cache.zir_cache.put(path, source_hash, source_hash, func_names.items);
-
-    // Generate LLVM IR using per-function AIR cache
-    var cached_gen = cache_mod.CachedCodegen.init(allocator, &multi_cache.air_cache, path);
-    const llvm_ir = try cached_gen.generate(program);
+    try multi_cache.zir_cache.put(path, combined_hash, combined_hash, func_names.items, llvm_ir);
 
     return .{
         .llvm_ir = llvm_ir,
         .functions_cached = cached_gen.stats.functions_cached,
         .functions_compiled = cached_gen.stats.functions_compiled,
     };
+}
+
+/// Compute a combined hash from source content and all dependency contents
+fn computeCombinedHashFromPaths(allocator: mem.Allocator, path: []const u8, source: []const u8, import_paths: []const []const u8) !u64 {
+    var hasher = std.hash.Wyhash.init(0);
+
+    // Hash the main source
+    hasher.update(source);
+
+    // Get directory of source file for resolving relative imports
+    const dir = std.fs.path.dirname(path) orelse "";
+
+    // Hash each dependency's content
+    for (import_paths) |import_path| {
+        const resolved_path = if (dir.len > 0)
+            try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir, import_path })
+        else
+            import_path;
+        defer if (dir.len > 0) allocator.free(resolved_path);
+
+        // Read and hash dependency content
+        const dep_source = readFile(allocator, resolved_path) catch continue;
+        defer allocator.free(dep_source);
+        hasher.update(dep_source);
+    }
+
+    return hasher.final();
+}
+
+/// Extract import paths from source without full parsing
+/// Looks for patterns like: import "path.mini" as name;
+fn extractImportPaths(allocator: mem.Allocator, source: []const u8) ![]const []const u8 {
+    var paths: std.ArrayListUnmanaged([]const u8) = .empty;
+
+    var i: usize = 0;
+    while (i < source.len) {
+        // Look for "import" keyword
+        if (i + 6 < source.len and mem.eql(u8, source[i .. i + 6], "import")) {
+            i += 6;
+            // Skip whitespace
+            while (i < source.len and (source[i] == ' ' or source[i] == '\t')) : (i += 1) {}
+            // Expect opening quote
+            if (i < source.len and source[i] == '"') {
+                i += 1;
+                const start = i;
+                // Find closing quote
+                while (i < source.len and source[i] != '"') : (i += 1) {}
+                if (i < source.len) {
+                    const path = try allocator.dupe(u8, source[start..i]);
+                    try paths.append(allocator, path);
+                }
+            }
+        }
+        i += 1;
+    }
+
+    return paths.toOwnedSlice(allocator);
 }
 
 fn collectDependencies(allocator: mem.Allocator, path: []const u8) ![]const []const u8 {

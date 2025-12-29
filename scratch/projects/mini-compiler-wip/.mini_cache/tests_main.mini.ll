@@ -17,7 +17,8 @@ entry:
 define i32 @math_multiply(i32 %p0, i32 %p1) {
 entry:
     %2 = mul i32 %p0, %p1
-    ret i32 %2
+    %4 = add i32 %2, 0
+    ret i32 %4
 }
 
 define i32 @math_square(i32 %p0) {

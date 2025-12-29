@@ -3,9 +3,10 @@ fn add(a: i32, b: i32) i32 {
 }
 
 fn multiply(x: i32, y: i32) i32 {
-    return x * y;
+    return x * y + 0;
 }
 
 fn square(n: i32) i32 {
     return n * n;
 }
+

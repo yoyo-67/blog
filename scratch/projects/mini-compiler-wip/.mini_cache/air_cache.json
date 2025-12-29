@@ -2,8 +2,8 @@
   "functions": [
     {
       "key": "tests/main.mini:math_multiply",
-      "zir_hash": 3329313502962928641,
-      "llvm_ir": "define i32 @math_multiply(i32 %p0, i32 %p1) {\nentry:\n    %2 = mul i32 %p0, %p1\n    ret i32 %2\n}\n"
+      "zir_hash": 9370736761716059065,
+      "llvm_ir": "define i32 @math_multiply(i32 %p0, i32 %p1) {\nentry:\n    %2 = mul i32 %p0, %p1\n    %4 = add i32 %2, 0\n    ret i32 %4\n}\n"
     },
     {
       "key": "tests/main.mini:str_double",
