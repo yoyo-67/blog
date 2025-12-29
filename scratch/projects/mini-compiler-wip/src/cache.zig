@@ -378,6 +378,32 @@ pub const ZirCache = struct {
         return self.getObject(combined_hash);
     }
 
+    /// Get combined IR for surgical patching (stores at well-known location)
+    pub fn getCombinedIr(self: *ZirCache, path: []const u8) ?[]const u8 {
+        const combined_path = std.fmt.allocPrint(self.allocator, "{s}/combined/{s}.ll", .{ self.cache_dir, std.fs.path.basename(path) }) catch return null;
+        defer self.allocator.free(combined_path);
+
+        const file = fs.cwd().openFile(combined_path, .{}) catch return null;
+        defer file.close();
+
+        const stat = file.stat() catch return null;
+        return file.readToEndAlloc(self.allocator, stat.size) catch null;
+    }
+
+    /// Store combined IR for surgical patching
+    pub fn putCombinedIr(self: *ZirCache, path: []const u8, llvm_ir: []const u8) !void {
+        const combined_dir = try std.fmt.allocPrint(self.allocator, "{s}/combined", .{self.cache_dir});
+        defer self.allocator.free(combined_dir);
+        fs.cwd().makePath(combined_dir) catch {};
+
+        const combined_path = try std.fmt.allocPrint(self.allocator, "{s}/combined/{s}.ll", .{ self.cache_dir, std.fs.path.basename(path) });
+        defer self.allocator.free(combined_path);
+
+        const file = try fs.cwd().createFile(combined_path, .{});
+        defer file.close();
+        try file.writeAll(llvm_ir);
+    }
+
     fn getObject(self: *ZirCache, hash: u64) ?[]const u8 {
         const object_path = self.getObjectPath(hash) catch return null;
         defer self.allocator.free(object_path);

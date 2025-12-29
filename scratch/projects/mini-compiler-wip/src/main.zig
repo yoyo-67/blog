@@ -229,8 +229,9 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !
         const result = try incrementalCompilePerFile(allocator, path, &multi_cache, verbosity);
         defer allocator.free(result.llvm_ir);
 
-        // Update caches
+        // Update caches - store both hash-indexed and combined IR for surgical patching
         try multi_cache.zir_cache.put(path, combined_hash, 0, &.{}, result.llvm_ir);
+        try multi_cache.zir_cache.putCombinedIr(path, result.llvm_ir);
         try multi_cache.save();
 
         if (verbosity >= 1) {
@@ -422,6 +423,14 @@ fn surgicalPatch(
         std.debug.print("[incremental] Surgical patch: {d}/{d} files changed\n", .{ changed_files.items.len, file_order.items.len });
     }
 
+    // Show changed files with -vv
+    if (verbosity >= 2 and changed_files.items.len > 0) {
+        std.debug.print("[changed] Files that need recompilation:\n", .{});
+        for (changed_files.items) |cf| {
+            std.debug.print("  -> {s}\n", .{cf});
+        }
+    }
+
     // Compile only changed files
     var new_sections: std.StringHashMapUnmanaged([]const u8) = .empty;
     var compile_arena = std.heap.ArenaAllocator.init(allocator);
@@ -429,7 +438,7 @@ fn surgicalPatch(
 
     for (changed_files.items) |file_path| {
         if (verbosity >= 2) {
-            std.debug.print("[file] {s}: MISS -> compiling\n", .{file_path});
+            std.debug.print("[compile] {s}\n", .{file_path});
         }
         const file_ir = try compileOneFile(arena_alloc, file_path, &compile_arena);
         try new_sections.put(arena_alloc, file_path, file_ir);
@@ -459,9 +468,7 @@ fn surgicalPatch(
         } else if (cached_sections.get(file_path)) |cached_ir| {
             try output.appendSlice(allocator, cached_ir);
             files_cached += 1;
-            if (verbosity >= 2) {
-                std.debug.print("[file] {s}: HIT\n", .{file_path});
-            }
+            // Don't print HIT for each file - too verbose
         } else {
             // Shouldn't happen, but compile if needed
             const file_ir = try compileOneFile(arena_alloc, file_path, &compile_arena);
@@ -521,11 +528,18 @@ fn compileOneFile(allocator: mem.Allocator, path: []const u8, arena: *std.heap.A
     var unit = unit_mod.CompilationUnit.init(arena_alloc, path);
     try unit.load(arena);
 
+    // Extract function prefix from filename (e.g., "file_01000.mini" -> "m1000")
+    const prefix = extractFunctionPrefix(arena_alloc, path) catch null;
+
     // Generate ZIR for just this file's functions
     var functions: std.ArrayListUnmanaged(zir_mod.Function) = .empty;
     for (unit.tree.root.decls) |*decl| {
         if (decl.* == .fn_decl) {
-            const fn_decl = try zir_mod.generateFunction(arena_alloc, decl);
+            var fn_decl = try zir_mod.generateFunction(arena_alloc, decl);
+            // Prefix function name if this is an imported file (not main.mini)
+            if (prefix) |p| {
+                fn_decl.name = try std.fmt.allocPrint(arena_alloc, "{s}_{s}", .{ p, fn_decl.name });
+            }
             try functions.append(arena_alloc, fn_decl);
         }
     }
@@ -542,6 +556,29 @@ fn compileOneFile(allocator: mem.Allocator, path: []const u8, arena: *std.heap.A
     }
 
     return output.toOwnedSlice(allocator);
+}
+
+/// Extract function prefix from file path
+/// "files/file_01000.mini" -> "m1000"
+/// "main.mini" -> null (no prefix for main)
+fn extractFunctionPrefix(allocator: mem.Allocator, path: []const u8) !?[]const u8 {
+    const basename = std.fs.path.basename(path);
+
+    // Don't prefix main.mini
+    if (mem.eql(u8, basename, "main.mini")) return null;
+
+    // Parse "file_NNNNN.mini" format
+    if (mem.startsWith(u8, basename, "file_") and mem.endsWith(u8, basename, ".mini")) {
+        const num_start = 5; // after "file_"
+        const num_end = basename.len - 5; // before ".mini"
+        const num_str = basename[num_start..num_end];
+
+        // Parse as integer to remove leading zeros, then format as m{N}
+        const num = std.fmt.parseInt(usize, num_str, 10) catch return null;
+        return try std.fmt.allocPrint(allocator, "m{d}", .{num});
+    }
+
+    return null;
 }
 
 const CompileCacheResult = struct {

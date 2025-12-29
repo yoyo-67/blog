@@ -57,10 +57,13 @@ def main():
         shutil.rmtree(OUTPUT_DIR)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # All files in flat structure for simplicity
+    # All files in files/ subfolder
+    files_dir = OUTPUT_DIR / "files"
+    files_dir.mkdir(parents=True, exist_ok=True)
+
     files = []
     for i in range(NUM_FILES):
-        files.append((i, f"file_{i:05d}.mini"))
+        files.append((i, f"files/file_{i:05d}.mini"))
 
     # Build a TREE structure: each file imports ~2 children
     # This ensures ALL files are reachable from main.mini
@@ -93,7 +96,9 @@ def main():
         imports = []
         for dep_idx in deps[file_idx]:
             _, dep_path = files[dep_idx]
-            imports.append((dep_path, f"m{dep_idx}", dep_idx))
+            # Import path relative to file location (just the filename since all in same folder)
+            dep_filename = os.path.basename(dep_path)
+            imports.append((dep_filename, f"m{dep_idx}", dep_idx))
 
         content = gen_file(file_idx, imports, random.randint(2, 4))
         (OUTPUT_DIR / rel_path).write_text(content)
@@ -101,11 +106,11 @@ def main():
         if (file_idx + 1) % 2000 == 0:
             print(f"  {file_idx + 1}/{NUM_FILES} files...")
 
-    # main.mini imports file_00000.mini (root of tree)
-    main_content = f'''import "file_00000.mini" as root;
+    # main.mini imports files/file_00000.mini as m0 (matching file index)
+    main_content = f'''import "files/file_00000.mini" as m0;
 
 fn main() i32 {{
-    return root.{func_name(0, 0)}(1, 2);
+    return m0.{func_name(0, 0)}(1, 2);
 }}
 '''
     (OUTPUT_DIR / "main.mini").write_text(main_content)
