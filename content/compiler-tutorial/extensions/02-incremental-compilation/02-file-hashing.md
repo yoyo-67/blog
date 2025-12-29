@@ -1,43 +1,41 @@
 ---
-title: "2.2: File Hashing"
+title: "2.2: Change Detection"
 weight: 2
 ---
 
-# Lesson 2.2: File Hashing
+# Lesson 2.2: Change Detection (FileHashCache)
 
-How do we know if a file has changed? We need reliable change detection.
+How do we know if a file has changed? We need fast, reliable change detection that also tracks dependencies.
 
 ---
 
 ## Goal
 
-Implement functions to:
-- Get file modification time (mtime)
-- Hash file contents
-- Detect if a file needs recompilation
+Build a `FileHashCache` that:
+- Detects when files change (via mtime and content hash)
+- Extracts import statements from source files
+- Supports computing combined hashes (including transitive dependencies)
+- Persists to disk in binary format for speed
 
 ---
 
-## Two Methods for Change Detection
+## FileHashCache Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                         CHANGE DETECTION METHODS                              │
+│                         FILE HASH CACHE                                       │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   Method 1: MODIFICATION TIME (mtime)                                        │
-│   ───────────────────────────────────                                        │
-│   - Fast: just read file metadata                                            │
-│   - Unreliable: "touch" changes mtime without changing content               │
-│   - Good for: quick first check                                              │
+│   FileHashCache {                                                            │
+│       entries: Map<path, FileHashEntry>,                                     │
+│       dirty: bool,  // needs saving?                                         │
+│   }                                                                          │
 │                                                                              │
-│   Method 2: CONTENT HASH                                                     │
-│   ──────────────────────                                                     │
-│   - Slower: must read entire file                                            │
-│   - Reliable: only changes when content actually changes                     │
-│   - Good for: confirming real changes                                        │
-│                                                                              │
-│   Best approach: Check mtime first (fast), hash if mtime differs (reliable)  │
+│   FileHashEntry {                                                            │
+│       mtime:   i128,           // File modification time (nanoseconds)       │
+│       hash:    u64,            // Source code content hash                   │
+│       imports: []string,       // Extracted import paths                     │
+│   }                                                                          │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -46,23 +44,15 @@ Implement functions to:
 
 ## Step 1: Get File Modification Time
 
+Check mtime first - it's fast because we only read metadata:
+
 ```
-getFileMtime(path) -> timestamp {
+getFileMtime(path) -> i128 {
     file = open(path)
     defer file.close()
 
     stat = file.stat()
     return stat.mtime  // Nanoseconds since epoch
-}
-```
-
-Usage:
-```
-old_mtime = cache.get(path).mtime
-current_mtime = getFileMtime(path)
-
-if current_mtime != old_mtime {
-    // File might have changed - check hash to be sure
 }
 ```
 
@@ -78,126 +68,252 @@ hashSource(source) -> u64 {
 }
 ```
 
-Or with manual implementation:
-
-```
-hashSource(source) -> u64 {
-    hasher = Hasher.init(seed: 0)
-    hasher.update(source)
-    return hasher.final()
-}
-```
-
 Properties we need:
 - **Fast**: We hash on every build
 - **Collision-resistant**: Different files should have different hashes
 - **Deterministic**: Same content always produces same hash
 
-We don't need cryptographic security - WyHash, xxHash, or similar are perfect.
+We don't need cryptographic security - WyHash is perfect.
 
 ---
 
-## Step 3: Hash Function ZIR (for per-function caching)
+## Step 3: Extract Imports
 
-For per-function caching, we hash the function's intermediate representation:
+Parse the source to find import statements:
 
 ```
-hashFunctionZir(function) -> u64 {
-    hasher = Hasher.init(seed: 0)
+extractImports(source) -> []string {
+    imports = []
 
-    // Hash function name
-    hasher.update(function.name)
+    for line in source.lines() {
+        line = line.trim()
 
-    // Hash parameter types
-    for param in function.params {
-        hasher.update(param.name)
-        hasher.update(param.type)
-    }
+        // Look for: import "path/to/file.mini"
+        if line.startsWith("import ") {
+            // Extract path between quotes
+            start = line.indexOf('"')
+            end = line.lastIndexOf('"')
 
-    // Hash return type
-    if function.return_type {
-        hasher.update(function.return_type)
-    }
-
-    // Hash each instruction
-    for inst in function.instructions {
-        hasher.update(inst.opcode)
-
-        switch inst {
-            .literal => hasher.update(inst.value),
-            .add => {
-                hasher.update(inst.lhs)
-                hasher.update(inst.rhs)
-            },
-            .call => {
-                hasher.update(inst.name)
-                for arg in inst.args {
-                    hasher.update(arg)
-                }
-            },
-            // ... other instruction types
+            if start != -1 and end > start {
+                path = line[start+1..end]
+                imports.append(path)
+            }
         }
     }
 
-    return hasher.final()
+    return imports
 }
+```
+
+Example:
+```
+// Source file:
+import "math.mini"
+import "utils.mini"
+
+fn main() { ... }
+
+// Extracted imports: ["math.mini", "utils.mini"]
 ```
 
 ---
 
-## Step 4: Needs Recompile Check
+## Step 4: Ensure Entry is Cached
 
-Combine mtime and hash checking:
+The core logic - check mtime, update if needed:
 
 ```
-needsRecompile(cache, path) -> bool {
-    // No cache entry? Definitely need to compile
-    entry = cache.get(path)
-    if entry == null {
-        return true
-    }
-
-    // Check mtime first (fast)
+FileHashCache.ensureCached(self, path) -> FileHashEntry {
     current_mtime = getFileMtime(path)
-    if current_mtime != entry.mtime {
-        return true
-    }
 
-    // Check if dependencies changed
-    for dep in entry.dependencies {
-        dep_mtime = getFileMtime(dep)
-        // If dependency changed AFTER we compiled, recompile
-        if dep_mtime > entry.compiled_at {
-            return true
+    // Check if we have a cached entry
+    if self.entries.get(path) -> entry {
+        // Mtime unchanged? Cache is valid
+        if entry.mtime == current_mtime {
+            return entry
         }
+
+        // Mtime changed - need to update
+        source = read_file(path)
+        entry.mtime = current_mtime
+        entry.hash = hashSource(source)
+        entry.imports = extractImports(source)
+        self.dirty = true
+        return entry
     }
 
-    return false
+    // No cached entry - create new one
+    source = read_file(path)
+    entry = FileHashEntry {
+        mtime: current_mtime,
+        hash: hashSource(source),
+        imports: extractImports(source),
+    }
+
+    self.entries.put(path, entry)
+    self.dirty = true
+    return entry
 }
 ```
 
 ---
 
-## Handling Dependencies
+## Step 5: Compute Combined Hash
+
+Include ALL transitive dependencies in the hash:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                         DEPENDENCY CHECKING                                   │
+│                         COMBINED HASH COMPUTATION                             │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   main.mini imports math.mini                                                │
+│   main.mini imports: math.mini                                               │
+│   math.mini imports: utils.mini                                              │
 │                                                                              │
-│   Cache for main.mini:                                                       │
+│   computeCombinedHash(main.mini):                                            │
+│       hasher = Hasher.init()                                                 │
+│       hasher.update(main.mini source)    // Main file                        │
+│       hasher.update(math.mini source)    // Direct import                    │
+│       hasher.update(utils.mini source)   // Transitive import                │
+│       return hasher.final()                                                  │
+│                                                                              │
+│   If ANY file changes, combined hash changes!                                │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+```
+computeCombinedHash(cache, path, source) -> u64 {
+    hasher = Hasher.init()
+    visited = Set<string>{}
+
+    // Hash main source
+    hasher.update(source)
+
+    // Recursively hash all transitive dependencies
+    hashTransitiveDeps(cache, path, hasher, visited)
+
+    return hasher.final()
+}
+
+hashTransitiveDeps(cache, path, hasher, visited) {
+    if visited.contains(path) {
+        return  // Avoid cycles
+    }
+    visited.add(path)
+
+    // Get imports from cache (uses mtime optimization)
+    entry = cache.ensureCached(path)
+
+    for import_path in entry.imports {
+        // Hash the imported file's content
+        import_entry = cache.ensureCached(import_path)
+        import_source = read_file(import_path)
+        hasher.update(import_source)
+
+        // Recursively hash its imports
+        hashTransitiveDeps(cache, import_path, hasher, visited)
+    }
+}
+```
+
+---
+
+## Step 6: Binary Persistence
+
+Save to binary format for fast loading:
+
+```
+FileHashCache.save(self, path) {
+    if not self.dirty {
+        return  // Nothing changed
+    }
+
+    file = create_file(path)  // e.g., "file_hashes.bin"
+
+    // Write entry count
+    file.writeInt(self.entries.count())
+
+    for (entry_path, entry) in self.entries {
+        // Write path (length-prefixed string)
+        file.writeInt(entry_path.len)
+        file.writeBytes(entry_path)
+
+        // Write entry data
+        file.writeInt128(entry.mtime)
+        file.writeU64(entry.hash)
+
+        // Write imports
+        file.writeInt(entry.imports.len)
+        for import_path in entry.imports {
+            file.writeInt(import_path.len)
+            file.writeBytes(import_path)
+        }
+    }
+
+    self.dirty = false
+}
+
+FileHashCache.load(self, path) {
+    if not file_exists(path) {
+        return  // No cache yet
+    }
+
+    file = open_file(path)
+    count = file.readInt()
+
+    for _ in 0..count {
+        // Read path
+        path_len = file.readInt()
+        entry_path = file.readBytes(path_len)
+
+        // Read entry data
+        mtime = file.readInt128()
+        hash = file.readU64()
+
+        // Read imports
+        imports_len = file.readInt()
+        imports = []
+        for _ in 0..imports_len {
+            import_len = file.readInt()
+            imports.append(file.readBytes(import_len))
+        }
+
+        self.entries.put(entry_path, FileHashEntry {
+            mtime: mtime,
+            hash: hash,
+            imports: imports,
+        })
+    }
+}
+```
+
+---
+
+## Why Binary Format?
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         JSON vs BINARY                                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   JSON format:                                                               │
 │   {                                                                          │
-│       path: "main.mini",                                                     │
-│       mtime: 1703789456,                                                     │
-│       compiled_at: 1703789500,  ◄── When we last compiled                    │
-│       dependencies: ["math.mini"],                                           │
+│     "main.mini": {                                                           │
+│       "mtime": 1703789456000000000,                                          │
+│       "hash": 12345678901234,                                                │
+│       "imports": ["math.mini"]                                               │
+│     }                                                                        │
 │   }                                                                          │
+│   Pros: Human-readable, easy to debug                                        │
+│   Cons: Slower to parse, larger file size                                    │
 │                                                                              │
-│   If math.mini's mtime > main.mini's compiled_at:                            │
-│       → math.mini changed AFTER we compiled main.mini                        │
-│       → main.mini needs recompilation                                        │
+│   Binary format:                                                             │
+│   [entry_count][path_len][path_bytes][mtime][hash][imports...]              │
+│   Pros: Very fast to load/save, compact                                      │
+│   Cons: Not human-readable                                                   │
+│                                                                              │
+│   For a cache that loads on EVERY compile, binary wins.                      │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -228,24 +344,51 @@ hash2 = hashSource(source2)
 Check: hash1 != hash2
 ```
 
-### Test 3: Mtime detection
+### Test 3: Import extraction
 ```
-// Create file, record mtime
-write_file("test.mini", "content")
-mtime1 = getFileMtime("test.mini")
+source = '''
+import "math.mini"
+import "utils.mini"
+fn main() {}
+'''
 
-// Wait, then modify
-sleep(1ms)
-write_file("test.mini", "new content")
-mtime2 = getFileMtime("test.mini")
+imports = extractImports(source)
+Check: imports == ["math.mini", "utils.mini"]
+```
 
-Check: mtime2 > mtime1
+### Test 4: Mtime caching
+```
+cache = FileHashCache.init()
+
+// First call - reads file
+entry1 = cache.ensureCached("test.mini")
+
+// Second call - uses cached mtime
+entry2 = cache.ensureCached("test.mini")
+
+Check: entry1.hash == entry2.hash
+Check: only one file read occurred (verify with logging)
+```
+
+### Test 5: Combined hash changes with dependency
+```
+// main.mini imports math.mini
+cache = FileHashCache.init()
+
+hash1 = computeCombinedHash(cache, "main.mini", read("main.mini"))
+
+// Modify math.mini
+write("math.mini", "modified content")
+
+hash2 = computeCombinedHash(cache, "main.mini", read("main.mini"))
+
+Check: hash1 != hash2  // Combined hash changed!
 ```
 
 ---
 
 ## What's Next
 
-Now let's build the file cache structure.
+Now let's build the file-level cache (ZirCache) that stores LLVM IR using Git-style content-addressed storage.
 
 Next: [Lesson 2.3: File Cache](../03-file-cache/) →

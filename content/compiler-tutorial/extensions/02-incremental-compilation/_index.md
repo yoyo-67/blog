@@ -28,37 +28,67 @@ Compiling from scratch every time is slow. This section teaches you how to cache
 
 ## What You'll Build
 
-A multi-level caching system that:
-- Detects when source files change (via timestamps and hashes)
-- Caches LLVM IR at the file level
-- Caches LLVM IR at the function level (even finer-grained!)
-- Tracks dependencies between files
-- Invalidates cache when dependencies change
+A multi-level caching system with four components:
+
+1. **FileHashCache** - Track file changes via mtime, content hash, and imports
+2. **ZirCache** - Cache LLVM IR at the file level using Git-style storage
+3. **AirCache** - Cache LLVM IR at the function level for fine-grained reuse
+4. **Surgical Patching** - Partially rebuild files using embedded markers
 
 ---
 
-## Cache Levels
+## Cache Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                         CACHE LEVELS                                          │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   Level 1: FILE CACHE                                                        │
-│   ─────────────────                                                          │
-│   "Has main.mini changed since last compile?"                                │
+│   FileHashCache (Change Detection)                                           │
+│   ────────────────────────────────                                           │
+│   "Has main.mini or ANY of its imports changed?"                             │
 │   Key: file path                                                             │
-│   Value: mtime, hash, compiled LLVM IR                                       │
+│   Value: mtime, hash, imports list                                           │
 │                                                                              │
-│   Level 2: FUNCTION CACHE (AIR Cache)                                        │
-│   ─────────────────────────────────                                          │
-│   "Has the add() function changed?"                                          │
-│   Key: file:function_name                                                    │
-│   Value: ZIR hash, compiled LLVM IR for that function                        │
+│   ZirCache (File-Level Cache)                                                │
+│   ───────────────────────────                                                │
+│   "Do we have cached LLVM IR for this file+dependencies combo?"              │
+│   Key: combined hash (file + all transitive imports)                         │
+│   Value: LLVM IR stored in Git-style objects                                 │
 │                                                                              │
-│   Even if a file changes, unchanged functions can use cached output.         │
+│   AirCache (Function-Level Cache)                                            │
+│   ───────────────────────────────                                            │
+│   "Has this specific function changed?"                                      │
+│   Key: file:function_name → ZIR hash                                         │
+│   Value: LLVM IR for just this function                                      │
+│                                                                              │
+│   Surgical Patching                                                          │
+│   ─────────────────                                                          │
+│   "Can we patch just the changed sections?"                                  │
+│   Uses file markers: ; ==== FILE: path:hash ====                             │
+│   Reassembles output from cached + recompiled sections                       │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Cache Directory Structure
+
+```
+.mini_cache/
+├── file_hashes.bin      # FileHashCache index (binary for speed)
+├── zir_index.bin        # ZirCache path→hash index
+├── zir/                 # Git-style file-level cache
+│   └── 3d/
+│       └── b3b7314a73226b
+├── objects/             # Git-style function-level cache
+│   ├── 9a/
+│   │   └── 2eb98b6d927e93
+│   └── df/
+│       └── 15672fe8b1d382
+└── combined/            # Full IRs with markers for surgical patching
+    └── main.mini.ll
 ```
 
 ---
@@ -68,10 +98,11 @@ A multi-level caching system that:
 | Lesson | Topic | What You'll Build |
 |--------|-------|-------------------|
 | [1. Why Cache?](01-why-cache/) | Motivation | Understanding the problem |
-| [2. File Hashing](02-file-hashing/) | Change detection | Hash functions, mtime checks |
-| [3. File Cache](03-file-cache/) | File-level caching | Cache structure, save/load |
-| [4. Function Cache](04-function-cache/) | Per-function caching | ZIR hashing, AIR cache |
-| [5. Multi-Level Cache](05-multi-level-cache/) | Complete system | Putting it all together |
+| [2. Change Detection](02-file-hashing/) | FileHashCache | Mtime, hashing, import tracking |
+| [3. File Cache](03-file-cache/) | ZirCache | Git-style file-level cache |
+| [4. Function Cache](04-function-cache/) | AirCache | Per-function caching with ZIR hashing |
+| [5. Surgical Patching](05-surgical-patching/) | Partial rebuilds | File markers, incremental reassembly |
+| [6. Multi-Level Cache](06-multi-level-cache/) | Complete system | Putting it all together |
 
 ---
 
@@ -83,7 +114,7 @@ Production compilers spend significant effort on incremental compilation:
 - **Go**: Fast compilation is a core design goal
 - **TypeScript**: `--incremental` flag for caching
 
-Even our simple cache can show dramatic improvements on larger projects.
+Even our multi-level cache can show dramatic improvements on larger projects.
 
 ---
 

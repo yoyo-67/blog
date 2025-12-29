@@ -59,31 +59,25 @@ Store compilation results and reuse them when nothing changed:
 
 ---
 
-## What We Can Cache
+## What We'll Cache
 
-### Level 1: Whole File Output
-
-```
-Cache entry:
-    path: "math.mini"
-    last_modified: 1703789456
-    content_hash: 0x8a3f2b1c...
-    llvm_ir: "define i32 @math_add..."
-```
-
-If the file hasn't changed, skip everything and use cached LLVM IR.
-
-### Level 2: Per-Function Output
+### Level 1: File-Level Cache (ZirCache)
 
 ```
-Cache entry:
-    file: "math.mini"
-    function: "add"
-    zir_hash: 0x5c7d9e2a...
-    llvm_ir: "define i32 @math_add..."
+Cache key: combined_hash (includes file + ALL transitive imports)
+Cache value: complete LLVM IR for this file
+
+If the combined hash matches, skip all compilation.
 ```
 
-Even if a file changed, unchanged functions can use cached output.
+### Level 2: Function-Level Cache (AirCache)
+
+```
+Cache key: file:function_name → ZIR hash
+Cache value: LLVM IR for just that function
+
+Even if a file changed, unchanged functions use cached output.
+```
 
 Example:
 - `math.mini` has functions `add`, `sub`, `mul`
@@ -103,13 +97,14 @@ The hard part: knowing WHEN to invalidate the cache.
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │   File changed?                                                              │
-│   ├── Check modification time (mtime)                                        │
-│   └── Check content hash (for moved/touched files)                           │
+│   ├── Check modification time (mtime) - fast first check                     │
+│   └── If mtime differs, hash content to confirm                              │
 │                                                                              │
-│   Dependency changed?                                                        │
+│   Transitive dependencies changed?                                           │
 │   ├── main.mini imports math.mini                                            │
-│   ├── math.mini changes                                                      │
-│   └── main.mini MIGHT need recompilation (its calls might break)            │
+│   ├── math.mini imports utils.mini                                           │
+│   ├── utils.mini changes                                                     │
+│   └── BOTH main.mini AND math.mini need recompilation!                       │
 │                                                                              │
 │   Function changed?                                                          │
 │   ├── Hash the function's ZIR instructions                                   │
@@ -120,15 +115,42 @@ The hard part: knowing WHEN to invalidate the cache.
 
 ---
 
+## The Combined Hash Concept
+
+A file's "combined hash" includes ALL of its dependencies:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         COMBINED HASH                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   main.mini imports: math.mini                                               │
+│   math.mini imports: utils.mini                                              │
+│                                                                              │
+│   combined_hash(main.mini) = hash(                                           │
+│       main.mini content +                                                    │
+│       math.mini content +                                                    │
+│       utils.mini content                                                     │
+│   )                                                                          │
+│                                                                              │
+│   If ANY file in the chain changes, combined_hash changes.                   │
+│   This ensures we never use stale cache entries.                             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## What We'll Build
 
 A cache with:
 
-1. **File mtime tracking** - Quick "did file change?" check
-2. **Content hashing** - Reliable change detection
-3. **Dependency tracking** - Know what depends on what
-4. **Per-function hashing** - Fine-grained invalidation
-5. **Disk persistence** - Cache survives between runs
+1. **FileHashCache** - Track mtime, content hash, and imports per file
+2. **Combined hash** - Include ALL transitive dependencies in the key
+3. **ZirCache** - File-level LLVM IR cache with Git-style storage
+4. **AirCache** - Function-level LLVM IR cache
+5. **Surgical patching** - Replace only changed sections
+6. **Disk persistence** - Binary format for speed
 
 ---
 
@@ -138,10 +160,11 @@ A cache with:
 ```
 Files: main.mini, math.mini, utils.mini
 main.mini imports math.mini
+math.mini imports utils.mini
 You modify utils.mini
 
 Which files need recompilation?
-Answer: Only utils.mini (main.mini doesn't depend on it)
+Answer: ALL THREE! Because combined hash includes transitive deps.
 ```
 
 ### Question 2
@@ -153,10 +176,20 @@ With per-function caching, how many functions are recompiled?
 Answer: Just 1 (mul). add and sub use cached output.
 ```
 
+### Question 3
+```
+main.mini imports math.mini
+You add a comment to math.mini (whitespace only)
+
+Does main.mini's combined hash change?
+Answer: Yes! Content hash changed, so combined hash changed.
+(This is a trade-off: simpler logic, occasional false positives)
+```
+
 ---
 
 ## What's Next
 
-Let's start by detecting when files change.
+Let's start by building change detection with FileHashCache.
 
-Next: [Lesson 2.2: File Hashing](../02-file-hashing/) →
+Next: [Lesson 2.2: Change Detection](../02-file-hashing/) →

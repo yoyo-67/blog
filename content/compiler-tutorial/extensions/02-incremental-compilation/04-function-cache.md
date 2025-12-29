@@ -3,15 +3,19 @@ title: "2.4: Function Cache"
 weight: 4
 ---
 
-# Lesson 2.4: Function Cache
+# Lesson 2.4: Function Cache (AirCache)
 
-File-level caching helps, but we can do better. Let's cache at the function level.
+File-level caching helps, but we can do better. Let's cache individual functions so that changing one function doesn't recompile others in the same file.
 
 ---
 
 ## Goal
 
-Cache LLVM IR for individual functions, so changing one function doesn't recompile others in the same file.
+Build an `AirCache` that:
+- Caches LLVM IR for individual functions
+- Uses ZIR hash (function's intermediate representation) as the key
+- Uses Git-style object storage like ZirCache
+- Integrates with codegen via a `CachedCodegen` wrapper
 
 ---
 
@@ -25,37 +29,32 @@ Cache LLVM IR for individual functions, so changing one function doesn't recompi
 │   math.mini has 3 functions: add, sub, mul                                   │
 │   You modify only mul()                                                      │
 │                                                                              │
-│   FILE CACHE:                           FUNCTION CACHE:                      │
-│   ───────────                           ───────────────                      │
-│   math.mini changed                     add() unchanged → use cache          │
-│        │                                sub() unchanged → use cache          │
-│        ▼                                mul() changed   → recompile          │
-│   Recompile all 3 functions                    │                             │
-│                                                ▼                             │
-│   Work: 3 functions                     Work: 1 function                     │
+│   FILE CACHE (ZirCache):           FUNCTION CACHE (AirCache):               │
+│   ─────────────────────            ───────────────────────────               │
+│   math.mini's combined hash        add() ZIR hash unchanged                  │
+│   changed (content changed)            → use cached LLVM IR                  │
+│        │                           sub() ZIR hash unchanged                  │
+│        ▼                               → use cached LLVM IR                  │
+│   Recompile all 3 functions        mul() ZIR hash changed                    │
+│                                        → recompile                           │
 │                                                                              │
-│   Function cache = 3x faster in this case!                                   │
+│   Work: 3 functions                Work: 1 function                          │
+│                                                                              │
+│   Function cache = 3x faster!                                                │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## AIR Cache Structure
-
-AIR (Analyzed IR) cache stores per-function output:
+## AirCache Structure
 
 ```
-AirCache = struct {
-    allocator:  Allocator,
-    entries:    Map<string, AirCacheEntry>,
-    cache_dir:  string,
-}
-
-AirCacheEntry = struct {
-    function_key: string,    // "math.mini:add"
-    zir_hash:     u64,       // Hash of function's ZIR
-    llvm_ir:      string,    // Cached LLVM IR for this function
+AirCache {
+    cache_dir:    string,
+    objects_dir:  string,                        // e.g., ".mini_cache/objects"
+    index:        Map<string, u64>,              // "path:funcname" -> zir_hash
+    loaded_count: usize,
 }
 ```
 
@@ -63,7 +62,7 @@ AirCacheEntry = struct {
 
 ## Step 1: Hash Function ZIR
 
-To know if a function changed, hash its intermediate representation:
+The key insight: hash the function's **intermediate representation**, not the source text. This means whitespace and comments don't affect the hash.
 
 ```
 hashFunctionZir(function) -> u64 {
@@ -72,10 +71,10 @@ hashFunctionZir(function) -> u64 {
     // Hash function name
     hasher.update(function.name)
 
-    // Hash parameters
+    // Hash parameter names and types
     for param in function.params {
         hasher.update(param.name)
-        hasher.update(byte(param.type))  // Type as byte
+        hasher.update(byte(param.type))  // Type enum as byte
     }
 
     // Hash return type
@@ -83,7 +82,7 @@ hashFunctionZir(function) -> u64 {
         hasher.update(byte(function.return_type))
     }
 
-    // Hash each instruction's structure
+    // Hash each instruction in the function body
     for inst in function.instructions {
         hasher.update(byte(inst.opcode))
 
@@ -93,22 +92,32 @@ hashFunctionZir(function) -> u64 {
                     .int => hasher.update(bytes(lit.value)),
                     .float => hasher.update(bytes(lit.value)),
                     .bool => hasher.update(byte(lit.value)),
+                    .string => hasher.update(lit.value),
                 }
             },
+
             .add, .sub, .mul, .div => |op| {
-                hasher.update(bytes(op.lhs))  // Instruction index
+                hasher.update(bytes(op.lhs))  // Operand indices
                 hasher.update(bytes(op.rhs))
             },
+
             .call => |c| {
-                hasher.update(c.name)
+                hasher.update(c.function_name)
                 for arg in c.args {
                     hasher.update(bytes(arg))
                 }
             },
+
             .return_stmt => |r| {
                 hasher.update(bytes(r.value))
             },
-            // ... other instructions
+
+            .declare => |d| {
+                hasher.update(d.name)
+                hasher.update(bytes(d.value))
+            },
+
+            // ... handle all instruction types
         }
     }
 
@@ -118,62 +127,122 @@ hashFunctionZir(function) -> u64 {
 
 ---
 
-## Step 2: AIR Cache Operations
+## What Changes Affect the Hash?
 
 ```
-AirCache.init(allocator, cache_dir) -> AirCache {
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         HASH CHANGE EXAMPLES                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   CHANGES THAT AFFECT HASH:                                                  │
+│   ─────────────────────────                                                  │
+│   • Change function body:  return a + b  →  return a - b                     │
+│   • Change parameter types: (a: i32)  →  (a: i64)                            │
+│   • Change return type:    fn foo() i32  →  fn foo() bool                    │
+│   • Add/remove instructions                                                  │
+│   • Change literal values: 42 → 43                                           │
+│   • Change called function: call foo() → call bar()                          │
+│                                                                              │
+│   CHANGES THAT DON'T AFFECT HASH:                                            │
+│   ───────────────────────────────                                            │
+│   • Whitespace changes (hashing ZIR, not source)                             │
+│   • Comments (not in ZIR)                                                    │
+│   • Other functions in the same file                                         │
+│   • Renaming local variables (if your ZIR uses indices)                      │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Step 2: AirCache Operations
+
+```
+AirCache.init(cache_dir) -> AirCache {
     return AirCache {
-        allocator: allocator,
-        entries: empty_map,
         cache_dir: cache_dir,
+        objects_dir: format("{}/objects", cache_dir),
+        index: empty_map,
+        loaded_count: 0,
     }
+}
+
+AirCache.makeKey(file_path, func_name) -> string {
+    return format("{}:{}", file_path, func_name)
 }
 
 AirCache.get(self, file_path, func_name, zir_hash) -> string | null {
-    key = format("{}:{}", file_path, func_name)
+    key = self.makeKey(file_path, func_name)
 
-    entry = self.entries.get(key)
-    if entry == null {
-        return null
+    // Check if we have this function cached with matching hash
+    if self.index.get(key) -> cached_hash {
+        if cached_hash == zir_hash {
+            // Hash matches - read from object file
+            object_path = hashToPath(self.objects_dir, zir_hash)
+            if file_exists(object_path) {
+                return read_file(object_path)
+            }
+        }
     }
 
-    // Only return if hash matches (function unchanged)
-    if entry.zir_hash == zir_hash {
-        return entry.llvm_ir
-    }
-
-    return null
+    return null  // Cache miss
 }
 
 AirCache.put(self, file_path, func_name, zir_hash, llvm_ir) {
-    key = format("{}:{}", file_path, func_name)
+    key = self.makeKey(file_path, func_name)
 
-    self.entries.put(key, AirCacheEntry {
-        function_key: key,
-        zir_hash: zir_hash,
-        llvm_ir: copy(llvm_ir),
-    })
+    // Update index
+    self.index.put(key, zir_hash)
+
+    // Write to object file immediately (write-on-put)
+    object_path = hashToPath(self.objects_dir, zir_hash)
+    mkdir_p(dirname(object_path))
+    write_file(object_path, llvm_ir)
 }
 ```
 
 ---
 
-## Step 3: Cached Codegen
-
-Wrap the code generator to use the cache:
+## Git-Style Storage (Same as ZirCache)
 
 ```
-CachedCodegen = struct {
+hashToPath(objects_dir, hash) -> string {
+    hex = format("{:016x}", hash)
+    return format("{}/{}/{}", objects_dir, hex[0..2], hex[2..16])
+}
+
+// Example:
+// hash = 0x9a2eb98b6d927e93
+// path = ".mini_cache/objects/9a/2eb98b6d927e93"
+```
+
+---
+
+## Step 3: CachedCodegen Wrapper
+
+Wrap the code generator to transparently use the cache:
+
+```
+CachedCodegen {
     allocator:  Allocator,
     air_cache:  *AirCache,
     file_path:  string,
     stats:      Stats,
 }
 
-Stats = struct {
+Stats {
     functions_total:    usize,
-    functions_cached:   usize,
-    functions_compiled: usize,
+    functions_cached:   usize,   // Cache hits
+    functions_compiled: usize,   // Cache misses
+}
+
+CachedCodegen.init(allocator, air_cache, file_path) -> CachedCodegen {
+    return CachedCodegen {
+        allocator: allocator,
+        air_cache: air_cache,
+        file_path: file_path,
+        stats: Stats { 0, 0, 0 },
+    }
 }
 
 CachedCodegen.generate(self, program) -> string {
@@ -182,80 +251,138 @@ CachedCodegen.generate(self, program) -> string {
     for function in program.functions {
         self.stats.functions_total += 1
 
-        // Compute function's ZIR hash
+        // Compute ZIR hash for this function
         zir_hash = hashFunctionZir(function)
 
         // Check cache
-        cached_ir = self.air_cache.get(self.file_path, function.name, zir_hash)
+        cached_ir = self.air_cache.get(
+            self.file_path,
+            function.name,
+            zir_hash
+        )
 
         if cached_ir != null {
-            // Cache HIT - use cached output
+            // CACHE HIT - use cached output
             self.stats.functions_cached += 1
             output.append(cached_ir)
         } else {
-            // Cache MISS - compile and cache
+            // CACHE MISS - compile and cache
             self.stats.functions_compiled += 1
 
             func_ir = generateSingleFunction(function)
 
             // Store in cache for next time
-            self.air_cache.put(self.file_path, function.name, zir_hash, func_ir)
+            self.air_cache.put(
+                self.file_path,
+                function.name,
+                zir_hash,
+                func_ir
+            )
 
             output.append(func_ir)
         }
     }
 
-    return join(output, "\n")
+    return join(output, "\n\n")
 }
 ```
 
 ---
 
-## Step 4: Save/Load AIR Cache
-
-Similar to file cache, persist to disk:
+## Step 4: Save/Load Index
 
 ```
-// air_cache.json
-{
-  "functions": [
-    {
-      "key": "math.mini:add",
-      "zir_hash": 12345678901234,
-      "llvm_ir": "define i32 @math_add(i32 %0, i32 %1) {\n  %3 = add i32 %0, %1\n  ret i32 %3\n}"
-    },
-    {
-      "key": "math.mini:sub",
-      "zir_hash": 98765432109876,
-      "llvm_ir": "define i32 @math_sub(i32 %0, i32 %1) {\n  %3 = sub i32 %0, %1\n  ret i32 %3\n}"
+AirCache.save(self) {
+    // Note: Object files are written immediately in put()
+    // We only need to save the index
+
+    index_path = format("{}/air_index.bin", self.cache_dir)
+    file = create_file(index_path)
+
+    file.writeU32(self.index.count())
+
+    for (key, hash) in self.index {
+        file.writeU32(key.len)
+        file.writeBytes(key)
+        file.writeU64(hash)
     }
-  ]
+}
+
+AirCache.load(self) {
+    index_path = format("{}/air_index.bin", self.cache_dir)
+
+    if not file_exists(index_path) {
+        return
+    }
+
+    file = open_file(index_path)
+    count = file.readU32()
+
+    for _ in 0..count {
+        key_len = file.readU32()
+        key = file.readBytes(key_len)
+        hash = file.readU64()
+
+        self.index.put(key, hash)
+        self.loaded_count += 1
+    }
 }
 ```
 
-Note: LLVM IR must be escaped in JSON (newlines → `\n`, quotes → `\"`).
-
 ---
 
-## When Hashes Change
+## Complete Flow Example
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                         HASH CHANGE EXAMPLES                                  │
+│                         PER-FUNCTION CACHING FLOW                             │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   CHANGES THAT AFFECT HASH:                                                  │
-│   - Change function body: return a + b  →  return a - b                      │
-│   - Change parameter types: (a: i32)  →  (a: i64)                            │
-│   - Change return type: fn foo() i32  →  fn foo() bool                       │
-│   - Add/remove instructions                                                  │
+│   math.mini has: add(), sub(), mul()                                         │
+│   You changed mul() implementation                                           │
 │                                                                              │
-│   CHANGES THAT DON'T AFFECT HASH:                                            │
-│   - Whitespace changes                                                       │
-│   - Comments (if not in ZIR)                                                 │
-│   - Other functions in the same file                                         │
+│   CachedCodegen.generate(program):                                           │
+│                                                                              │
+│   Function: add()                                                            │
+│   ├── zir_hash = 0xaaa111... (unchanged)                                    │
+│   ├── cache.get("math.mini", "add", 0xaaa111...)                            │
+│   ├── HIT! Return cached IR                                                  │
+│   └── stats: cached=1, compiled=0                                           │
+│                                                                              │
+│   Function: sub()                                                            │
+│   ├── zir_hash = 0xbbb222... (unchanged)                                    │
+│   ├── cache.get("math.mini", "sub", 0xbbb222...)                            │
+│   ├── HIT! Return cached IR                                                  │
+│   └── stats: cached=2, compiled=0                                           │
+│                                                                              │
+│   Function: mul()                                                            │
+│   ├── zir_hash = 0xccc333... (CHANGED!)                                     │
+│   ├── cache.get("math.mini", "mul", 0xccc333...)                            │
+│   ├── MISS! Compile function                                                 │
+│   ├── cache.put("math.mini", "mul", 0xccc333..., new_ir)                    │
+│   └── stats: cached=2, compiled=1                                           │
+│                                                                              │
+│   Result: Only 1/3 functions compiled!                                       │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Directory Structure
+
+```
+.mini_cache/
+├── air_index.bin               # "path:func" -> zir_hash mapping
+└── objects/                    # Git-style function object storage
+    ├── 9a/
+    │   └── 2eb98b6d927e93      # LLVM IR for one function
+    ├── aa/
+    │   └── a111222333444555    # add() function
+    ├── bb/
+    │   └── b222333444555666    # sub() function
+    └── cc/
+        └── c333444555666777    # mul() function
 ```
 
 ---
@@ -266,7 +393,6 @@ Note: LLVM IR must be escaped in JSON (newlines → `\n`, quotes → `\"`).
 ```
 source = "fn add(a: i32, b: i32) i32 { return a + b; }"
 
-// Parse and generate ZIR twice
 program1 = compile(source)
 program2 = compile(source)
 
@@ -278,8 +404,8 @@ Check: hash1 == hash2
 
 ### Test 2: Different body, different hash
 ```
-source1 = "fn add(a: i32, b: i32) i32 { return a + b; }"
-source2 = "fn add(a: i32, b: i32) i32 { return a - b; }"
+source1 = "fn calc(x: i32) i32 { return x + 1; }"
+source2 = "fn calc(x: i32) i32 { return x - 1; }"
 
 hash1 = hashFunctionZir(compile(source1).functions[0])
 hash2 = hashFunctionZir(compile(source2).functions[0])
@@ -287,24 +413,41 @@ hash2 = hashFunctionZir(compile(source2).functions[0])
 Check: hash1 != hash2
 ```
 
-### Test 3: Cache hit/miss
+### Test 3: Cache hit and miss
 ```
-cache = AirCache.init(allocator, ".cache")
-cache.put("test.mini", "add", 12345, "define i32 @add...")
+cache = AirCache.init(".test_cache")
+cache.put("test.mini", "add", 0x12345, "define i32 @add...")
 
-// Hit
-ir = cache.get("test.mini", "add", 12345)
+// Hit - same hash
+ir = cache.get("test.mini", "add", 0x12345)
 Check: ir == "define i32 @add..."
 
-// Miss (different hash)
-ir = cache.get("test.mini", "add", 99999)
+// Miss - different hash
+ir = cache.get("test.mini", "add", 0x99999)
 Check: ir == null
+```
+
+### Test 4: CachedCodegen stats
+```
+cache = AirCache.init(".test_cache")
+// Pre-populate cache with one function
+cache.put("math.mini", "add", 0xaaa, "cached add ir")
+
+program = compile("fn add() {} fn sub() {}")  // 2 functions
+gen = CachedCodegen.init(allocator, cache, "math.mini")
+
+// Assuming add's hash is 0xaaa (matches cache)
+// and sub's hash is new
+output = gen.generate(program)
+
+Check: gen.stats.functions_cached == 1   // add
+Check: gen.stats.functions_compiled == 1  // sub
 ```
 
 ---
 
 ## What's Next
 
-Let's combine file and function caching into a complete multi-level cache.
+Now let's explore surgical patching - a technique to partially rebuild files using embedded markers.
 
-Next: [Lesson 2.5: Multi-Level Cache](../05-multi-level-cache/) →
+Next: [Lesson 2.5: Surgical Patching](../05-surgical-patching/) →
