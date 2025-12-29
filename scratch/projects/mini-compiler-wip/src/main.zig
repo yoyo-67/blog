@@ -207,44 +207,36 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !
 
     if (verbosity >= 1) {
         std.debug.print("[cache] Loaded: {d} files (ZIR), {d} functions (AIR)\n", .{
-            multi_cache.zir_cache.entries.count(),
-            multi_cache.air_cache.entries.count(),
+            multi_cache.zir_cache.index.count(),
+            multi_cache.air_cache.getFunctionCount(),
         });
     }
 
-    // Check if file needs recompilation
-    const needs_recompile = try multi_cache.file_cache.needsRecompile(path);
+    // Compute combined hash of main file + ALL transitive dependencies (using mtime cache)
+    const source = try readFile(allocator, path);
+    defer allocator.free(source);
+    const combined_hash = try computeCombinedHashWithCache(allocator, path, source, &multi_cache.hash_cache);
+
+    if (verbosity >= 2) {
+        std.debug.print("[hash] Combined hash of all deps: {x:0>16}\n", .{combined_hash});
+    }
+
+    // Check if combined hash matches cached hash
+    const needs_recompile = !multi_cache.zir_cache.hasMatchingHash(path, combined_hash);
 
     if (needs_recompile) {
-        if (verbosity >= 1) {
-            std.debug.print("[build] File changed, recompiling: {s}\n", .{path});
-        }
-
-        // Compile using multi-level cache
-        const result = try compileWithCache(allocator, path, &multi_cache, verbosity);
+        // Use per-file incremental compilation
+        const result = try incrementalCompilePerFile(allocator, path, &multi_cache, verbosity);
         defer allocator.free(result.llvm_ir);
 
-        // Get dependencies from compilation unit
-        const deps = try collectDependencies(allocator, path);
-        defer {
-            for (deps) |dep| allocator.free(dep);
-            allocator.free(deps);
-        }
-
-        // Update file-level cache
-        try multi_cache.file_cache.update(path, result.llvm_ir, deps);
-
-        // Save all caches (file cache + AIR cache)
+        // Update caches
+        try multi_cache.zir_cache.put(path, combined_hash, 0, &.{}, result.llvm_ir);
         try multi_cache.save();
 
         if (verbosity >= 1) {
-            std.debug.print("[build] Cache stats - ZIR: {d} files, AIR: {d} functions\n", .{
-                multi_cache.zir_cache.entries.count(),
-                multi_cache.air_cache.entries.count(),
-            });
-            std.debug.print("[build] Functions: {d} cached, {d} compiled\n", .{
-                result.functions_cached,
-                result.functions_compiled,
+            std.debug.print("[build] Files: {d} cached, {d} compiled\n", .{
+                result.files_cached,
+                result.files_compiled,
             });
         }
 
@@ -270,22 +262,286 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !
             std.debug.print("[build] No changes, using cache: {s}\n", .{path});
         }
 
-        // Use cached version
-        if (multi_cache.file_cache.getCachedLLVMIR(path)) |cached_ir| {
+        // Use cached combined output
+        if (multi_cache.zir_cache.getLlvmIr(path, combined_hash)) |cached_ir| {
             const output_path = try getOutputPath(allocator, path);
             defer allocator.free(output_path);
 
             const out_file = try fs.cwd().createFile(output_path, .{});
             defer out_file.close();
             try out_file.writeAll(cached_ir);
+            allocator.free(cached_ir);
 
             std.debug.print("[build] Output (cached): {s}\n", .{output_path});
         } else {
             std.debug.print("[build] Cache miss, recompiling...\n", .{});
-            // Fallback to full compile
             try incrementalBuild(allocator, path, verbosity);
         }
     }
+}
+
+const PerFileResult = struct {
+    llvm_ir: []const u8,
+    files_cached: usize,
+    files_compiled: usize,
+};
+
+const FILE_MARKER_PREFIX = "; ==== FILE: ";
+const FILE_MARKER_SUFFIX = " ====\n";
+
+/// Per-file incremental compilation with surgical patching
+/// Uses markers in combined IR to enable fast partial rebuilds
+fn incrementalCompilePerFile(
+    allocator: mem.Allocator,
+    path: []const u8,
+    multi_cache: *cache_mod.MultiLevelCache,
+    verbosity: u8,
+) !PerFileResult {
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const arena_alloc = arena.allocator();
+
+    // Collect all files in dependency tree with their hashes
+    var file_hashes: std.StringHashMapUnmanaged(u64) = .empty;
+    var file_order: std.ArrayListUnmanaged([]const u8) = .empty;
+    try collectAllFileHashes(arena_alloc, path, &multi_cache.hash_cache, &file_hashes, &file_order);
+
+    // Try surgical patch if we have cached combined output
+    if (try surgicalPatch(allocator, arena_alloc, path, multi_cache, &file_hashes, &file_order, verbosity)) |result| {
+        return result;
+    }
+
+    if (verbosity >= 1) {
+        std.debug.print("[incremental] Full rebuild: {d} files\n", .{file_order.items.len});
+    }
+
+    // Full rebuild - build output with file markers
+    var output: std.ArrayListUnmanaged(u8) = .empty;
+    var files_compiled: usize = 0;
+
+    for (file_order.items) |file_path| {
+        const file_hash = file_hashes.get(file_path).?;
+
+        // Add file marker
+        try output.appendSlice(allocator, FILE_MARKER_PREFIX);
+        try output.appendSlice(allocator, file_path);
+        try output.appendSlice(allocator, ":");
+        var hash_buf: [16]u8 = undefined;
+        _ = std.fmt.bufPrint(&hash_buf, "{x:0>16}", .{file_hash}) catch unreachable;
+        try output.appendSlice(allocator, &hash_buf);
+        try output.appendSlice(allocator, FILE_MARKER_SUFFIX);
+
+        // Compile this file
+        files_compiled += 1;
+        if (verbosity >= 2) {
+            std.debug.print("[file] {s}: MISS -> compiling\n", .{file_path});
+        }
+
+        const file_ir = try compileOneFile(allocator, file_path, &arena);
+        try output.appendSlice(allocator, file_ir);
+        allocator.free(file_ir);
+    }
+
+    return .{
+        .llvm_ir = try output.toOwnedSlice(allocator),
+        .files_cached = 0,
+        .files_compiled = files_compiled,
+    };
+}
+
+/// Try to surgically patch the cached combined IR
+/// Returns null if full rebuild is needed
+fn surgicalPatch(
+    allocator: mem.Allocator,
+    arena_alloc: mem.Allocator,
+    path: []const u8,
+    multi_cache: *cache_mod.MultiLevelCache,
+    file_hashes: *std.StringHashMapUnmanaged(u64),
+    file_order: *std.ArrayListUnmanaged([]const u8),
+    verbosity: u8,
+) !?PerFileResult {
+    // Get cached combined IR (using hash 0 as key for combined output)
+    const cached_combined = multi_cache.zir_cache.getCombinedIr(path) orelse return null;
+    defer allocator.free(cached_combined);
+
+    // Parse cached IR into sections by file markers
+    var cached_sections: std.StringHashMapUnmanaged([]const u8) = .empty;
+    var cached_hashes: std.StringHashMapUnmanaged(u64) = .empty;
+
+    var pos: usize = 0;
+    while (pos < cached_combined.len) {
+        // Find next file marker
+        const marker_start = mem.indexOfPos(u8, cached_combined, pos, FILE_MARKER_PREFIX) orelse break;
+        const path_start = marker_start + FILE_MARKER_PREFIX.len;
+
+        // Parse "path:hash ===="
+        const colon_pos = mem.indexOfPos(u8, cached_combined, path_start, ":") orelse break;
+        const file_path = cached_combined[path_start..colon_pos];
+        const hash_start = colon_pos + 1;
+        const marker_end = mem.indexOfPos(u8, cached_combined, hash_start, FILE_MARKER_SUFFIX) orelse break;
+        const hash_str = cached_combined[hash_start..marker_end];
+
+        // Parse hash
+        const cached_hash = std.fmt.parseInt(u64, hash_str, 16) catch break;
+
+        // Find end of this section (next marker or end of file)
+        const content_start = marker_end + FILE_MARKER_SUFFIX.len;
+        const next_marker = mem.indexOfPos(u8, cached_combined, content_start, FILE_MARKER_PREFIX) orelse cached_combined.len;
+        const content = cached_combined[content_start..next_marker];
+
+        // Store in maps (using arena since we're just reading)
+        const path_copy = try arena_alloc.dupe(u8, file_path);
+        try cached_sections.put(arena_alloc, path_copy, content);
+        try cached_hashes.put(arena_alloc, path_copy, cached_hash);
+
+        pos = next_marker;
+    }
+
+    if (cached_sections.count() == 0) return null; // No valid sections found
+
+    // Check how many files changed
+    var changed_files: std.ArrayListUnmanaged([]const u8) = .empty;
+    for (file_order.items) |file_path| {
+        const new_hash = file_hashes.get(file_path).?;
+        const old_hash = cached_hashes.get(file_path) orelse {
+            // New file not in cache
+            try changed_files.append(arena_alloc, file_path);
+            continue;
+        };
+        if (new_hash != old_hash) {
+            try changed_files.append(arena_alloc, file_path);
+        }
+    }
+
+    // If too many changes or no cached data, do full rebuild
+    if (changed_files.items.len > 100 or cached_sections.count() < file_order.items.len / 2) {
+        return null;
+    }
+
+    if (verbosity >= 1) {
+        std.debug.print("[incremental] Surgical patch: {d}/{d} files changed\n", .{ changed_files.items.len, file_order.items.len });
+    }
+
+    // Compile only changed files
+    var new_sections: std.StringHashMapUnmanaged([]const u8) = .empty;
+    var compile_arena = std.heap.ArenaAllocator.init(allocator);
+    defer compile_arena.deinit();
+
+    for (changed_files.items) |file_path| {
+        if (verbosity >= 2) {
+            std.debug.print("[file] {s}: MISS -> compiling\n", .{file_path});
+        }
+        const file_ir = try compileOneFile(arena_alloc, file_path, &compile_arena);
+        try new_sections.put(arena_alloc, file_path, file_ir);
+    }
+
+    // Build output with markers, using cached or newly compiled sections
+    var output: std.ArrayListUnmanaged(u8) = .empty;
+    var files_cached: usize = 0;
+    var files_compiled: usize = 0;
+
+    for (file_order.items) |file_path| {
+        const file_hash = file_hashes.get(file_path).?;
+
+        // Add file marker
+        try output.appendSlice(allocator, FILE_MARKER_PREFIX);
+        try output.appendSlice(allocator, file_path);
+        try output.appendSlice(allocator, ":");
+        var hash_buf: [16]u8 = undefined;
+        _ = std.fmt.bufPrint(&hash_buf, "{x:0>16}", .{file_hash}) catch unreachable;
+        try output.appendSlice(allocator, &hash_buf);
+        try output.appendSlice(allocator, FILE_MARKER_SUFFIX);
+
+        // Use newly compiled or cached section
+        if (new_sections.get(file_path)) |new_ir| {
+            try output.appendSlice(allocator, new_ir);
+            files_compiled += 1;
+        } else if (cached_sections.get(file_path)) |cached_ir| {
+            try output.appendSlice(allocator, cached_ir);
+            files_cached += 1;
+            if (verbosity >= 2) {
+                std.debug.print("[file] {s}: HIT\n", .{file_path});
+            }
+        } else {
+            // Shouldn't happen, but compile if needed
+            const file_ir = try compileOneFile(arena_alloc, file_path, &compile_arena);
+            try output.appendSlice(allocator, file_ir);
+            files_compiled += 1;
+        }
+    }
+
+    return .{
+        .llvm_ir = try output.toOwnedSlice(allocator),
+        .files_cached = files_cached,
+        .files_compiled = files_compiled,
+    };
+}
+
+/// Collect all files in dependency tree with their content hashes
+fn collectAllFileHashes(
+    allocator: mem.Allocator,
+    path: []const u8,
+    hash_cache: *cache_mod.FileHashCache,
+    file_hashes: *std.StringHashMapUnmanaged(u64),
+    file_order: *std.ArrayListUnmanaged([]const u8),
+) !void {
+    // Check if already visited
+    if (file_hashes.contains(path)) return;
+
+    // Get hash for this file
+    const hash = try hash_cache.getHash(path);
+    const path_copy = try allocator.dupe(u8, path);
+    try file_hashes.put(allocator, path_copy, hash);
+    try file_order.append(allocator, path_copy);
+
+    // Get imports and recurse
+    const imports = try hash_cache.getImports(allocator, path);
+    defer {
+        for (imports) |imp| allocator.free(imp);
+        allocator.free(imports);
+    }
+
+    const dir = std.fs.path.dirname(path) orelse "";
+    for (imports) |import_path| {
+        const resolved = if (dir.len > 0)
+            try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir, import_path })
+        else
+            try allocator.dupe(u8, import_path);
+        defer allocator.free(resolved);
+
+        try collectAllFileHashes(allocator, resolved, hash_cache, file_hashes, file_order);
+    }
+}
+
+/// Compile a single file to LLVM IR
+fn compileOneFile(allocator: mem.Allocator, path: []const u8, arena: *std.heap.ArenaAllocator) ![]const u8 {
+    const arena_alloc = arena.allocator();
+
+    // Load and parse this single file
+    var unit = unit_mod.CompilationUnit.init(arena_alloc, path);
+    try unit.load(arena);
+
+    // Generate ZIR for just this file's functions
+    var functions: std.ArrayListUnmanaged(zir_mod.Function) = .empty;
+    for (unit.tree.root.decls) |*decl| {
+        if (decl.* == .fn_decl) {
+            const fn_decl = try zir_mod.generateFunction(arena_alloc, decl);
+            try functions.append(arena_alloc, fn_decl);
+        }
+    }
+
+    // Generate LLVM IR
+    var gen = codegen_mod.init(allocator);
+    var output: std.ArrayListUnmanaged(u8) = .empty;
+
+    for (functions.items) |function| {
+        const func_ir = try gen.generateSingleFunction(function);
+        try output.appendSlice(allocator, func_ir);
+        try output.appendSlice(allocator, "\n");
+        allocator.free(func_ir);
+    }
+
+    return output.toOwnedSlice(allocator);
 }
 
 const CompileCacheResult = struct {
@@ -309,23 +565,8 @@ fn compileWithCache(
     const source = try readFile(arena_alloc, path);
     const source_hash = cache_mod.hashSource(source);
 
-    // Compute combined hash: source content + all dependency contents
-    const import_paths = try extractImportPaths(arena_alloc, source);
-    defer {
-        for (import_paths) |p| arena_alloc.free(p);
-        arena_alloc.free(import_paths);
-    }
-
-    if (verbosity >= 1 and import_paths.len > 0) {
-        std.debug.print("[deps] Found {d} imports: ", .{import_paths.len});
-        for (import_paths, 0..) |imp, i| {
-            if (i > 0) std.debug.print(", ", .{});
-            std.debug.print("{s}", .{imp});
-        }
-        std.debug.print("\n", .{});
-    }
-
-    const combined_hash = try computeCombinedHashFromPaths(arena_alloc, path, source, import_paths);
+    // Compute combined hash using mtime cache
+    const combined_hash = try computeCombinedHashWithCache(arena_alloc, path, source, &multi_cache.hash_cache);
 
     if (verbosity >= 2) {
         std.debug.print("[hash] Source: {x:0>16}, Combined: {x:0>16}\n", .{ source_hash, combined_hash });
@@ -382,31 +623,67 @@ fn compileWithCache(
     };
 }
 
-/// Compute a combined hash from source content and all dependency contents
-fn computeCombinedHashFromPaths(allocator: mem.Allocator, path: []const u8, source: []const u8, import_paths: []const []const u8) !u64 {
+/// Compute a combined hash using mtime-based file hash cache
+fn computeCombinedHashWithCache(allocator: mem.Allocator, path: []const u8, source: []const u8, hash_cache: *cache_mod.FileHashCache) !u64 {
     var hasher = std.hash.Wyhash.init(0);
 
     // Hash the main source
     hasher.update(source);
 
-    // Get directory of source file for resolving relative imports
+    // Recursively hash ALL transitive dependencies using mtime cache
+    var visited: std.StringHashMapUnmanaged([]const u8) = .empty;
+    defer {
+        var iter = visited.iterator();
+        while (iter.next()) |entry| {
+            allocator.free(entry.value_ptr.*);
+        }
+        visited.deinit(allocator);
+    }
+
+    try hashTransitiveDepsWithCache(allocator, path, &hasher, &visited, hash_cache);
+
+    return hasher.final();
+}
+
+/// Recursively hash all transitive dependencies using mtime cache
+fn hashTransitiveDepsWithCache(
+    allocator: mem.Allocator,
+    path: []const u8,
+    hasher: *std.hash.Wyhash,
+    visited: *std.StringHashMapUnmanaged([]const u8),
+    hash_cache: *cache_mod.FileHashCache,
+) !void {
     const dir = std.fs.path.dirname(path) orelse "";
 
-    // Hash each dependency's content
+    // Get imports for this file
+    const import_paths = hash_cache.getImports(allocator, path) catch return;
+    defer {
+        for (import_paths) |p| allocator.free(p);
+        allocator.free(import_paths);
+    }
+
     for (import_paths) |import_path| {
         const resolved_path = if (dir.len > 0)
             try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir, import_path })
         else
-            import_path;
-        defer if (dir.len > 0) allocator.free(resolved_path);
+            try allocator.dupe(u8, import_path);
 
-        // Read and hash dependency content
-        const dep_source = readFile(allocator, resolved_path) catch continue;
-        defer allocator.free(dep_source);
-        hasher.update(dep_source);
+        // Skip if already visited
+        if (visited.contains(resolved_path)) {
+            allocator.free(resolved_path);
+            continue;
+        }
+
+        // Store in visited (key owns the memory)
+        try visited.put(allocator, resolved_path, resolved_path);
+
+        // Get hash using mtime cache (avoids re-reading unchanged files)
+        const dep_hash = hash_cache.getHash(resolved_path) catch continue;
+        hasher.update(mem.asBytes(&dep_hash));
+
+        // Recursively process this dependency's imports
+        try hashTransitiveDepsWithCache(allocator, resolved_path, hasher, visited, hash_cache);
     }
-
-    return hasher.final();
 }
 
 /// Extract import paths from source without full parsing

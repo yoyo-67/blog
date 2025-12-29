@@ -92,6 +92,7 @@ pub const CompilationUnit = struct {
 
     pub fn generateProgram(self: *const CompilationUnit, allocator: mem.Allocator) !zir_mod.Program {
         var functions: std.ArrayListUnmanaged(zir_mod.Function) = .empty;
+        var visited: std.StringHashMapUnmanaged(void) = .empty;
 
         // Generate functions from this unit
         for (self.tree.root.decls) |*decl| {
@@ -101,23 +102,47 @@ pub const CompilationUnit = struct {
             }
         }
 
-        // Generate functions from imported units with namespace prefix
+        // Recursively generate functions from all imported units
+        try self.generateImportedFunctions(allocator, &functions, &visited, "");
+
+        return .{ .functions_list = functions };
+    }
+
+    fn generateImportedFunctions(
+        self: *const CompilationUnit,
+        allocator: mem.Allocator,
+        functions: *std.ArrayListUnmanaged(zir_mod.Function),
+        visited: *std.StringHashMapUnmanaged(void),
+        prefix: []const u8,
+    ) !void {
         var iter = self.imports.iterator();
         while (iter.next()) |entry| {
             if (entry.value_ptr.unit) |unit| {
+                // Build full namespace prefix
+                const full_prefix = if (prefix.len > 0)
+                    try std.fmt.allocPrint(allocator, "{s}_{s}", .{ prefix, entry.value_ptr.namespace })
+                else
+                    entry.value_ptr.namespace;
+
+                // Skip if already visited
+                if (visited.contains(full_prefix)) continue;
+                try visited.put(allocator, full_prefix, {});
+
+                // Generate functions from this unit
                 for (unit.tree.root.decls) |*decl| {
                     if (decl.* == .fn_decl) {
                         var fn_decl = try zir_mod.generateFunction(allocator, decl);
                         // Prefix function name with namespace
-                        const prefixed_name = try std.fmt.allocPrint(allocator, "{s}_{s}", .{ entry.value_ptr.namespace, fn_decl.name });
+                        const prefixed_name = try std.fmt.allocPrint(allocator, "{s}_{s}", .{ full_prefix, fn_decl.name });
                         fn_decl.name = prefixed_name;
                         try functions.append(allocator, fn_decl);
                     }
                 }
+
+                // Recursively process imports of this unit
+                try unit.generateImportedFunctions(allocator, functions, visited, full_prefix);
             }
         }
-
-        return .{ .functions_list = functions };
     }
 
     pub fn getImportedNamespaces(self: *const CompilationUnit) []const []const u8 {

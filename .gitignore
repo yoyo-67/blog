@@ -6,3 +6,8 @@ scratch/projects/mini-compiler/output.ll
 scratch/projects/mini-compiler/output_binary
 scratch/projects/mini-compiler-wip/.zig-cache
 scratch/projects/mini-compiler-wip/zig-out/bin/comp
+scratch/projects/mini-compiler-wip/.mini_cache
+scratch/projects/mini-compiler-wip/tests/benchmark/.mini_cache/objects
+scratch/projects/mini-compiler-wip/tests/benchmark/.mini_cache/zir
+scratch/projects/mini-compiler-wip/tests/benchmark/.mini_cache
+scratch/projects/mini-compiler-wip/tests/benchmark

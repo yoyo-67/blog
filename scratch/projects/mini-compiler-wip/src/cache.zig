@@ -83,411 +83,558 @@ pub fn hashFunctionZir(function: zir_mod.Function) u64 {
 // ZIR Cache (per-file)
 // ============================================================================
 
+// ============================================================================
+// File Hash Cache (per-file content hash with mtime)
+// ============================================================================
+
+pub const FileHashCache = struct {
+    allocator: mem.Allocator,
+    entries: std.StringHashMapUnmanaged(FileHashEntry),
+    dirty: bool,
+
+    pub const FileHashEntry = struct {
+        mtime: i128,
+        hash: u64,
+        imports: []const []const u8,
+    };
+
+    pub fn init(allocator: mem.Allocator) FileHashCache {
+        return .{
+            .allocator = allocator,
+            .entries = .empty,
+            .dirty = false,
+        };
+    }
+
+    pub fn deinit(self: *FileHashCache) void {
+        var iter = self.entries.iterator();
+        while (iter.next()) |entry| {
+            self.allocator.free(entry.key_ptr.*);
+            for (entry.value_ptr.imports) |imp| {
+                self.allocator.free(imp);
+            }
+            self.allocator.free(entry.value_ptr.imports);
+        }
+        self.entries.deinit(self.allocator);
+    }
+
+    /// Get or compute hash and imports for a file (uses mtime cache)
+    fn ensureCached(self: *FileHashCache, path: []const u8) !*const FileHashEntry {
+        const current_mtime = try getFileMtime(path);
+
+        // Check if cached and mtime matches
+        if (self.entries.getPtr(path)) |entry| {
+            if (entry.mtime == current_mtime) {
+                return entry;
+            }
+            // Mtime changed - free old imports and update
+            for (entry.imports) |imp| {
+                self.allocator.free(imp);
+            }
+            self.allocator.free(entry.imports);
+
+            // Read file and update entry
+            const source = try readFileSimple(path, self.allocator);
+            defer self.allocator.free(source);
+
+            entry.mtime = current_mtime;
+            entry.hash = hashSource(source);
+            entry.imports = try extractImportPathsSimple(self.allocator, source);
+            self.dirty = true;
+            return entry;
+        }
+
+        // New entry - read file
+        const source = try readFileSimple(path, self.allocator);
+        defer self.allocator.free(source);
+
+        const key = try self.allocator.dupe(u8, path);
+        const imports = try extractImportPathsSimple(self.allocator, source);
+
+        try self.entries.put(self.allocator, key, .{
+            .mtime = current_mtime,
+            .hash = hashSource(source),
+            .imports = imports,
+        });
+
+        self.dirty = true;
+        return self.entries.getPtr(key).?;
+    }
+
+    /// Get hash for file, using cache if mtime unchanged
+    pub fn getHash(self: *FileHashCache, path: []const u8) !u64 {
+        const entry = try self.ensureCached(path);
+        return entry.hash;
+    }
+
+    /// Get imports for a file (uses mtime cache)
+    pub fn getImports(self: *FileHashCache, allocator: mem.Allocator, path: []const u8) ![]const []const u8 {
+        const entry = try self.ensureCached(path);
+        // Return a copy since caller expects to own the memory
+        const result = try allocator.alloc([]const u8, entry.imports.len);
+        for (entry.imports, 0..) |imp, i| {
+            result[i] = try allocator.dupe(u8, imp);
+        }
+        return result;
+    }
+
+    /// Load hash cache from disk (binary format for speed)
+    pub fn load(self: *FileHashCache, cache_dir: []const u8) !void {
+        const path = try std.fmt.allocPrint(self.allocator, "{s}/file_hashes.bin", .{cache_dir});
+        defer self.allocator.free(path);
+
+        const file = fs.cwd().openFile(path, .{}) catch return;
+        defer file.close();
+
+        // Read number of entries
+        var count_buf: [8]u8 = undefined;
+        _ = file.read(&count_buf) catch return;
+        const count = mem.readInt(u64, &count_buf, .little);
+
+        // Read each entry
+        var i: u64 = 0;
+        while (i < count) : (i += 1) {
+            // Read path length and path
+            var len_buf: [4]u8 = undefined;
+            _ = file.read(&len_buf) catch return;
+            const path_len = mem.readInt(u32, &len_buf, .little);
+
+            const entry_path = try self.allocator.alloc(u8, path_len);
+            _ = file.read(entry_path) catch {
+                self.allocator.free(entry_path);
+                return;
+            };
+
+            // Read mtime and hash
+            var mtime_buf: [16]u8 = undefined;
+            _ = file.read(&mtime_buf) catch {
+                self.allocator.free(entry_path);
+                return;
+            };
+            const mtime = mem.readInt(i128, &mtime_buf, .little);
+
+            var hash_buf: [8]u8 = undefined;
+            _ = file.read(&hash_buf) catch {
+                self.allocator.free(entry_path);
+                return;
+            };
+            const hash = mem.readInt(u64, &hash_buf, .little);
+
+            // Read imports count and imports
+            _ = file.read(&len_buf) catch {
+                self.allocator.free(entry_path);
+                return;
+            };
+            const imports_count = mem.readInt(u32, &len_buf, .little);
+
+            const imports = try self.allocator.alloc([]const u8, imports_count);
+            var j: u32 = 0;
+            while (j < imports_count) : (j += 1) {
+                _ = file.read(&len_buf) catch {
+                    // Cleanup on error
+                    for (imports[0..j]) |imp| self.allocator.free(imp);
+                    self.allocator.free(imports);
+                    self.allocator.free(entry_path);
+                    return;
+                };
+                const imp_len = mem.readInt(u32, &len_buf, .little);
+                const imp = try self.allocator.alloc(u8, imp_len);
+                _ = file.read(imp) catch {
+                    self.allocator.free(imp);
+                    for (imports[0..j]) |im| self.allocator.free(im);
+                    self.allocator.free(imports);
+                    self.allocator.free(entry_path);
+                    return;
+                };
+                imports[j] = imp;
+            }
+
+            try self.entries.put(self.allocator, entry_path, .{
+                .mtime = mtime,
+                .hash = hash,
+                .imports = imports,
+            });
+        }
+    }
+
+    /// Save hash cache to disk (binary format for speed)
+    pub fn save(self: *FileHashCache, cache_dir: []const u8) !void {
+        if (!self.dirty and self.entries.count() > 0) return; // No changes
+
+        fs.cwd().makePath(cache_dir) catch {};
+
+        const path = try std.fmt.allocPrint(self.allocator, "{s}/file_hashes.bin", .{cache_dir});
+        defer self.allocator.free(path);
+
+        const file = try fs.cwd().createFile(path, .{});
+        defer file.close();
+
+        // Write number of entries
+        var count_buf: [8]u8 = undefined;
+        mem.writeInt(u64, &count_buf, self.entries.count(), .little);
+        try file.writeAll(&count_buf);
+
+        // Write each entry
+        var iter = self.entries.iterator();
+        while (iter.next()) |entry| {
+            // Write path
+            var len_buf: [4]u8 = undefined;
+            mem.writeInt(u32, &len_buf, @intCast(entry.key_ptr.len), .little);
+            try file.writeAll(&len_buf);
+            try file.writeAll(entry.key_ptr.*);
+
+            // Write mtime and hash
+            var mtime_buf: [16]u8 = undefined;
+            mem.writeInt(i128, &mtime_buf, entry.value_ptr.mtime, .little);
+            try file.writeAll(&mtime_buf);
+
+            var hash_buf: [8]u8 = undefined;
+            mem.writeInt(u64, &hash_buf, entry.value_ptr.hash, .little);
+            try file.writeAll(&hash_buf);
+
+            // Write imports
+            mem.writeInt(u32, &len_buf, @intCast(entry.value_ptr.imports.len), .little);
+            try file.writeAll(&len_buf);
+            for (entry.value_ptr.imports) |imp| {
+                mem.writeInt(u32, &len_buf, @intCast(imp.len), .little);
+                try file.writeAll(&len_buf);
+                try file.writeAll(imp);
+            }
+        }
+
+        self.dirty = false;
+    }
+};
+
+fn readFileSimple(path: []const u8, allocator: mem.Allocator) ![]const u8 {
+    const file = try fs.cwd().openFile(path, .{});
+    defer file.close();
+    const stat = try file.stat();
+    return try file.readToEndAlloc(allocator, stat.size);
+}
+
+fn extractImportPathsSimple(allocator: mem.Allocator, source: []const u8) ![]const []const u8 {
+    var paths: std.ArrayListUnmanaged([]const u8) = .empty;
+
+    var i: usize = 0;
+    while (i < source.len) {
+        if (i + 6 < source.len and mem.eql(u8, source[i .. i + 6], "import")) {
+            i += 6;
+            while (i < source.len and (source[i] == ' ' or source[i] == '\t')) : (i += 1) {}
+            if (i < source.len and source[i] == '"') {
+                i += 1;
+                const start = i;
+                while (i < source.len and source[i] != '"') : (i += 1) {}
+                if (i < source.len) {
+                    const path = try allocator.dupe(u8, source[start..i]);
+                    try paths.append(allocator, path);
+                }
+            }
+        }
+        i += 1;
+    }
+
+    return paths.toOwnedSlice(allocator);
+}
+
+/// ZIR Cache - Hash-based storage (like git)
+/// Stores file hash -> LLVM IR in objects/zir/xx/xxxxxx...
 pub const ZirCache = struct {
     allocator: mem.Allocator,
-    entries: std.StringHashMapUnmanaged(ZirCacheEntry),
-
-    pub const ZirCacheEntry = struct {
-        path: []const u8,
-        source_hash: u64,
-        zir_hash: u64,
-        function_names: []const []const u8,
-        llvm_ir: ?[]const u8, // Cached LLVM IR for the whole file
-    };
+    cache_dir: []const u8,
+    // In-memory index: path -> combined_hash (to check if cache is valid)
+    index: std.StringHashMapUnmanaged(u64),
+    loaded_count: usize,
 
     pub fn init(allocator: mem.Allocator) ZirCache {
         return .{
             .allocator = allocator,
-            .entries = .empty,
+            .cache_dir = "",
+            .index = .empty,
+            .loaded_count = 0,
         };
     }
 
     pub fn deinit(self: *ZirCache) void {
-        var iter = self.entries.iterator();
+        var iter = self.index.iterator();
         while (iter.next()) |entry| {
-            self.allocator.free(entry.value_ptr.path);
-            for (entry.value_ptr.function_names) |name| {
-                self.allocator.free(name);
-            }
-            self.allocator.free(entry.value_ptr.function_names);
-            if (entry.value_ptr.llvm_ir) |ir| {
-                self.allocator.free(ir);
-            }
+            self.allocator.free(entry.key_ptr.*);
         }
-        self.entries.deinit(self.allocator);
+        self.index.deinit(self.allocator);
     }
 
-    pub fn get(self: *ZirCache, path: []const u8, source_hash: u64) ?*const ZirCacheEntry {
-        if (self.entries.getPtr(path)) |entry| {
-            if (entry.source_hash == source_hash) {
-                return entry;
-            }
+    /// Check if the cache has an entry with matching combined hash
+    pub fn hasMatchingHash(self: *ZirCache, path: []const u8, combined_hash: u64) bool {
+        if (self.index.get(path)) |cached_hash| {
+            return cached_hash == combined_hash;
         }
-        return null;
+        return false;
     }
 
-    /// Get cached LLVM IR for a file if source hash matches
-    pub fn getLlvmIr(self: *ZirCache, path: []const u8, source_hash: u64) ?[]const u8 {
-        if (self.entries.getPtr(path)) |entry| {
-            if (entry.source_hash == source_hash) {
-                return entry.llvm_ir;
-            }
-        }
-        return null;
+    /// Get cached LLVM IR for a file by combined hash
+    pub fn getLlvmIr(self: *ZirCache, path: []const u8, combined_hash: u64) ?[]const u8 {
+        _ = path;
+        // Content-addressed: lookup by hash
+        return self.getObject(combined_hash);
+    }
+
+    fn getObject(self: *ZirCache, hash: u64) ?[]const u8 {
+        const object_path = self.getObjectPath(hash) catch return null;
+        defer self.allocator.free(object_path);
+
+        const file = fs.cwd().openFile(object_path, .{}) catch return null;
+        defer file.close();
+
+        const stat = file.stat() catch return null;
+        return file.readToEndAlloc(self.allocator, stat.size) catch null;
     }
 
     pub fn put(self: *ZirCache, path: []const u8, source_hash: u64, zir_hash: u64, function_names: []const []const u8, llvm_ir: ?[]const u8) !void {
-        // Free old entry if exists
-        if (self.entries.getPtr(path)) |old| {
-            for (old.function_names) |name| {
-                self.allocator.free(name);
-            }
-            self.allocator.free(old.function_names);
-            if (old.llvm_ir) |ir| {
-                self.allocator.free(ir);
-            }
-        }
+        _ = zir_hash;
+        _ = function_names;
 
-        const path_copy = if (self.entries.contains(path))
-            self.entries.get(path).?.path
+        // Update in-memory index
+        const key = if (self.index.contains(path))
+            self.index.getKey(path).?
         else
             try self.allocator.dupe(u8, path);
+        try self.index.put(self.allocator, key, source_hash);
 
-        const names_copy = try self.allocator.alloc([]const u8, function_names.len);
-        for (function_names, 0..) |name, i| {
-            names_copy[i] = try self.allocator.dupe(u8, name);
+        // Store LLVM IR in hash-based object
+        if (llvm_ir) |ir| {
+            try self.putObject(source_hash, ir);
         }
+    }
 
-        const ir_copy = if (llvm_ir) |ir| try self.allocator.dupe(u8, ir) else null;
+    fn putObject(self: *ZirCache, hash: u64, content: []const u8) !void {
+        const object_path = try self.getObjectPath(hash);
+        defer self.allocator.free(object_path);
 
-        try self.entries.put(self.allocator, path_copy, .{
-            .path = path_copy,
-            .source_hash = source_hash,
-            .zir_hash = zir_hash,
-            .function_names = names_copy,
-            .llvm_ir = ir_copy,
+        const parent = std.fs.path.dirname(object_path) orelse return;
+        fs.cwd().makePath(parent) catch {};
+
+        const file = fs.cwd().createFile(object_path, .{}) catch |err| switch (err) {
+            error.PathAlreadyExists => return,
+            else => return err,
+        };
+        defer file.close();
+        try file.writeAll(content);
+    }
+
+    fn getObjectPath(self: *ZirCache, hash: u64) ![]const u8 {
+        var hash_str: [16]u8 = undefined;
+        _ = std.fmt.bufPrint(&hash_str, "{x:0>16}", .{hash}) catch unreachable;
+        return std.fmt.allocPrint(self.allocator, "{s}/zir/{s}/{s}", .{
+            self.cache_dir,
+            hash_str[0..2],
+            hash_str[2..],
         });
     }
 
-    /// Load ZIR cache from disk
+    /// Load index from disk (binary format)
     pub fn load(self: *ZirCache, cache_dir: []const u8) !void {
-        const manifest_path = try std.fmt.allocPrint(self.allocator, "{s}/zir_cache.json", .{cache_dir});
-        defer self.allocator.free(manifest_path);
+        self.cache_dir = cache_dir;
 
-        const file = fs.cwd().openFile(manifest_path, .{}) catch |err| switch (err) {
-            error.FileNotFound => return,
-            else => return err,
-        };
+        const index_path = try std.fmt.allocPrint(self.allocator, "{s}/zir_index.bin", .{cache_dir});
+        defer self.allocator.free(index_path);
+
+        const file = fs.cwd().openFile(index_path, .{}) catch return;
         defer file.close();
 
-        const stat = try file.stat();
-        const content = try file.readToEndAlloc(self.allocator, stat.size);
-        defer self.allocator.free(content);
+        // Read count
+        var count_buf: [8]u8 = undefined;
+        _ = file.read(&count_buf) catch return;
+        const count = mem.readInt(u64, &count_buf, .little);
 
-        try self.parseManifest(content);
+        var i: u64 = 0;
+        while (i < count) : (i += 1) {
+            // Read path length and path
+            var len_buf: [4]u8 = undefined;
+            _ = file.read(&len_buf) catch return;
+            const path_len = mem.readInt(u32, &len_buf, .little);
+
+            const path = try self.allocator.alloc(u8, path_len);
+            _ = file.read(path) catch {
+                self.allocator.free(path);
+                return;
+            };
+
+            // Read hash
+            var hash_buf: [8]u8 = undefined;
+            _ = file.read(&hash_buf) catch {
+                self.allocator.free(path);
+                return;
+            };
+            const hash = mem.readInt(u64, &hash_buf, .little);
+
+            try self.index.put(self.allocator, path, hash);
+            self.loaded_count += 1;
+        }
     }
 
-    /// Save ZIR cache to disk
+    /// Save index to disk (binary format)
     pub fn save(self: *ZirCache, cache_dir: []const u8) !void {
-        fs.cwd().makePath(cache_dir) catch |err| switch (err) {
-            error.PathAlreadyExists => {},
-            else => return err,
-        };
+        self.cache_dir = cache_dir;
+        fs.cwd().makePath(cache_dir) catch {};
 
-        const manifest_path = try std.fmt.allocPrint(self.allocator, "{s}/zir_cache.json", .{cache_dir});
-        defer self.allocator.free(manifest_path);
+        const index_path = try std.fmt.allocPrint(self.allocator, "{s}/zir_index.bin", .{cache_dir});
+        defer self.allocator.free(index_path);
 
-        const file = try fs.cwd().createFile(manifest_path, .{});
+        const file = try fs.cwd().createFile(index_path, .{});
         defer file.close();
 
-        try self.writeManifest(file);
-    }
+        // Write count
+        var count_buf: [8]u8 = undefined;
+        mem.writeInt(u64, &count_buf, self.index.count(), .little);
+        try file.writeAll(&count_buf);
 
-    fn parseManifest(self: *ZirCache, content: []const u8) !void {
-        const parsed = try json.parseFromSlice(json.Value, self.allocator, content, .{});
-        defer parsed.deinit();
-
-        const root = parsed.value.object;
-        const files = root.get("files") orelse return;
-
-        for (files.array.items) |item| {
-            const obj = item.object;
-            const path = obj.get("path").?.string;
-            const source_hash_val = obj.get("source_hash").?;
-            const source_hash: u64 = switch (source_hash_val) {
-                .integer => |i| @intCast(i),
-                .number_string => |s| std.fmt.parseInt(u64, s, 10) catch 0,
-                else => 0,
-            };
-            const zir_hash_val = obj.get("zir_hash").?;
-            const zir_hash: u64 = switch (zir_hash_val) {
-                .integer => |i| @intCast(i),
-                .number_string => |s| std.fmt.parseInt(u64, s, 10) catch 0,
-                else => 0,
-            };
-
-            // Parse function names
-            const names_arr = obj.get("function_names").?.array;
-            const names_copy = try self.allocator.alloc([]const u8, names_arr.items.len);
-            for (names_arr.items, 0..) |name_val, i| {
-                names_copy[i] = try self.allocator.dupe(u8, name_val.string);
-            }
-
-            // Parse LLVM IR (optional)
-            const llvm_ir: ?[]const u8 = if (obj.get("llvm_ir")) |ir_val|
-                try self.allocator.dupe(u8, ir_val.string)
-            else
-                null;
-
-            const path_copy = try self.allocator.dupe(u8, path);
-            try self.entries.put(self.allocator, path_copy, .{
-                .path = path_copy,
-                .source_hash = source_hash,
-                .zir_hash = zir_hash,
-                .function_names = names_copy,
-                .llvm_ir = llvm_ir,
-            });
-        }
-    }
-
-    fn writeManifest(self: *ZirCache, file: fs.File) !void {
-        var content: std.ArrayListUnmanaged(u8) = .empty;
-        defer content.deinit(self.allocator);
-
-        try content.appendSlice(self.allocator, "{\n  \"files\": [\n");
-
-        var first = true;
-        var iter = self.entries.iterator();
+        // Write entries
+        var iter = self.index.iterator();
         while (iter.next()) |entry| {
-            if (!first) try content.appendSlice(self.allocator, ",\n");
-            first = false;
+            var len_buf: [4]u8 = undefined;
+            mem.writeInt(u32, &len_buf, @intCast(entry.key_ptr.len), .little);
+            try file.writeAll(&len_buf);
+            try file.writeAll(entry.key_ptr.*);
 
-            // Build function names array
-            var names_json: std.ArrayListUnmanaged(u8) = .empty;
-            defer names_json.deinit(self.allocator);
-            try names_json.appendSlice(self.allocator, "[");
-            for (entry.value_ptr.function_names, 0..) |name, i| {
-                if (i > 0) try names_json.appendSlice(self.allocator, ", ");
-                try std.fmt.format(names_json.writer(self.allocator), "\"{s}\"", .{name});
-            }
-            try names_json.appendSlice(self.allocator, "]");
-
-            // Escape LLVM IR for JSON if present
-            var ir_json: std.ArrayListUnmanaged(u8) = .empty;
-            defer ir_json.deinit(self.allocator);
-            if (entry.value_ptr.llvm_ir) |ir| {
-                try ir_json.appendSlice(self.allocator, "\"");
-                for (ir) |c| {
-                    switch (c) {
-                        '\n' => try ir_json.appendSlice(self.allocator, "\\n"),
-                        '\r' => try ir_json.appendSlice(self.allocator, "\\r"),
-                        '\t' => try ir_json.appendSlice(self.allocator, "\\t"),
-                        '"' => try ir_json.appendSlice(self.allocator, "\\\""),
-                        '\\' => try ir_json.appendSlice(self.allocator, "\\\\"),
-                        else => try ir_json.append(self.allocator, c),
-                    }
-                }
-                try ir_json.appendSlice(self.allocator, "\"");
-            } else {
-                try ir_json.appendSlice(self.allocator, "null");
-            }
-
-            const entry_str = try std.fmt.allocPrint(self.allocator,
-                \\    {{
-                \\      "path": "{s}",
-                \\      "source_hash": {d},
-                \\      "zir_hash": {d},
-                \\      "function_names": {s},
-                \\      "llvm_ir": {s}
-                \\    }}
-            , .{ entry.value_ptr.path, entry.value_ptr.source_hash, entry.value_ptr.zir_hash, names_json.items, ir_json.items });
-            defer self.allocator.free(entry_str);
-            try content.appendSlice(self.allocator, entry_str);
+            var hash_buf: [8]u8 = undefined;
+            mem.writeInt(u64, &hash_buf, entry.value_ptr.*, .little);
+            try file.writeAll(&hash_buf);
         }
-
-        try content.appendSlice(self.allocator, "\n  ]\n}\n");
-        try file.writeAll(content.items);
     }
 };
 
 // ============================================================================
-// AIR Cache (per-function)
+// AIR Cache (per-function) - Git-style hash-based storage
 // ============================================================================
 
 pub const AirCache = struct {
     allocator: mem.Allocator,
-    entries: std.StringHashMapUnmanaged(AirCacheEntry),
     cache_dir: []const u8,
-
-    pub const AirCacheEntry = struct {
-        function_key: []const u8, // "file:function_name"
-        zir_hash: u64, // Hash of the function's ZIR
-        air_hash: u64, // Hash of the generated AIR
-        llvm_ir: []const u8, // Cached LLVM IR for this function
-    };
+    objects_dir: []const u8,
+    // In-memory index: function_key -> zir_hash (for quick lookup)
+    index: std.StringHashMapUnmanaged(u64),
+    loaded_count: usize,
 
     pub fn init(allocator: mem.Allocator, cache_dir: []const u8) AirCache {
+        const objects_dir = std.fmt.allocPrint(allocator, "{s}/objects", .{cache_dir}) catch cache_dir;
         return .{
             .allocator = allocator,
-            .entries = .empty,
             .cache_dir = cache_dir,
+            .objects_dir = objects_dir,
+            .index = .empty,
+            .loaded_count = 0,
         };
     }
 
     pub fn deinit(self: *AirCache) void {
-        var iter = self.entries.iterator();
+        var iter = self.index.iterator();
         while (iter.next()) |entry| {
-            self.allocator.free(entry.value_ptr.function_key);
-            self.allocator.free(entry.value_ptr.llvm_ir);
+            self.allocator.free(entry.key_ptr.*);
         }
-        self.entries.deinit(self.allocator);
+        self.index.deinit(self.allocator);
+        if (!mem.eql(u8, self.objects_dir, self.cache_dir)) {
+            self.allocator.free(self.objects_dir);
+        }
     }
 
+    /// Get cached LLVM IR by looking up the hash-based object file
     pub fn get(self: *AirCache, file_path: []const u8, func_name: []const u8, zir_hash: u64) ?[]const u8 {
-        const key = std.fmt.allocPrint(self.allocator, "{s}:{s}", .{ file_path, func_name }) catch return null;
-        defer self.allocator.free(key);
-
-        if (self.entries.get(key)) |entry| {
-            if (entry.zir_hash == zir_hash) {
-                return entry.llvm_ir;
-            }
-        }
-        return null;
+        _ = file_path;
+        _ = func_name;
+        // Content-addressed: use zir_hash directly to find the object
+        return self.getObject(zir_hash);
     }
 
-    pub fn put(self: *AirCache, file_path: []const u8, func_name: []const u8, zir_hash: u64, air_hash: u64, llvm_ir: []const u8) !void {
-        const key = try std.fmt.allocPrint(self.allocator, "{s}:{s}", .{ file_path, func_name });
+    /// Get object by hash (content-addressed lookup)
+    fn getObject(self: *AirCache, hash: u64) ?[]const u8 {
+        const object_path = self.getObjectPath(hash) catch return null;
+        defer self.allocator.free(object_path);
 
-        // Check if entry exists and update in-place
-        if (self.entries.getPtr(key)) |old| {
-            // Free the new key we just allocated (we'll reuse the old one)
+        const file = fs.cwd().openFile(object_path, .{}) catch return null;
+        defer file.close();
+
+        const stat = file.stat() catch return null;
+        return file.readToEndAlloc(self.allocator, stat.size) catch null;
+    }
+
+    /// Store LLVM IR in a hash-based object file
+    pub fn put(self: *AirCache, file_path: []const u8, func_name: []const u8, zir_hash: u64, air_hash: u64, llvm_ir: []const u8) !void {
+        _ = air_hash;
+
+        // Update in-memory index
+        const key = try std.fmt.allocPrint(self.allocator, "{s}:{s}", .{ file_path, func_name });
+        if (self.index.contains(key)) {
             self.allocator.free(key);
-            // Free old llvm_ir
-            self.allocator.free(old.llvm_ir);
-            // Update in place
-            old.zir_hash = zir_hash;
-            old.air_hash = air_hash;
-            old.llvm_ir = try self.allocator.dupe(u8, llvm_ir);
-            return;
+        } else {
+            try self.index.put(self.allocator, key, zir_hash);
         }
 
-        const ir_copy = try self.allocator.dupe(u8, llvm_ir);
+        // Write object file (content-addressed by zir_hash)
+        try self.putObject(zir_hash, llvm_ir);
+    }
 
-        try self.entries.put(self.allocator, key, .{
-            .function_key = key,
-            .zir_hash = zir_hash,
-            .air_hash = air_hash,
-            .llvm_ir = ir_copy,
+    /// Write object to hash-based path
+    fn putObject(self: *AirCache, hash: u64, content: []const u8) !void {
+        const object_path = try self.getObjectPath(hash);
+        defer self.allocator.free(object_path);
+
+        // Ensure parent directory exists (e.g., objects/ab/)
+        const parent = std.fs.path.dirname(object_path) orelse return;
+        fs.cwd().makePath(parent) catch {};
+
+        // Write object file
+        const file = fs.cwd().createFile(object_path, .{}) catch |err| switch (err) {
+            error.PathAlreadyExists => return, // Already cached
+            else => return err,
+        };
+        defer file.close();
+        try file.writeAll(content);
+    }
+
+    /// Get object path: objects/ab/cdef1234... (like git)
+    fn getObjectPath(self: *AirCache, hash: u64) ![]const u8 {
+        var hash_str: [16]u8 = undefined;
+        _ = std.fmt.bufPrint(&hash_str, "{x:0>16}", .{hash}) catch unreachable;
+        return std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{
+            self.objects_dir,
+            hash_str[0..2],
+            hash_str[2..],
         });
     }
 
     pub fn getFunctionCount(self: *AirCache) usize {
-        return self.entries.count();
+        // Count objects in the objects directory
+        return self.loaded_count;
     }
 
-    /// Load AIR cache from disk
+    /// Load index from disk (just count objects, don't load content)
     pub fn load(self: *AirCache) !void {
-        const manifest_path = try std.fmt.allocPrint(self.allocator, "{s}/air_cache.json", .{self.cache_dir});
-        defer self.allocator.free(manifest_path);
+        // Create objects dir if needed
+        fs.cwd().makePath(self.objects_dir) catch {};
 
-        const file = fs.cwd().openFile(manifest_path, .{}) catch |err| switch (err) {
-            error.FileNotFound => return,
-            else => return err,
-        };
-        defer file.close();
+        // Count existing objects by walking the directory
+        var count: usize = 0;
+        var dir = fs.cwd().openDir(self.objects_dir, .{ .iterate = true }) catch return;
+        defer dir.close();
 
-        const stat = try file.stat();
-        const content = try file.readToEndAlloc(self.allocator, stat.size);
-        defer self.allocator.free(content);
-
-        try self.parseManifest(content);
-    }
-
-    /// Save AIR cache to disk
-    pub fn save(self: *AirCache) !void {
-        fs.cwd().makePath(self.cache_dir) catch |err| switch (err) {
-            error.PathAlreadyExists => {},
-            else => return err,
-        };
-
-        const manifest_path = try std.fmt.allocPrint(self.allocator, "{s}/air_cache.json", .{self.cache_dir});
-        defer self.allocator.free(manifest_path);
-
-        const file = try fs.cwd().createFile(manifest_path, .{});
-        defer file.close();
-
-        try self.writeManifest(file);
-    }
-
-    fn parseManifest(self: *AirCache, content: []const u8) !void {
-        const parsed = try json.parseFromSlice(json.Value, self.allocator, content, .{});
-        defer parsed.deinit();
-
-        const root = parsed.value.object;
-        const functions = root.get("functions") orelse return;
-
-        for (functions.array.items) |item| {
-            const obj = item.object;
-            const key = obj.get("key").?.string;
-            const zir_hash_val = obj.get("zir_hash").?;
-            const zir_hash: u64 = switch (zir_hash_val) {
-                .integer => |i| @intCast(i),
-                .number_string => |s| std.fmt.parseInt(u64, s, 10) catch 0,
-                else => 0,
-            };
-            const llvm_ir = obj.get("llvm_ir").?.string;
-
-            const key_copy = try self.allocator.dupe(u8, key);
-            const ir_copy = try self.allocator.dupe(u8, llvm_ir);
-
-            try self.entries.put(self.allocator, key_copy, .{
-                .function_key = key_copy,
-                .zir_hash = zir_hash,
-                .air_hash = 0,
-                .llvm_ir = ir_copy,
-            });
-        }
-    }
-
-    fn writeManifest(self: *AirCache, file: fs.File) !void {
-        var content: std.ArrayListUnmanaged(u8) = .empty;
-        defer content.deinit(self.allocator);
-
-        try content.appendSlice(self.allocator, "{\n  \"functions\": [\n");
-
-        var first = true;
-        var iter = self.entries.iterator();
-        while (iter.next()) |entry| {
-            if (!first) try content.appendSlice(self.allocator, ",\n");
-            first = false;
-
-            // Escape the LLVM IR for JSON
-            var escaped_ir: std.ArrayListUnmanaged(u8) = .empty;
-            defer escaped_ir.deinit(self.allocator);
-            for (entry.value_ptr.llvm_ir) |c| {
-                switch (c) {
-                    '\n' => try escaped_ir.appendSlice(self.allocator, "\\n"),
-                    '\r' => try escaped_ir.appendSlice(self.allocator, "\\r"),
-                    '\t' => try escaped_ir.appendSlice(self.allocator, "\\t"),
-                    '"' => try escaped_ir.appendSlice(self.allocator, "\\\""),
-                    '\\' => try escaped_ir.appendSlice(self.allocator, "\\\\"),
-                    else => try escaped_ir.append(self.allocator, c),
+        var iter = dir.iterate();
+        while (try iter.next()) |entry| {
+            if (entry.kind == .directory and entry.name.len == 2) {
+                var subdir = dir.openDir(entry.name, .{ .iterate = true }) catch continue;
+                defer subdir.close();
+                var sub_iter = subdir.iterate();
+                while (try sub_iter.next()) |_| {
+                    count += 1;
                 }
             }
-
-            const entry_str = try std.fmt.allocPrint(self.allocator,
-                \\    {{
-                \\      "key": "{s}",
-                \\      "zir_hash": {d},
-                \\      "llvm_ir": "{s}"
-                \\    }}
-            , .{ entry.value_ptr.function_key, entry.value_ptr.zir_hash, escaped_ir.items });
-            defer self.allocator.free(entry_str);
-            try content.appendSlice(self.allocator, entry_str);
         }
+        self.loaded_count = count;
+    }
 
-        try content.appendSlice(self.allocator, "\n  ]\n}\n");
-        try file.writeAll(content.items);
+    /// Save is now a no-op - objects are written immediately
+    pub fn save(self: *AirCache) !void {
+        _ = self;
+        // Objects are written on put(), nothing to do here
     }
 };
 
@@ -501,6 +648,7 @@ pub const MultiLevelCache = struct {
     zir_cache: ZirCache,
     air_cache: AirCache,
     file_cache: Cache, // Original file-level cache
+    hash_cache: FileHashCache, // Per-file hash cache with mtime
 
     pub fn init(allocator: mem.Allocator, cache_dir: []const u8) MultiLevelCache {
         return .{
@@ -509,6 +657,7 @@ pub const MultiLevelCache = struct {
             .zir_cache = ZirCache.init(allocator),
             .air_cache = AirCache.init(allocator, cache_dir),
             .file_cache = Cache.init(allocator, cache_dir),
+            .hash_cache = FileHashCache.init(allocator),
         };
     }
 
@@ -517,6 +666,7 @@ pub const MultiLevelCache = struct {
         try self.file_cache.load();
         try self.air_cache.load();
         try self.zir_cache.load(self.cache_dir);
+        try self.hash_cache.load(self.cache_dir);
     }
 
     /// Save all caches to disk
@@ -524,12 +674,14 @@ pub const MultiLevelCache = struct {
         try self.file_cache.save();
         try self.air_cache.save();
         try self.zir_cache.save(self.cache_dir);
+        try self.hash_cache.save(self.cache_dir);
     }
 
     pub fn deinit(self: *MultiLevelCache) void {
         self.zir_cache.deinit();
         self.air_cache.deinit();
         self.file_cache.deinit();
+        self.hash_cache.deinit();
     }
 
     pub fn getStats(self: *MultiLevelCache) CacheStats {
