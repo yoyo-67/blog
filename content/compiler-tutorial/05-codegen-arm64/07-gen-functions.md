@@ -199,6 +199,103 @@ This is a key difference between ARM64 and x86:
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+### Understanding the ARM64 Memory Syntax
+
+Before we write the prologue, let's understand the syntax we'll use:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ ARM64 MEMORY SYNTAX EXPLAINED                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│ BASIC MEMORY ACCESS:                                                │
+│                                                                     │
+│   [sp]         = "the memory location that sp points to"           │
+│   [sp, #16]    = "memory at (sp + 16)"                             │
+│   [sp, #-16]   = "memory at (sp - 16)"                             │
+│                                                                     │
+│ THE INSTRUCTIONS:                                                   │
+│                                                                     │
+│   str  x0, [sp]       = Store x0 to memory at sp                   │
+│   ldr  x0, [sp]       = Load from memory at sp into x0             │
+│   stp  x0, x1, [sp]   = Store Pair: save TWO registers at once     │
+│   ldp  x0, x1, [sp]   = Load Pair: load TWO registers at once      │
+│                                                                     │
+│ THE ! (PRE-INDEX):                                                  │
+│                                                                     │
+│   stp x29, x30, [sp, #-16]!                                        │
+│                        ▲                                            │
+│                        └── The ! means "update sp BEFORE storing"  │
+│                                                                     │
+│   This does TWO things:                                             │
+│     1. sp = sp - 16          (move stack pointer down)             │
+│     2. store x29, x30 at sp  (save the registers there)            │
+│                                                                     │
+│   It's like: "make room on the stack, then store"                  │
+│                                                                     │
+│ POST-INDEX (no !):                                                  │
+│                                                                     │
+│   ldp x29, x30, [sp], #16                                          │
+│                       ▲                                             │
+│                       └── No !, but #16 after means "update AFTER" │
+│                                                                     │
+│   This does TWO things:                                             │
+│     1. load x29, x30 from sp (restore the registers)               │
+│     2. sp = sp + 16          (move stack pointer up)               │
+│                                                                     │
+│   It's like: "load from stack, then shrink the stack"              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Why #-16?** We save two 8-byte registers (x29 and x30), so we need 16 bytes of space. The stack grows downward, so we subtract.
+
+**Visual: What `stp x29, x30, [sp, #-16]!` does:**
+
+```
+BEFORE:                              AFTER:
+
+sp = 1000                            sp = 984 (moved down by 16)
+
+         Memory                               Memory
+         ┌────────┐                           ┌────────┐
+  1000 → │ (old)  │ ← sp points here   984 → │  x29   │ ← sp points here now
+         ├────────┤                           ├────────┤
+   992 → │        │                    992 → │  x30   │
+         ├────────┤                           ├────────┤
+   984 → │        │                   1000 → │ (old)  │
+         └────────┘                           └────────┘
+
+Step 1: sp = sp - 16  (1000 → 984)
+Step 2: store x29 at [sp]      (address 984)
+        store x30 at [sp + 8]  (address 992)
+```
+
+**Visual: What `ldp x29, x30, [sp], #16` does:**
+
+```
+BEFORE:                              AFTER:
+
+sp = 984                             sp = 1000 (moved up by 16)
+
+         Memory                               Memory
+         ┌────────┐                           ┌────────┐
+   984 → │  x29   │ ← sp points here   984 → │  x29   │
+         ├────────┤                           ├────────┤
+   992 → │  x30   │                    992 → │  x30   │
+         ├────────┤                           ├────────┤
+  1000 → │ (old)  │                   1000 → │ (old)  │ ← sp points here now
+         └────────┘                           └────────┘
+
+Step 1: load x29 from [sp]      (address 984)
+        load x30 from [sp + 8]  (address 992)
+Step 2: sp = sp + 16  (984 → 1000)
+```
+
+**The difference:**
+- `[sp, #-16]!` = change sp first, THEN access memory (pre-index)
+- `[sp], #16` = access memory first, THEN change sp (post-index)
+
 ### The Problem
 
 Now we understand the pieces. At function entry, we need to:

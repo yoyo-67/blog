@@ -176,12 +176,15 @@ Most ARM64 instructions follow one of these patterns:
 │   add     w0, w1, #10      // w0 = w1 + 10                        │
 │   sub     w0, w0, #1       // w0 = w0 - 1                         │
 │                                                                     │
-│ Memory operations:                                                  │
-│   ldr     dst, [base]                // load from address          │
-│   str     src, [base]                // store to address           │
-│   ldr     dst, [base, #offset]       // load with offset           │
-│   stp     r1, r2, [sp, #-16]!        // store pair, pre-decrement  │
-│   ldp     r1, r2, [sp], #16          // load pair, post-increment  │
+│ Memory operations (explained in detail in Lesson 7):               │
+│   ldr     dst, [base]                // load from memory address   │
+│   str     src, [base]                // store to memory address    │
+│   stp     r1, r2, [sp, #-16]!        // store pair (for prologue)  │
+│   ldp     r1, r2, [sp], #16          // load pair (for epilogue)   │
+│                                                                     │
+│   The [brackets] mean "memory at this address"                     │
+│   The ! means "also update the base register"                      │
+│   Don't worry about these yet - we'll cover them in Lesson 7!      │
 │                                                                     │
 │ Branches:                                                           │
 │   b       label            // unconditional branch                 │
@@ -230,12 +233,18 @@ Here are the instructions we'll use in our backend:
 │   sdiv  wD, wN, wM       // wD = wN / wM (signed)                 │
 │                                                                     │
 │ STACK OPERATIONS:                                                   │
-│   stp   x29, x30, [sp, #-16]!   // push FP and LR                 │
-│   ldp   x29, x30, [sp], #16     // pop FP and LR                  │
+│   stp   x29, x30, [sp, #-16]!   // save FP and LR to stack        │
+│   ldp   x29, x30, [sp], #16     // restore FP and LR from stack   │
+│                                                                     │
+│   FP = Frame Pointer (x29) - base of our stack frame              │
+│   LR = Link Register (x30) - return address                       │
 │                                                                     │
 │ CONTROL FLOW:                                                       │
-│   bl    label            // call function (stores return in x30)  │
+│   b     label            // Branch (unconditional jump)           │
+│   bl    label            // Branch with Link (call function)      │
 │   ret                    // return (jump to address in x30)       │
+│                                                                     │
+│   bl = "Branch with Link" - jumps AND saves return address in x30 │
 │                                                                     │
 │ FRAME SETUP:                                                        │
 │   mov   x29, sp          // set frame pointer to stack pointer    │
@@ -298,20 +307,26 @@ cat > basics.s << 'EOF'
     .text
     .globl _main
 _main:
-    // Save frame pointer and link register
+    // ─────────────────────────────────────────────────────────────
+    // These two lines are the "prologue" - explained in Lesson 7
+    // For now, just know: every function needs these at the start
     stp     x29, x30, [sp, #-16]!
     mov     x29, sp
+    // ─────────────────────────────────────────────────────────────
 
     // Simple arithmetic: (10 + 5) * 2 = 30
     mov     w0, #10         // w0 = 10
     mov     w1, #5          // w1 = 5
     add     w2, w0, w1      // w2 = 15
     mov     w3, #2          // w3 = 2
-    mul     w0, w2, w3      // w0 = 30 (result for return)
+    mul     w0, w2, w3      // w0 = 30 (result in w0 for return)
 
-    // Restore and return
+    // ─────────────────────────────────────────────────────────────
+    // These two lines are the "epilogue" - explained in Lesson 7
+    // For now, just know: every function needs these at the end
     ldp     x29, x30, [sp], #16
     ret
+    // ─────────────────────────────────────────────────────────────
 EOF
 
 cc -o basics basics.s
@@ -326,6 +341,7 @@ cat > div.s << 'EOF'
     .text
     .globl _main
 _main:
+    // Prologue (explained in Lesson 7)
     stp     x29, x30, [sp, #-16]!
     mov     x29, sp
 
@@ -334,6 +350,7 @@ _main:
     mov     w1, #4
     sdiv    w0, w0, w1      // w0 = 25
 
+    // Epilogue (explained in Lesson 7)
     ldp     x29, x30, [sp], #16
     ret
 EOF
@@ -344,6 +361,8 @@ echo $?  # Should print 25
 ```
 
 **For Linux ARM64**, remove the underscore from `_main`.
+
+**What's with the stp/ldp lines?** These are the function prologue and epilogue - boilerplate that every function needs. We'll explain exactly what they do in Lesson 7. For now, just copy them and focus on the arithmetic in the middle!
 
 ---
 
