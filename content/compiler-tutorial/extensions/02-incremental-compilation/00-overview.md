@@ -329,19 +329,21 @@ Verdict: Matters at scale (100k+ objects), nice otherwise
 
 ---
 
-## Detailed Lessons
+## Detailed Modules
 
-For implementation details, see the following lessons:
+For implementation details, follow these modules in order:
 
-| Lesson | Topic | Priority |
-|--------|-------|----------|
-| [1. Why Cache?](01-why-cache/) | Motivation | Understand first |
-| [2. Change Detection](02-file-hashing/) | FileHashCache | **Critical** |
-| [3. File Cache](03-file-cache/) | ZirCache | **Critical** |
-| [4. Function Cache](04-function-cache/) | AirCache | Nice to have |
-| [5. Surgical Patching](05-surgical-patching/) | Partial rebuilds | **Critical** |
-| [6. Multi-Level Cache](06-multi-level-cache/) | Complete system | Integration |
+| Module | Topic | Sub-lessons | Priority |
+|--------|-------|-------------|----------|
+| [1. File Change Detection](../01-file-change-detection/) | FileHashCache | 5 | **Critical** |
+| [2. File-Level Cache](../02-file-cache/) | ZirCache | 4 | **Critical** |
+| [3. Function-Level Cache](../03-function-cache/) | AirCache | 4 | Nice to have |
+| [4. Multi-Level Integration](../04-multi-level-cache/) | Combined caches | 3 | Integration |
+| [5. Surgical Patching](../05-surgical-patching/) | Partial rebuilds | 5 | **Critical** |
+| [6. Performance](../06-performance/) | Optimization | 3 | Polish |
+
+**Total: 24 sub-lessons** taking you from zero to a production-ready incremental compiler.
 
 ---
 
-Next: [Lesson 2.1: Why Cache?](01-why-cache/) →
+Next: [Module 1: File Change Detection](../01-file-change-detection/) →
