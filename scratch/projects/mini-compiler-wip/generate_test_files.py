@@ -40,8 +40,10 @@ def gen_file(file_idx, imports, num_funcs=3):
     for i in range(num_funcs):
         name = func_name(file_idx, i)
         calls = []
-        if imports and random.random() < 0.7:
-            for _, alias, dep_idx in random.sample(imports, min(2, len(imports))):
+        # func_N_0 ALWAYS calls imports to ensure full tree is executed
+        # Other functions randomly call imports (70% chance)
+        if imports and (i == 0 or random.random() < 0.7):
+            for _, alias, dep_idx in imports:  # Call ALL imports, not random sample
                 calls.append((alias, func_name(dep_idx, 0)))
         lines.append(gen_function(name, calls if calls else None))
 

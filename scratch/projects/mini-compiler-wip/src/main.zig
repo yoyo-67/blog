@@ -48,11 +48,19 @@ pub fn main() !void {
             std.debug.print("Error: 'build' requires a file argument\n", .{});
             return;
         }
-        const verbosity: u8 = if (args.len > 3)
-            if (mem.eql(u8, args[3], "-vv")) 2 else if (mem.eql(u8, args[3], "-v")) 1 else 0
-        else
-            0;
-        try incrementalBuild(allocator, args[2], verbosity);
+        // Parse flags
+        var verbosity: u8 = 0;
+        var compile_exe: bool = true;
+        for (args[3..]) |arg| {
+            if (mem.eql(u8, arg, "-vv")) {
+                verbosity = 2;
+            } else if (mem.eql(u8, arg, "-v")) {
+                verbosity = 1;
+            } else if (mem.eql(u8, arg, "--no-exe")) {
+                compile_exe = false;
+            }
+        }
+        try incrementalBuild(allocator, args[2], verbosity, compile_exe);
     } else if (mem.eql(u8, command, "clean")) {
         try cleanCache(allocator);
     } else {
@@ -69,25 +77,34 @@ fn printUsage() void {
         \\  run <file>        Compile and run the file
         \\  emit <file>       Emit LLVM IR to stdout
         \\  eval <code>       Compile and run code string
-        \\  build <file> [-v] Incremental build
+        \\  build <file>      Incremental build (outputs .ll, .opt.ll, and executable)
         \\  clean             Clean the build cache
         \\
-        \\Verbosity:
-        \\  -v   Show cache status and function counts
-        \\  -vv  Show detailed hashes, timing, and per-function info
+        \\Build flags:
+        \\  -v       Show cache status and function counts
+        \\  -vv      Show detailed hashes, timing, and per-function info
+        \\  --no-exe Only generate LLVM IR, skip native executable
         \\
         \\Examples:
         \\  comp run example.mini
         \\  comp emit example.mini > output.ll
         \\  comp eval "fn main() i32 {{ return 42; }}"
         \\  comp build main.mini -v
+        \\  comp build main.mini --no-exe
         \\  comp build main.mini -vv
         \\
     , .{});
 }
 
 fn runFile(allocator: mem.Allocator, path: []const u8) !void {
-    const llvm_ir = try compileUnit(allocator, path);
+    // Use incremental build to get the combined IR (handles imports correctly)
+    try incrementalBuild(allocator, path, 0, false); // Don't compile to exe when running
+
+    // Read the generated output file
+    const output_path = try getOutputPath(allocator, path);
+    defer allocator.free(output_path);
+
+    const llvm_ir = try readFile(allocator, output_path);
     defer allocator.free(llvm_ir);
 
     try runLLVM(allocator, llvm_ir);
@@ -141,12 +158,18 @@ fn compileUnit(allocator: mem.Allocator, path: []const u8) ![]const u8 {
     var unit = unit_mod.CompilationUnit.init(arena_alloc, path);
     try unit.load(&arena);
 
+    std.debug.print("[debug] Imports found: {d}\n", .{unit.imports.count()});
+
     // Load all imports
     var units: std.StringHashMapUnmanaged(*unit_mod.CompilationUnit) = .empty;
     try unit.loadImports(&arena, &units);
 
+    std.debug.print("[debug] Units loaded: {d}\n", .{units.count()});
+
     // Generate program with all imported functions
     const program = try unit.generateProgram(arena_alloc);
+
+    std.debug.print("[debug] Functions generated: {d}\n", .{program.functions_list.items.len});
 
     // Generate LLVM IR
     var gen = codegen_mod.init(allocator);
@@ -195,15 +218,17 @@ fn runLLVM(allocator: mem.Allocator, llvm_ir: []const u8) !void {
 
 const CACHE_DIR = ".mini_cache";
 
-fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !void {
+fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8, compile_exe: bool) !void {
     const start_time = std.time.nanoTimestamp();
 
     // Initialize multi-level cache
     var multi_cache = cache_mod.MultiLevelCache.init(allocator, CACHE_DIR);
     defer multi_cache.deinit();
 
-    // Load all caches (file cache + AIR cache + ZIR cache)
+    // TIMING: Cache loading
+    const load_start = std.time.nanoTimestamp();
     try multi_cache.load();
+    const load_end = std.time.nanoTimestamp();
 
     if (verbosity >= 1) {
         std.debug.print("[cache] Loaded: {d} files (ZIR), {d} functions (AIR)\n", .{
@@ -212,27 +237,37 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !
         });
     }
 
-    // Compute combined hash of main file + ALL transitive dependencies (using mtime cache)
+    // TIMING: Hash computation
+    const hash_start = std.time.nanoTimestamp();
     const source = try readFile(allocator, path);
     defer allocator.free(source);
     const combined_hash = try computeCombinedHashWithCache(allocator, path, source, &multi_cache.hash_cache);
+    const hash_end = std.time.nanoTimestamp();
 
     if (verbosity >= 2) {
         std.debug.print("[hash] Combined hash of all deps: {x:0>16}\n", .{combined_hash});
+        const load_ms = @as(f64, @floatFromInt(load_end - load_start)) / 1_000_000.0;
+        const hash_ms = @as(f64, @floatFromInt(hash_end - hash_start)) / 1_000_000.0;
+        std.debug.print("[time] Cache load: {d:.2}ms, Hash compute: {d:.2}ms\n", .{ load_ms, hash_ms });
+        multi_cache.hash_cache.printStats();
     }
 
     // Check if combined hash matches cached hash
     const needs_recompile = !multi_cache.zir_cache.hasMatchingHash(path, combined_hash);
 
     if (needs_recompile) {
-        // Use per-file incremental compilation
+        // TIMING: Compilation
+        const compile_start = std.time.nanoTimestamp();
         const result = try incrementalCompilePerFile(allocator, path, &multi_cache, verbosity);
         defer allocator.free(result.llvm_ir);
+        const compile_end = std.time.nanoTimestamp();
 
-        // Update caches - store both hash-indexed and combined IR for surgical patching
+        // TIMING: Cache saving
+        const save_start = std.time.nanoTimestamp();
         try multi_cache.zir_cache.put(path, combined_hash, 0, &.{}, result.llvm_ir);
         try multi_cache.zir_cache.putCombinedIr(path, result.llvm_ir);
         try multi_cache.save();
+        const save_end = std.time.nanoTimestamp();
 
         if (verbosity >= 1) {
             std.debug.print("[build] Files: {d} cached, {d} compiled\n", .{
@@ -243,10 +278,12 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !
 
         const end_time = std.time.nanoTimestamp();
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time)) / 1_000_000.0;
+        const compile_ms = @as(f64, @floatFromInt(compile_end - compile_start)) / 1_000_000.0;
+        const save_ms = @as(f64, @floatFromInt(save_end - save_start)) / 1_000_000.0;
 
         std.debug.print("[build] Compiled: {s}\n", .{path});
         if (verbosity >= 2) {
-            std.debug.print("[time] Total: {d:.2}ms\n", .{elapsed_ms});
+            std.debug.print("[time] Compile: {d:.2}ms, Save: {d:.2}ms, Total: {d:.2}ms\n", .{ compile_ms, save_ms, elapsed_ms });
         }
 
         // Write output
@@ -258,25 +295,54 @@ fn incrementalBuild(allocator: mem.Allocator, path: []const u8, verbosity: u8) !
         try out_file.writeAll(result.llvm_ir);
 
         std.debug.print("[build] Output: {s}\n", .{output_path});
+
+        // Compile to native executable if requested
+        if (compile_exe) {
+            const exe_path = try getExePath(allocator, path);
+            defer allocator.free(exe_path);
+            try compileToExecutable(allocator, output_path, exe_path, verbosity);
+        }
     } else {
         if (verbosity >= 1) {
             std.debug.print("[build] No changes, using cache: {s}\n", .{path});
         }
 
         // Use cached combined output
+        const read_start = std.time.nanoTimestamp();
         if (multi_cache.zir_cache.getLlvmIr(path, combined_hash)) |cached_ir| {
+            const read_end = std.time.nanoTimestamp();
+
             const output_path = try getOutputPath(allocator, path);
             defer allocator.free(output_path);
 
+            const write_start = std.time.nanoTimestamp();
             const out_file = try fs.cwd().createFile(output_path, .{});
             defer out_file.close();
             try out_file.writeAll(cached_ir);
+            const write_end = std.time.nanoTimestamp();
             allocator.free(cached_ir);
 
+            const end_time = std.time.nanoTimestamp();
+            if (verbosity >= 2) {
+                const load_ms = @as(f64, @floatFromInt(load_end - load_start)) / 1_000_000.0;
+                const hash_ms = @as(f64, @floatFromInt(hash_end - hash_start)) / 1_000_000.0;
+                const read_ms = @as(f64, @floatFromInt(read_end - read_start)) / 1_000_000.0;
+                const write_ms = @as(f64, @floatFromInt(write_end - write_start)) / 1_000_000.0;
+                const total_ms = @as(f64, @floatFromInt(end_time - start_time)) / 1_000_000.0;
+                std.debug.print("[time] Load: {d:.2}ms, Hash: {d:.2}ms, Read: {d:.2}ms, Write: {d:.2}ms, Total: {d:.2}ms\n", .{ load_ms, hash_ms, read_ms, write_ms, total_ms });
+            }
+
             std.debug.print("[build] Output (cached): {s}\n", .{output_path});
+
+            // Compile to native executable if requested
+            if (compile_exe) {
+                const exe_path = try getExePath(allocator, path);
+                defer allocator.free(exe_path);
+                try compileToExecutable(allocator, output_path, exe_path, verbosity);
+            }
         } else {
             std.debug.print("[build] Cache miss, recompiling...\n", .{});
-            try incrementalBuild(allocator, path, verbosity);
+            try incrementalBuild(allocator, path, verbosity, compile_exe);
         }
     }
 }
@@ -661,7 +727,21 @@ fn compileWithCache(
 }
 
 /// Compute a combined hash using mtime-based file hash cache
+// Timing stats for hash traversal
+var hash_traverse_alloc_ns: i128 = 0;
+var hash_traverse_lookup_ns: i128 = 0;
+var hash_traverse_getimports_ns: i128 = 0;
+var hash_traverse_gethash_ns: i128 = 0;
+var hash_traverse_count: usize = 0;
+
 fn computeCombinedHashWithCache(allocator: mem.Allocator, path: []const u8, source: []const u8, hash_cache: *cache_mod.FileHashCache) !u64 {
+    // Reset stats
+    hash_traverse_alloc_ns = 0;
+    hash_traverse_lookup_ns = 0;
+    hash_traverse_getimports_ns = 0;
+    hash_traverse_gethash_ns = 0;
+    hash_traverse_count = 0;
+
     var hasher = std.hash.Wyhash.init(0);
 
     // Hash the main source
@@ -679,8 +759,24 @@ fn computeCombinedHashWithCache(allocator: mem.Allocator, path: []const u8, sour
 
     try hashTransitiveDepsWithCache(allocator, path, &hasher, &visited, hash_cache);
 
+    // Print traversal stats
+    const alloc_ms = @as(f64, @floatFromInt(hash_traverse_alloc_ns)) / 1_000_000.0;
+    const lookup_ms = @as(f64, @floatFromInt(hash_traverse_lookup_ns)) / 1_000_000.0;
+    const getimports_ms = @as(f64, @floatFromInt(hash_traverse_getimports_ns)) / 1_000_000.0;
+    const gethash_ms = @as(f64, @floatFromInt(hash_traverse_gethash_ns)) / 1_000_000.0;
+    std.debug.print("[traverse] count: {d}, alloc: {d:.2}ms, lookup: {d:.2}ms, getImports: {d:.2}ms, getHash: {d:.2}ms\n", .{
+        hash_traverse_count,
+        alloc_ms,
+        lookup_ms,
+        getimports_ms,
+        gethash_ms,
+    });
+
     return hasher.final();
 }
+
+// Reusable buffer for path resolution (avoids 10k+ allocations)
+var path_buffer: [4096]u8 = undefined;
 
 /// Recursively hash all transitive dependencies using mtime cache
 fn hashTransitiveDepsWithCache(
@@ -690,32 +786,43 @@ fn hashTransitiveDepsWithCache(
     visited: *std.StringHashMapUnmanaged([]const u8),
     hash_cache: *cache_mod.FileHashCache,
 ) !void {
+    hash_traverse_count += 1;
     const dir = std.fs.path.dirname(path) orelse "";
 
     // Get imports for this file
+    const gi_start = std.time.nanoTimestamp();
     const import_paths = hash_cache.getImports(allocator, path) catch return;
+    hash_traverse_getimports_ns += std.time.nanoTimestamp() - gi_start;
     defer {
         for (import_paths) |p| allocator.free(p);
         allocator.free(import_paths);
     }
 
     for (import_paths) |import_path| {
-        const resolved_path = if (dir.len > 0)
-            try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir, import_path })
-        else
-            try allocator.dupe(u8, import_path);
+        // Use stack buffer for path resolution (no allocation!)
+        const alloc_start = std.time.nanoTimestamp();
+        const resolved_path_slice = if (dir.len > 0) blk: {
+            const written = std.fmt.bufPrint(&path_buffer, "{s}/{s}", .{ dir, import_path }) catch continue;
+            break :blk written;
+        } else import_path;
+        hash_traverse_alloc_ns += std.time.nanoTimestamp() - alloc_start;
 
         // Skip if already visited
-        if (visited.contains(resolved_path)) {
-            allocator.free(resolved_path);
+        const lookup_start = std.time.nanoTimestamp();
+        if (visited.contains(resolved_path_slice)) {
+            hash_traverse_lookup_ns += std.time.nanoTimestamp() - lookup_start;
             continue;
         }
 
-        // Store in visited (key owns the memory)
+        // Store in visited (need to dupe for storage)
+        const resolved_path = try allocator.dupe(u8, resolved_path_slice);
         try visited.put(allocator, resolved_path, resolved_path);
+        hash_traverse_lookup_ns += std.time.nanoTimestamp() - lookup_start;
 
         // Get hash using mtime cache (avoids re-reading unchanged files)
+        const gh_start = std.time.nanoTimestamp();
         const dep_hash = hash_cache.getHash(resolved_path) catch continue;
+        hash_traverse_gethash_ns += std.time.nanoTimestamp() - gh_start;
         hasher.update(mem.asBytes(&dep_hash));
 
         // Recursively process this dependency's imports
@@ -786,6 +893,72 @@ fn getOutputPath(allocator: mem.Allocator, path: []const u8) ![]const u8 {
         return std.fmt.allocPrint(allocator, "{s}.ll", .{base});
     }
     return std.fmt.allocPrint(allocator, "{s}.ll", .{path});
+}
+
+fn getExePath(allocator: mem.Allocator, path: []const u8) ![]const u8 {
+    // Replace .mini with _exe (or just remove extension)
+    if (mem.endsWith(u8, path, ".mini")) {
+        const base = path[0 .. path.len - 5];
+        return std.fmt.allocPrint(allocator, "{s}", .{base});
+    }
+    return std.fmt.allocPrint(allocator, "{s}_exe", .{path});
+}
+
+fn compileToExecutable(allocator: mem.Allocator, ll_path: []const u8, exe_path: []const u8, verbosity: u8) !void {
+    const compile_start = std.time.nanoTimestamp();
+
+    // First, emit optimized LLVM IR
+    const opt_ll_path = try std.fmt.allocPrint(allocator, "{s}.opt.ll", .{exe_path});
+    defer allocator.free(opt_ll_path);
+
+    var opt_child = process.Child.init(&.{
+        "clang",
+        "-O2",
+        "-S",
+        "-emit-llvm",
+        "-o",
+        opt_ll_path,
+        ll_path,
+    }, allocator);
+    opt_child.stderr_behavior = .Pipe;
+    opt_child.stdout_behavior = .Pipe;
+    _ = try opt_child.spawn();
+    _ = try opt_child.wait();
+
+    // Then compile to native executable
+    var child = process.Child.init(&.{
+        "clang",
+        "-O2",
+        "-o",
+        exe_path,
+        ll_path,
+    }, allocator);
+    child.stderr_behavior = .Pipe;
+    child.stdout_behavior = .Pipe;
+
+    _ = try child.spawn();
+    const result = try child.wait();
+
+    const compile_end = std.time.nanoTimestamp();
+    const compile_ms = @as(f64, @floatFromInt(compile_end - compile_start)) / 1_000_000.0;
+
+    if (result.Exited == 0) {
+        std.debug.print("[build] Executable: {s}\n", .{exe_path});
+        std.debug.print("[build] Optimized IR: {s}\n", .{opt_ll_path});
+        if (verbosity >= 2) {
+            std.debug.print("[time] Native compile: {d:.2}ms\n", .{compile_ms});
+        }
+    } else {
+        std.debug.print("[build] clang failed with exit code: {d}\n", .{result.Exited});
+        // Read and print stderr
+        if (child.stderr) |stderr| {
+            var buf: [4096]u8 = undefined;
+            const n = stderr.read(&buf) catch 0;
+            if (n > 0) {
+                std.debug.print("{s}\n", .{buf[0..n]});
+            }
+        }
+    }
 }
 
 fn cleanCache(allocator: mem.Allocator) !void {

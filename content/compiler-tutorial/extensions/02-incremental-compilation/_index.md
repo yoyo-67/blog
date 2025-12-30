@@ -7,22 +7,42 @@ weight: 2
 
 Compiling from scratch every time is slow. This section teaches you how to cache results and only recompile what changed.
 
+---
+
+## Real Benchmark: 10,000 Files
+
+| Scenario | Time | Speedup |
+|----------|------|---------|
+| Cold build (clean cache) | **7.97s** | baseline |
+| Warm build (no changes) | **1.25s** | 6.4x faster |
+| 1 file changed | **1.81s** | 4.4x faster |
+
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                         INCREMENTAL COMPILATION                               │
+│                    MEASURED TIMING BREAKDOWN                                  │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   First build:                          Second build (only main.mini changed)│
-│   ─────────────                         ─────────────────────────────────────│
+│   INCREMENTAL BUILD (1 file changed, 1.81s total):                           │
 │                                                                              │
-│   main.mini ──► compile ──┐             main.mini ──► compile ──┐            │
-│   math.mini ──► compile ──┼──► output   math.mini ──► [CACHED]──┼──► output  │
-│   utils.mini ─► compile ──┘             utils.mini ─► [CACHED]──┘            │
+│   [time] Cache load: 393ms, Hash compute: 938ms                              │
+│   [incremental] Surgical patch: 1/10001 files changed                        │
+│   [time] Compile: 335ms, Save: 142ms                                         │
 │                                                                              │
-│   Time: 3 units                         Time: 1 unit (3x faster!)            │
+│   Key insight: Hash compute (0.9s) dominates, not compilation!               │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Start Here: The Big Picture
+
+**[→ Overview: What Actually Matters](00-overview/)**
+
+Before diving into implementation, read the overview to understand:
+- Where time is actually spent
+- Which optimizations are **critical** vs **nice-to-have**
+- The complete build flow
 
 ---
 
@@ -30,10 +50,40 @@ Compiling from scratch every time is slow. This section teaches you how to cache
 
 A multi-level caching system with four components:
 
-1. **FileHashCache** - Track file changes via mtime, content hash, and imports
-2. **ZirCache** - Cache LLVM IR at the file level using Git-style storage
-3. **AirCache** - Cache LLVM IR at the function level for fine-grained reuse
-4. **Surgical Patching** - Partially rebuild files using embedded markers
+| Component | Purpose | Priority |
+|-----------|---------|----------|
+| **FileHashCache** | Track changes via mtime + hash + imports | Critical |
+| **ZirCache** | File-level LLVM IR cache | Critical |
+| **Surgical Patching** | Partial output rebuilds | Critical |
+| **AirCache** | Function-level LLVM IR cache | Nice to have |
+
+---
+
+## Lessons
+
+| Lesson | Topic | Priority |
+|--------|-------|----------|
+| [0. Overview](00-overview/) | Big picture, benchmarks | **Read first** |
+| [1. Why Cache?](01-why-cache/) | Motivation | Understand |
+| [2. Change Detection](02-file-hashing/) | FileHashCache | **Critical** |
+| [3. File Cache](03-file-cache/) | ZirCache | **Critical** |
+| [4. Function Cache](04-function-cache/) | AirCache | Nice to have |
+| [5. Surgical Patching](05-surgical-patching/) | Partial rebuilds | **Critical** |
+| [6. Multi-Level Cache](06-multi-level-cache/) | Complete system | Integration |
+
+---
+
+## Key Insight
+
+With 10,000 files, the **minimum time is ~1.2 seconds** regardless of what changed:
+- Cache load: **390ms** (loading file_hashes.bin)
+- Hash compute: **847ms** (mtime checks + dependency traversal for 10k files)
+
+The actual compilation is fast:
+- Compiling 1 changed file: **335ms** (including surgical patching)
+- Compiling all 10k files: **4700ms** (cold build only)
+
+**This means:** The bottleneck is hash computation, not compilation. Mtime-first checking, stack-allocated buffers, and binary cache format are critical.
 
 ---
 
@@ -41,83 +91,28 @@ A multi-level caching system with four components:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                         CACHE LEVELS                                          │
+│                         OPTIMIZATION PRIORITIES                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   FileHashCache (Change Detection)                                           │
-│   ────────────────────────────────                                           │
-│   "Has main.mini or ANY of its imports changed?"                             │
-│   Key: file path                                                             │
-│   Value: mtime, hash, imports list                                           │
+│   CRITICAL (must have):                                                      │
+│   ─────────────────────                                                      │
+│   • Mtime-first checking     → Avoid reading unchanged files                 │
+│   • Binary cache format      → 10x faster than JSON                          │
+│   • Combined hash            → One check includes all dependencies           │
+│   • Surgical patching        → Recompile only changed sections               │
 │                                                                              │
-│   ZirCache (File-Level Cache)                                                │
-│   ───────────────────────────                                                │
-│   "Do we have cached LLVM IR for this file+dependencies combo?"              │
-│   Key: combined hash (file + all transitive imports)                         │
-│   Value: LLVM IR stored in Git-style objects                                 │
-│                                                                              │
-│   AirCache (Function-Level Cache)                                            │
-│   ───────────────────────────────                                            │
-│   "Has this specific function changed?"                                      │
-│   Key: file:function_name → ZIR hash                                         │
-│   Value: LLVM IR for just this function                                      │
-│                                                                              │
-│   Surgical Patching                                                          │
-│   ─────────────────                                                          │
-│   "Can we patch just the changed sections?"                                  │
-│   Uses file markers: ; ==== FILE: path:hash ====                             │
-│   Reassembles output from cached + recompiled sections                       │
+│   NICE TO HAVE:                                                              │
+│   ─────────────                                                              │
+│   • Per-function caching     → Only helps within changed files               │
+│   • Git-style storage        → Matters at 100k+ cached objects               │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Cache Directory Structure
-
-```
-.mini_cache/
-├── file_hashes.bin      # FileHashCache index (binary for speed)
-├── zir_index.bin        # ZirCache path→hash index
-├── zir/                 # Git-style file-level cache
-│   └── 3d/
-│       └── b3b7314a73226b
-├── objects/             # Git-style function-level cache
-│   ├── 9a/
-│   │   └── 2eb98b6d927e93
-│   └── df/
-│       └── 15672fe8b1d382
-└── combined/            # Full IRs with markers for surgical patching
-    └── main.mini.ll
-```
-
----
-
-## Lessons
-
-| Lesson | Topic | What You'll Build |
-|--------|-------|-------------------|
-| [1. Why Cache?](01-why-cache/) | Motivation | Understanding the problem |
-| [2. Change Detection](02-file-hashing/) | FileHashCache | Mtime, hashing, import tracking |
-| [3. File Cache](03-file-cache/) | ZirCache | Git-style file-level cache |
-| [4. Function Cache](04-function-cache/) | AirCache | Per-function caching with ZIR hashing |
-| [5. Surgical Patching](05-surgical-patching/) | Partial rebuilds | File markers, incremental reassembly |
-| [6. Multi-Level Cache](06-multi-level-cache/) | Complete system | Putting it all together |
-
----
-
-## Real-World Impact
-
-Production compilers spend significant effort on incremental compilation:
-
-- **Rust**: Incremental compilation saves ~50% build time
-- **Go**: Fast compilation is a core design goal
-- **TypeScript**: `--incremental` flag for caching
-
-Even our multi-level cache can show dramatic improvements on larger projects.
-
----
-
 ## Start Here
 
-Begin with [Lesson 2.1: Why Cache?](01-why-cache/) →
+**[→ Overview: What Actually Matters](00-overview/)** - Benchmarks and big picture
+
+Or jump to implementation: [Lesson 2.1: Why Cache?](01-why-cache/) →

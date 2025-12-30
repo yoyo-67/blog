@@ -1,8 +1,0 @@
-fn length(x: i32) i32 {
-    return x + 1;
-}
-
-fn double(x: i32) i32 {
-    return x * 2;
-}
-

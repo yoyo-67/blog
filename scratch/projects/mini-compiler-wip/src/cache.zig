@@ -92,6 +92,14 @@ pub const FileHashCache = struct {
     entries: std.StringHashMapUnmanaged(FileHashEntry),
     dirty: bool,
 
+    // Timing stats
+    stat_count: usize = 0,
+    read_count: usize = 0,
+    cache_hits: usize = 0,
+    stat_time_ns: i128 = 0,
+    read_time_ns: i128 = 0,
+    hash_time_ns: i128 = 0,
+
     pub const FileHashEntry = struct {
         mtime: i128,
         hash: u64,
@@ -103,7 +111,27 @@ pub const FileHashCache = struct {
             .allocator = allocator,
             .entries = .empty,
             .dirty = false,
+            .stat_count = 0,
+            .read_count = 0,
+            .cache_hits = 0,
+            .stat_time_ns = 0,
+            .read_time_ns = 0,
+            .hash_time_ns = 0,
         };
+    }
+
+    pub fn printStats(self: *const FileHashCache) void {
+        const stat_ms = @as(f64, @floatFromInt(self.stat_time_ns)) / 1_000_000.0;
+        const read_ms = @as(f64, @floatFromInt(self.read_time_ns)) / 1_000_000.0;
+        const hash_ms = @as(f64, @floatFromInt(self.hash_time_ns)) / 1_000_000.0;
+        std.debug.print("[hash-stats] stat: {d} calls ({d:.2}ms), read: {d} files ({d:.2}ms), hash: {d:.2}ms, hits: {d}\n", .{
+            self.stat_count,
+            stat_ms,
+            self.read_count,
+            read_ms,
+            hash_ms,
+            self.cache_hits,
+        });
     }
 
     pub fn deinit(self: *FileHashCache) void {
@@ -120,11 +148,17 @@ pub const FileHashCache = struct {
 
     /// Get or compute hash and imports for a file (uses mtime cache)
     fn ensureCached(self: *FileHashCache, path: []const u8) !*const FileHashEntry {
+        // Time the stat call
+        const stat_start = std.time.nanoTimestamp();
         const current_mtime = try getFileMtime(path);
+        const stat_end = std.time.nanoTimestamp();
+        self.stat_count += 1;
+        self.stat_time_ns += stat_end - stat_start;
 
         // Check if cached and mtime matches
         if (self.entries.getPtr(path)) |entry| {
             if (entry.mtime == current_mtime) {
+                self.cache_hits += 1;
                 return entry;
             }
             // Mtime changed - free old imports and update
@@ -134,26 +168,43 @@ pub const FileHashCache = struct {
             self.allocator.free(entry.imports);
 
             // Read file and update entry
+            const read_start = std.time.nanoTimestamp();
             const source = try readFileSimple(path, self.allocator);
+            const read_end = std.time.nanoTimestamp();
+            self.read_count += 1;
+            self.read_time_ns += read_end - read_start;
             defer self.allocator.free(source);
 
+            const hash_start = std.time.nanoTimestamp();
             entry.mtime = current_mtime;
             entry.hash = hashSource(source);
             entry.imports = try extractImportPathsSimple(self.allocator, source);
+            const hash_end = std.time.nanoTimestamp();
+            self.hash_time_ns += hash_end - hash_start;
+
             self.dirty = true;
             return entry;
         }
 
         // New entry - read file
+        const read_start = std.time.nanoTimestamp();
         const source = try readFileSimple(path, self.allocator);
+        const read_end = std.time.nanoTimestamp();
+        self.read_count += 1;
+        self.read_time_ns += read_end - read_start;
         defer self.allocator.free(source);
 
         const key = try self.allocator.dupe(u8, path);
+
+        const hash_start = std.time.nanoTimestamp();
         const imports = try extractImportPathsSimple(self.allocator, source);
+        const file_hash = hashSource(source);
+        const hash_end = std.time.nanoTimestamp();
+        self.hash_time_ns += hash_end - hash_start;
 
         try self.entries.put(self.allocator, key, .{
             .mtime = current_mtime,
-            .hash = hashSource(source),
+            .hash = file_hash,
             .imports = imports,
         });
 
