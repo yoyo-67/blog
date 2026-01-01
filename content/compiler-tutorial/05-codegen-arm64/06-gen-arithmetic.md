@@ -124,6 +124,10 @@ Multiply two values. Is it as clean as add/sub?
 
 Yes! The `mul` instruction follows the same 3-operand pattern:
 
+> **Important:** Unlike `add` and `sub`, the `mul` instruction **cannot use immediate values**. Both operands must be registers. This means you must first load any constants into registers before multiplying.
+>
+> This is because `MUL` is actually an alias for `MADD Rd, Rn, Rm, XZR` (multiply-add with zero register). The encoding only has fields for registers (Rd, Rn, Rm, Ra) - no immediate field exists. See the [Stanford ARM64 Reference](https://www.scs.stanford.edu/~zyedidia/arm64/madd.html) and [ARM64 Quick Reference PDF](https://courses.cs.washington.edu/courses/cse469/18wi/Materials/arm64.pdf).
+
 ```asm
 mul     w11, w9, w10    // w11 = w9 * w10
 ```
@@ -165,6 +169,8 @@ Division is notoriously complex on x86 (special registers, sign extension). Is A
 ### The Solution
 
 Yes! ARM64's `sdiv` (signed divide) is just another 3-operand instruction:
+
+> **Important:** Like `mul`, the `sdiv` instruction **cannot use immediate values**. Both operands must be registers. See the [Stanford ARM64 SDIV Reference](https://www.scs.stanford.edu/~zyedidia/arm64/sdiv.html).
 
 ```asm
 sdiv    w11, w9, w10    // w11 = w9 / w10 (signed)
@@ -258,8 +264,13 @@ generateBinaryOp(index, op, lhs_index, rhs_index) {
 │                                                                    │
 │ ADD:    add   wD, wA, wB      // wD = wA + wB                     │
 │ SUB:    sub   wD, wA, wB      // wD = wA - wB                     │
-│ MUL:    mul   wD, wA, wB      // wD = wA * wB                     │
-│ DIV:    sdiv  wD, wA, wB      // wD = wA / wB (signed)            │
+│ MUL:    mul   wD, wA, wB      // wD = wA * wB (registers only!)   │
+│ DIV:    sdiv  wD, wA, wB      // wD = wA / wB (registers only!)   │
+│                                                                    │
+│ IMMEDIATE VALUES:                                                  │
+│   - add/sub: can use #imm as second operand (e.g., add w0, w1, #5)│
+│   - mul/sdiv: ALL operands must be registers - no immediates!     │
+│   - Always load constants with mov first for mul/sdiv             │
 │                                                                    │
 │ Benefits over x86:                                                 │
 │   - 3-operand: doesn't modify sources                             │

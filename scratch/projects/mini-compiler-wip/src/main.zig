@@ -7,8 +7,11 @@ const posix = std.posix;
 const ast_mod = @import("ast.zig");
 const zir_mod = @import("zir.zig");
 const codegen_mod = @import("codegen.zig");
+const codegen_arm64_mod = @import("codegen-arm64.zig");
 const unit_mod = @import("unit.zig");
 const cache_mod = @import("cache.zig");
+
+const Target = enum { llvm, arm64 };
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -36,7 +39,17 @@ pub fn main() !void {
             std.debug.print("Error: 'emit' requires a file argument\n", .{});
             return;
         }
-        try emitLLVM(allocator, args[2]);
+        // Check for --target flag
+        var target: Target = .llvm;
+        for (args[3..]) |arg| {
+            if (mem.eql(u8, arg, "--target")) {
+                // Next arg should be target name
+                continue;
+            } else if (mem.eql(u8, arg, "arm64")) {
+                target = .arm64;
+            }
+        }
+        try emitCode(allocator, args[2], target);
     } else if (mem.eql(u8, command, "eval")) {
         if (args.len < 3) {
             std.debug.print("Error: 'eval' requires a code string\n", .{});
@@ -75,10 +88,13 @@ fn printUsage() void {
         \\
         \\Commands:
         \\  run <file>        Compile and run the file
-        \\  emit <file>       Emit LLVM IR to stdout
+        \\  emit <file>       Emit LLVM IR to stdout (default)
         \\  eval <code>       Compile and run code string
         \\  build <file>      Incremental build (outputs .ll, .opt.ll, and executable)
         \\  clean             Clean the build cache
+        \\
+        \\Emit flags:
+        \\  --target arm64   Emit ARM64 assembly instead of LLVM IR
         \\
         \\Build flags:
         \\  -v       Show cache status and function counts
@@ -88,6 +104,7 @@ fn printUsage() void {
         \\Examples:
         \\  comp run example.mini
         \\  comp emit example.mini > output.ll
+        \\  comp emit example.mini --target arm64 > output.s
         \\  comp eval "fn main() i32 {{ return 42; }}"
         \\  comp build main.mini -v
         \\  comp build main.mini --no-exe
@@ -110,12 +127,12 @@ fn runFile(allocator: mem.Allocator, path: []const u8) !void {
     try runLLVM(allocator, llvm_ir);
 }
 
-fn emitLLVM(allocator: mem.Allocator, path: []const u8) !void {
-    const llvm_ir = try compileUnit(allocator, path);
-    defer allocator.free(llvm_ir);
+fn emitCode(allocator: mem.Allocator, path: []const u8, target: Target) !void {
+    const output = try compileUnit(allocator, path, target);
+    defer allocator.free(output);
 
     // Write to stdout
-    _ = try posix.write(posix.STDOUT_FILENO, llvm_ir);
+    _ = try posix.write(posix.STDOUT_FILENO, output);
 }
 
 fn evalString(allocator: mem.Allocator, source: []const u8) !void {
@@ -149,7 +166,7 @@ fn compile(allocator: mem.Allocator, source: []const u8) ![]const u8 {
     return llvm_ir;
 }
 
-fn compileUnit(allocator: mem.Allocator, path: []const u8) ![]const u8 {
+fn compileUnit(allocator: mem.Allocator, path: []const u8, target: Target) ![]const u8 {
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
     const arena_alloc = arena.allocator();
@@ -171,11 +188,17 @@ fn compileUnit(allocator: mem.Allocator, path: []const u8) ![]const u8 {
 
     std.debug.print("[debug] Functions generated: {d}\n", .{program.functions_list.items.len});
 
-    // Generate LLVM IR
-    var gen = codegen_mod.init(allocator);
-    const llvm_ir = try gen.generate(program);
-
-    return llvm_ir;
+    // Generate code based on target
+    switch (target) {
+        .llvm => {
+            var gen = codegen_mod.init(allocator);
+            return try gen.generate(program);
+        },
+        .arm64 => {
+            var gen = codegen_arm64_mod.init(allocator);
+            return try gen.generate(program);
+        },
+    }
 }
 
 fn compileAndRun(allocator: mem.Allocator, source: []const u8) !void {
