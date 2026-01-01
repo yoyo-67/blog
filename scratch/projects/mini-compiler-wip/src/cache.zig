@@ -5,6 +5,7 @@ const json = std.json;
 
 const zir_mod = @import("zir.zig");
 const codegen_mod = @import("codegen.zig");
+const trace = @import("trace.zig");
 
 // ============================================================================
 // Hash Utilities
@@ -818,6 +819,7 @@ pub const CachedCodegen = struct {
             if (self.air_cache.get(self.file_path, function.name, zir_hash)) |cached_ir| {
                 // Cache hit - use cached LLVM IR
                 self.stats.functions_cached += 1;
+                trace.cacheHit(function.name, zir_hash);
                 if (self.verbosity >= 2) {
                     std.debug.print("[func] {s}: HIT (hash={x:0>16})\n", .{ function.name, zir_hash });
                 }
@@ -825,12 +827,15 @@ pub const CachedCodegen = struct {
             } else {
                 // Cache miss - generate and cache
                 self.stats.functions_compiled += 1;
+                trace.cacheMiss(function.name, zir_hash);
+                trace.compileStart(function.name);
                 if (self.verbosity >= 2) {
                     std.debug.print("[func] {s}: MISS (hash={x:0>16}) -> compiling\n", .{ function.name, zir_hash });
                 }
 
                 var gen = codegen_mod.init(self.allocator);
                 const func_ir = try gen.generateSingleFunction(function);
+                trace.compileEnd(function.name, func_ir.len);
 
                 // Cache the result
                 try self.air_cache.put(self.file_path, function.name, zir_hash, 0, func_ir);
