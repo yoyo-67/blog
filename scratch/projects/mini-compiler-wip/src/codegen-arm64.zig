@@ -5,26 +5,96 @@ const Allocator = mem.Allocator;
 
 const zir_mod = @import("zir.zig");
 const ast_mod = @import("ast.zig");
-const Type = @import("types.zig").Type;
 const Value = @import("types.zig").Value;
 
 const Gen = @This();
 
+// ============================================================================
+// ARM64 Register Conventions
+// ============================================================================
+
+const Reg = struct {
+    /// Parameter/return registers (caller-saved)
+    const arg0: u8 = 0; // w0 - first arg and return value
+    const arg1: u8 = 1; // w1
+    const arg2: u8 = 2; // w2
+    const arg3: u8 = 3; // w3
+    const arg4: u8 = 4; // w4
+    const arg5: u8 = 5; // w5
+    const arg6: u8 = 6; // w6
+    const arg7: u8 = 7; // w7
+
+    /// Temporary registers for intermediate values (caller-saved)
+    const temp_start: u8 = 8; // w8-w15
+    const temp_end: u8 = 15;
+    const temp_count: u8 = temp_end - temp_start + 1;
+
+    /// Scratch registers for materialization
+    const scratch0: u8 = 16; // w16 - for LHS operand
+    const scratch1: u8 = 17; // w17 - for RHS operand
+
+    fn isArgReg(r: u8) bool {
+        return r <= arg7;
+    }
+
+    fn isTempReg(r: u8) bool {
+        return r >= temp_start and r <= temp_end;
+    }
+};
+
+// ============================================================================
+// Operand - Value Location
+// ============================================================================
+
+const Operand = union(enum) {
+    imm: i64,
+    reg: u8,
+
+    fn isImm(self: Operand) bool {
+        return self == .imm;
+    }
+
+    fn isReg(self: Operand) bool {
+        return self == .reg;
+    }
+
+    fn inReg(r: u8) Operand {
+        return .{ .reg = r };
+    }
+
+    fn immediate(v: i64) Operand {
+        return .{ .imm = v };
+    }
+};
+
+// ============================================================================
+// Generator State
+// ============================================================================
+
 output: std.ArrayListUnmanaged(u8),
 allocator: Allocator,
+values: std.AutoHashMap(u32, Operand),
 
 pub fn init(allocator: Allocator) Gen {
     return .{
         .output = .empty,
         .allocator = allocator,
+        .values = std.AutoHashMap(u32, Operand).init(allocator),
     };
 }
 
+pub fn deinit(self: *Gen) void {
+    self.values.deinit();
+}
+
+// ============================================================================
+// Public API
+// ============================================================================
+
 pub fn generate(self: *Gen, program: zir_mod.Program) ![]const u8 {
-    const functions = program.functions();
-    for (functions) |function| {
+    for (program.functions()) |function| {
         try self.generateFunction(function);
-        try self.emit("\n");
+        try self.write("\n");
     }
     return self.output.toOwnedSlice(self.allocator);
 }
@@ -34,259 +104,223 @@ pub fn generateSingleFunction(self: *Gen, function: zir_mod.Function) ![]const u
     return self.output.toOwnedSlice(self.allocator);
 }
 
+// ============================================================================
+// Function Generation
+// ============================================================================
+
 fn generateFunction(self: *Gen, function: zir_mod.Function) !void {
-    // Emit .global directive with _ prefix for macOS
-    try self.emit(".global _");
-    try self.emit(function.name);
-    try self.emit("\n");
+    self.values.clearRetainingCapacity();
 
-    // Emit label
-    try self.emit("_");
-    try self.emit(function.name);
-    try self.emit(":\n");
+    try self.emitGlobal(function.name);
+    try self.emitLabel(function.name);
+    try self.emitPrologue();
 
-    // Function prologue: save frame pointer and link register
-    try self.emit("    stp x29, x30, [sp, #-16]!\n");
-    try self.emit("    mov x29, sp\n");
-
-    // Track value info for each instruction
-    var value_info = std.AutoHashMap(u32, ValueInfo).init(self.allocator);
-    defer value_info.deinit();
-
-    // Generate instructions
     for (function.instructions(), 0..) |inst, idx| {
-        try self.generateInstruction(inst, @intCast(idx), &value_info, function);
+        try self.generateInstruction(inst, @intCast(idx), function);
     }
-
-    // Function epilogue is emitted by return_stmt
 }
 
-const ValueInfo = union(enum) {
-    constant: i64,
-    register: u8, // w8-w15 for temps, w0-w7 for params
-    parameter: u8, // Parameter index (0-7)
+fn emitPrologue(self: *Gen) !void {
+    try self.emitInstr("stp", "x29, x30, [sp, #-16]!", .{});
+    try self.emitInstr("mov", "x29, sp", .{});
+}
+
+fn emitEpilogue(self: *Gen) !void {
+    try self.emitInstr("ldp", "x29, x30, [sp], #16", .{});
+    try self.emitInstr("ret", "", .{});
+}
+
+// ============================================================================
+// Instruction Generation
+// ============================================================================
+
+fn generateInstruction(self: *Gen, inst: zir_mod.Instruction, idx: u32, function: zir_mod.Function) !void {
+    switch (inst) {
+        .literal => |lit| try self.genLiteral(idx, lit.value),
+        .param_ref => |ref| try self.genParamRef(idx, ref.value),
+        .decl => |decl| try self.genDecl(idx, decl.value),
+        .decl_ref => |ref| try self.genDeclRef(idx, ref.name, function),
+        .add => |op| try self.genBinaryOp(idx, .add, op.lhs, op.rhs),
+        .sub => |op| try self.genBinaryOp(idx, .sub, op.lhs, op.rhs),
+        .mul => |op| try self.genBinaryOp(idx, .mul, op.lhs, op.rhs),
+        .div => |op| try self.genBinaryOp(idx, .div, op.lhs, op.rhs),
+        .return_stmt => |ret| try self.genReturn(ret.value),
+        .call => |call| try self.genCall(idx, call.name, call.args),
+    }
+}
+
+fn genLiteral(self: *Gen, idx: u32, value: Value) !void {
+    const val: i64 = switch (value) {
+        .int => |v| v,
+        .float => |v| @intFromFloat(v),
+        .boolean => |v| if (v) 1 else 0,
+    };
+    try self.values.put(idx, Operand.immediate(val));
+}
+
+fn genParamRef(self: *Gen, idx: u32, param_idx: u32) !void {
+    // Parameters live in w0-w7 per ARM64 calling convention
+    std.debug.assert(param_idx <= Reg.arg7);
+    try self.values.put(idx, Operand.inReg(@intCast(param_idx)));
+}
+
+fn genDecl(self: *Gen, idx: u32, value_ref: u32) !void {
+    const source = self.values.get(value_ref) orelse unreachable;
+    try self.values.put(idx, source);
+}
+
+fn genDeclRef(self: *Gen, idx: u32, name: []const u8, function: zir_mod.Function) !void {
+    if (self.findDecl(function, name, idx)) |decl_value_ref| {
+        const source = self.values.get(decl_value_ref) orelse unreachable;
+        try self.values.put(idx, source);
+    }
+}
+
+const BinaryOp = enum {
+    add,
+    sub,
+    mul,
+    div,
+
+    fn mnemonic(self: BinaryOp) []const u8 {
+        return switch (self) {
+            .add => "add",
+            .sub => "sub",
+            .mul => "mul",
+            .div => "sdiv",
+        };
+    }
+
+    /// add/sub can use immediate as RHS operand
+    fn supportsImmediateRhs(self: BinaryOp) bool {
+        return switch (self) {
+            .add, .sub => true,
+            .mul, .div => false,
+        };
+    }
 };
 
-fn generateInstruction(
-    self: *Gen,
-    inst: zir_mod.Instruction,
-    idx: u32,
-    value_info: *std.AutoHashMap(u32, ValueInfo),
-    function: zir_mod.Function,
-) !void {
-    switch (inst) {
-        .literal => |lit| {
-            // Track constant value - will be inlined when used
-            const val: i64 = switch (lit.value) {
-                .int => |v| v,
-                .float => |v| @intFromFloat(v),
-                .boolean => |v| if (v) 1 else 0,
-            };
-            try value_info.put(idx, .{ .constant = val });
+fn genBinaryOp(self: *Gen, idx: u32, op: BinaryOp, lhs_ref: u32, rhs_ref: u32) !void {
+    const dest = self.allocTempReg(idx);
+    const lhs = self.values.get(lhs_ref) orelse unreachable;
+    const rhs = self.values.get(rhs_ref) orelse unreachable;
+
+    // LHS must always be in a register
+    const lhs_reg = try self.materialize(lhs, Reg.scratch0);
+
+    if (op.supportsImmediateRhs() and rhs.isImm()) {
+        try self.emitInstr(op.mnemonic(), "w{d}, w{d}, #{d}", .{ dest, lhs_reg, rhs.imm });
+    } else {
+        const rhs_reg = try self.materialize(rhs, Reg.scratch1);
+        try self.emitInstr(op.mnemonic(), "w{d}, w{d}, w{d}", .{ dest, lhs_reg, rhs_reg });
+    }
+
+    try self.values.put(idx, Operand.inReg(dest));
+}
+
+fn genReturn(self: *Gen, value_ref: u32) !void {
+    const value = self.values.get(value_ref) orelse unreachable;
+    try self.moveToReg(Reg.arg0, value);
+    try self.emitEpilogue();
+}
+
+fn genCall(self: *Gen, idx: u32, name: []const u8, args: []const u32) !void {
+    // Move arguments to arg registers (w0-w7)
+    for (args, 0..) |arg_ref, i| {
+        const arg = self.values.get(arg_ref) orelse unreachable;
+        try self.moveToReg(@intCast(i), arg);
+    }
+
+    try self.emitInstr("bl", "_{s}", .{name});
+
+    // Return value is in w0, save it to a temp register
+    // (so it doesn't get clobbered by subsequent calls)
+    const dest = self.allocTempReg(idx);
+    try self.emitMov(dest, Reg.arg0); // dest <- w0
+    try self.values.put(idx, Operand.inReg(dest));
+}
+
+// ============================================================================
+// Register Allocation
+// ============================================================================
+
+/// Allocate a temp register for instruction result (simple: round-robin w8-w15)
+fn allocTempReg(self: *Gen, idx: u32) u8 {
+    _ = self;
+    return Reg.temp_start + @as(u8, @intCast(idx % Reg.temp_count));
+}
+
+/// Ensure operand is in a register; load immediate into scratch if needed
+fn materialize(self: *Gen, op: Operand, scratch: u8) !u8 {
+    switch (op) {
+        .imm => |v| {
+            try self.emitInstr("mov", "w{d}, #{d}", .{ scratch, v });
+            return scratch;
         },
-        .param_ref => |ref| {
-            // Parameters are in w0-w7
-            try value_info.put(idx, .{ .parameter = @intCast(ref.value) });
-        },
-        .decl => |decl| {
-            // Variable declaration - copy the source value info
-            const source_info = value_info.get(decl.value) orelse unreachable;
-            try value_info.put(idx, source_info);
-        },
-        .decl_ref => |ref| {
-            // Variable reference - look up in previous instructions
-            const var_idx = self.findVariableDecl(function, ref.name, idx);
-            if (var_idx) |vi| {
-                const source_info = value_info.get(vi) orelse unreachable;
-                try value_info.put(idx, source_info);
-            }
-        },
-        .add => |op| {
-            const dest_reg: u8 = 8 + @as(u8, @intCast(idx % 8));
-            // add supports: add Rd, Rn, #imm OR add Rd, Rn, Rm
-            // LHS must be register, RHS can be immediate or register
-            const lhs_reg = try self.ensureRegister(op.lhs, value_info, 16); // w16 as temp
-            try self.emit("    add w");
-            try self.emitInt(dest_reg);
-            try self.emit(", w");
-            try self.emitInt(lhs_reg);
-            try self.emit(", ");
-            try self.emitOperand(op.rhs, value_info);
-            try self.emit("\n");
-            try value_info.put(idx, .{ .register = dest_reg });
-        },
-        .sub => |op| {
-            const dest_reg: u8 = 8 + @as(u8, @intCast(idx % 8));
-            // sub supports: sub Rd, Rn, #imm OR sub Rd, Rn, Rm
-            const lhs_reg = try self.ensureRegister(op.lhs, value_info, 16);
-            try self.emit("    sub w");
-            try self.emitInt(dest_reg);
-            try self.emit(", w");
-            try self.emitInt(lhs_reg);
-            try self.emit(", ");
-            try self.emitOperand(op.rhs, value_info);
-            try self.emit("\n");
-            try value_info.put(idx, .{ .register = dest_reg });
-        },
-        .mul => |op| {
-            const dest_reg: u8 = 8 + @as(u8, @intCast(idx % 8));
-            // mul requires all register operands: mul Rd, Rn, Rm
-            const lhs_reg = try self.ensureRegister(op.lhs, value_info, 16);
-            const rhs_reg = try self.ensureRegister(op.rhs, value_info, 17);
-            try self.emit("    mul w");
-            try self.emitInt(dest_reg);
-            try self.emit(", w");
-            try self.emitInt(lhs_reg);
-            try self.emit(", w");
-            try self.emitInt(rhs_reg);
-            try self.emit("\n");
-            try value_info.put(idx, .{ .register = dest_reg });
-        },
-        .div => |op| {
-            const dest_reg: u8 = 8 + @as(u8, @intCast(idx % 8));
-            // sdiv requires all register operands: sdiv Rd, Rn, Rm
-            const lhs_reg = try self.ensureRegister(op.lhs, value_info, 16);
-            const rhs_reg = try self.ensureRegister(op.rhs, value_info, 17);
-            try self.emit("    sdiv w");
-            try self.emitInt(dest_reg);
-            try self.emit(", w");
-            try self.emitInt(lhs_reg);
-            try self.emit(", w");
-            try self.emitInt(rhs_reg);
-            try self.emit("\n");
-            try value_info.put(idx, .{ .register = dest_reg });
-        },
-        .return_stmt => |ret| {
-            const info = value_info.get(ret.value) orelse unreachable;
-            switch (info) {
-                .constant => |val| {
-                    try self.emit("    mov w0, #");
-                    try self.emitInt(@intCast(val));
-                    try self.emit("\n");
-                },
-                .register => |reg| {
-                    if (reg != 0) {
-                        try self.emit("    mov w0, w");
-                        try self.emitInt(reg);
-                        try self.emit("\n");
-                    }
-                },
-                .parameter => |param| {
-                    if (param != 0) {
-                        try self.emit("    mov w0, w");
-                        try self.emitInt(param);
-                        try self.emit("\n");
-                    }
-                },
-            }
-            // Epilogue
-            try self.emit("    ldp x29, x30, [sp], #16\n");
-            try self.emit("    ret\n");
-        },
-        .call => |call| {
-            // Move arguments to w0-w7
-            for (call.args, 0..) |arg, i| {
-                const arg_info = value_info.get(arg) orelse unreachable;
-                switch (arg_info) {
-                    .constant => |val| {
-                        try self.emit("    mov w");
-                        try self.emitInt(i);
-                        try self.emit(", #");
-                        try self.emitInt(@intCast(val));
-                        try self.emit("\n");
-                    },
-                    .register => |reg| {
-                        if (reg != @as(u8, @intCast(i))) {
-                            try self.emit("    mov w");
-                            try self.emitInt(i);
-                            try self.emit(", w");
-                            try self.emitInt(reg);
-                            try self.emit("\n");
-                        }
-                    },
-                    .parameter => |param| {
-                        if (param != @as(u8, @intCast(i))) {
-                            try self.emit("    mov w");
-                            try self.emitInt(i);
-                            try self.emit(", w");
-                            try self.emitInt(param);
-                            try self.emit("\n");
-                        }
-                    },
-                }
-            }
-            // Call function with _ prefix
-            try self.emit("    bl _");
-            try self.emit(call.name);
-            try self.emit("\n");
-            // Result is in w0, but we track it as a register for later use
-            const dest_reg: u8 = 8 + @as(u8, @intCast(idx % 8));
-            try self.emit("    mov w");
-            try self.emitInt(dest_reg);
-            try self.emit(", w0\n");
-            try value_info.put(idx, .{ .register = dest_reg });
-        },
+        .reg => |r| return r,
     }
 }
 
-fn findVariableDecl(self: *Gen, function: zir_mod.Function, name: []const u8, before_idx: u32) ?u32 {
+/// Move operand to specific register (skip if already there)
+fn moveToReg(self: *Gen, dest: u8, op: Operand) !void {
+    switch (op) {
+        .imm => |v| try self.emitInstr("mov", "w{d}, #{d}", .{ dest, v }),
+        .reg => |r| if (r != dest) try self.emitInstr("mov", "w{d}, w{d}", .{ dest, r }),
+    }
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+fn findDecl(self: *Gen, function: zir_mod.Function, name: []const u8, before_idx: u32) ?u32 {
     _ = self;
-    var i: u32 = before_idx;
+    var i = before_idx;
     while (i > 0) {
         i -= 1;
         const inst = function.instructionAt(i);
-        if (inst.* == .decl) {
-            if (mem.eql(u8, inst.decl.name, name)) {
-                return inst.decl.value;
-            }
+        if (inst.* == .decl and mem.eql(u8, inst.decl.name, name)) {
+            return inst.decl.value;
         }
     }
     return null;
 }
 
-/// Ensure a value is in a register, loading from immediate if needed
-/// Returns the register number containing the value
-fn ensureRegister(self: *Gen, ref: u32, value_info: *std.AutoHashMap(u32, ValueInfo), temp_reg: u8) !u8 {
-    const info = value_info.get(ref) orelse unreachable;
-    switch (info) {
-        .constant => |val| {
-            // Load immediate into temp register
-            try self.emit("    mov w");
-            try self.emitInt(temp_reg);
-            try self.emit(", #");
-            try self.emitInt(@intCast(val));
-            try self.emit("\n");
-            return temp_reg;
-        },
-        .register => |reg| return reg,
-        .parameter => |param| return param,
+// ============================================================================
+// Code Emission
+// ============================================================================
+
+fn emitGlobal(self: *Gen, name: []const u8) !void {
+    try std.fmt.format(self.writer(), ".global _{s}\n", .{name});
+}
+
+fn emitLabel(self: *Gen, name: []const u8) !void {
+    try std.fmt.format(self.writer(), "_{s}:\n", .{name});
+}
+
+/// Emit: mov wDst, wSrc  (dst <- src)
+fn emitMov(self: *Gen, dst: u8, src: u8) !void {
+    if (dst != src) {
+        try self.emitInstr("mov", "w{d}, w{d}", .{ dst, src });
     }
 }
 
-fn emitOperand(self: *Gen, ref: u32, value_info: *std.AutoHashMap(u32, ValueInfo)) !void {
-    const info = value_info.get(ref) orelse unreachable;
-    switch (info) {
-        .constant => |val| {
-            try self.emit("#");
-            try self.emitInt(@intCast(val));
-        },
-        .register => |reg| {
-            try self.emit("w");
-            try self.emitInt(reg);
-        },
-        .parameter => |param| {
-            try self.emit("w");
-            try self.emitInt(param);
-        },
+fn emitInstr(self: *Gen, mnemonic: []const u8, comptime operands_fmt: []const u8, args: anytype) !void {
+    try self.write("    ");
+    try self.write(mnemonic);
+    if (operands_fmt.len > 0) {
+        try self.write(" ");
+        try std.fmt.format(self.writer(), operands_fmt, args);
     }
+    try self.write("\n");
 }
 
-fn emit(self: *Gen, str: []const u8) !void {
+fn write(self: *Gen, str: []const u8) !void {
     try self.output.appendSlice(self.allocator, str);
 }
 
-fn emitInt(self: *Gen, val: usize) !void {
-    try std.fmt.format(self.output.writer(self.allocator), "{d}", .{val});
+fn writer(self: *Gen) std.ArrayListUnmanaged(u8).Writer {
+    return self.output.writer(self.allocator);
 }
 
 // ============================================================================
@@ -304,7 +338,6 @@ fn testGenerate(input: []const u8) ![]const u8 {
     var gen = Gen.init(allocator);
     const result = try gen.generate(program);
 
-    // Copy result to testing allocator since arena will be freed
     const copy = try testing.allocator.alloc(u8, result.len);
     @memcpy(copy, result);
     return copy;
