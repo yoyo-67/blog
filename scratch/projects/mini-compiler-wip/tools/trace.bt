@@ -1,0 +1,154 @@
+#!/usr/bin/env bpftrace
+/*
+ * Compiler Cache Tracing Script
+ *
+ * Traces cache hits/misses and compilation latency in the mini-compiler.
+ *
+ * Usage:
+ *   sudo bpftrace tools/trace.bt -c "./zig-out/bin/comp build example.mini"
+ *
+ * Or attach to running process:
+ *   sudo bpftrace tools/trace.bt -p $(pgrep comp)
+ */
+
+BEGIN {
+    printf("Tracing compiler cache... Hit Ctrl-C to end.\n\n");
+}
+
+// ============================================================================
+// Cache Hit/Miss Tracking
+// ============================================================================
+
+uprobe:./zig-out/bin/comp:trace_cache_hit {
+    @cache_hits++;
+    $name = str(arg0, arg1);
+    @hit_functions[$name] = count();
+}
+
+uprobe:./zig-out/bin/comp:trace_cache_miss {
+    @cache_misses++;
+    $name = str(arg0, arg1);
+    @miss_functions[$name] = count();
+}
+
+// ============================================================================
+// Compilation Latency Tracking
+// ============================================================================
+
+uprobe:./zig-out/bin/comp:trace_compile_start {
+    $name = str(arg0, arg1);
+    @compile_start[$name] = nsecs;
+}
+
+uprobe:./zig-out/bin/comp:trace_compile_end {
+    $name = str(arg0, arg1);
+    $start = @compile_start[$name];
+
+    if ($start > 0) {
+        $duration_us = (nsecs - $start) / 1000;
+        @compile_latency_us = hist($duration_us);
+        @compile_time[$name] = $duration_us;
+        delete(@compile_start[$name]);
+    }
+
+    // Track IR sizes
+    $ir_size = arg2;
+    @ir_sizes = hist($ir_size);
+    @ir_size_by_func[$name] = $ir_size;
+}
+
+// ============================================================================
+// File I/O Tracking
+// ============================================================================
+
+uprobe:./zig-out/bin/comp:trace_file_stat {
+    @file_stats++;
+    $duration_us = arg2 / 1000;
+    @stat_latency_us = hist($duration_us);
+}
+
+uprobe:./zig-out/bin/comp:trace_file_read {
+    @file_reads++;
+    $duration_us = arg2 / 1000;
+    @read_latency_us = hist($duration_us);
+}
+
+uprobe:./zig-out/bin/comp:trace_file_hash {
+    @file_hashes++;
+    $duration_us = arg2 / 1000;
+    @hash_latency_us = hist($duration_us);
+}
+
+// ============================================================================
+// Summary Output
+// ============================================================================
+
+END {
+    printf("\n");
+    printf("================================================================================\n");
+    printf("                         COMPILER CACHE TRACE SUMMARY                          \n");
+    printf("================================================================================\n");
+
+    // Cache statistics
+    printf("\n=== Cache Statistics ===\n");
+    printf("  Hits:   %d\n", @cache_hits);
+    printf("  Misses: %d\n", @cache_misses);
+
+    $total = @cache_hits + @cache_misses;
+    if ($total > 0) {
+        printf("  Hit Rate: %.1f%%\n", @cache_hits * 100 / $total);
+    }
+
+    // Functions that hit cache
+    if (@cache_hits > 0) {
+        printf("\n=== Cache Hits by Function ===\n");
+        print(@hit_functions);
+    }
+
+    // Functions that missed cache
+    if (@cache_misses > 0) {
+        printf("\n=== Cache Misses by Function ===\n");
+        print(@miss_functions);
+    }
+
+    // Compilation latency
+    if (@cache_misses > 0) {
+        printf("\n=== Compilation Latency (microseconds) ===\n");
+        print(@compile_latency_us);
+
+        printf("\n=== Compile Time by Function (us) ===\n");
+        print(@compile_time);
+    }
+
+    // IR sizes
+    if (@cache_misses > 0) {
+        printf("\n=== Generated IR Sizes (bytes) ===\n");
+        print(@ir_sizes);
+
+        printf("\n=== IR Size by Function ===\n");
+        print(@ir_size_by_func);
+    }
+
+    // File I/O stats
+    if (@file_stats > 0 || @file_reads > 0) {
+        printf("\n=== File I/O Statistics ===\n");
+        printf("  Stats:  %d\n", @file_stats);
+        printf("  Reads:  %d\n", @file_reads);
+        printf("  Hashes: %d\n", @file_hashes);
+
+        if (@file_stats > 0) {
+            printf("\n=== Stat Latency (us) ===\n");
+            print(@stat_latency_us);
+        }
+
+        if (@file_reads > 0) {
+            printf("\n=== Read Latency (us) ===\n");
+            print(@read_latency_us);
+        }
+    }
+
+    printf("\n================================================================================\n");
+
+    // Cleanup
+    clear(@compile_start);
+}

@@ -1,0 +1,44 @@
+# Dockerfile for running eBPF tracing on the compiler
+#
+# Build:
+#   docker build -f tools/Dockerfile.trace -t compiler-trace .
+#
+# Run:
+#   docker run --privileged -v /sys/kernel/debug:/sys/kernel/debug:ro compiler-trace
+#
+# Note: Requires --privileged for eBPF access
+
+FROM ubuntu:22.04
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    bpftrace \
+    linux-headers-generic \
+    curl \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Zig
+ARG ZIG_VERSION=0.13.0
+RUN curl -L "https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz" | \
+    tar -xJ -C /usr/local && \
+    ln -s /usr/local/zig-linux-x86_64-${ZIG_VERSION}/zig /usr/local/bin/zig
+
+WORKDIR /app
+
+# Copy source code
+COPY . .
+
+# Build the compiler with debug symbols (needed for uprobe symbol resolution)
+RUN zig build -Doptimize=Debug
+
+# Create a sample file to compile
+RUN echo 'fn add(a: i32, b: i32) i32 { return a + b; }\n\
+fn mul(a: i32, b: i32) i32 { return a * b; }\n\
+fn main() i32 { return add(mul(2, 3), 4); }' > example.mini
+
+# Default command: run bpftrace with the compiler
+CMD ["bpftrace", "tools/trace.bt", "-c", "./zig-out/bin/comp build example.mini"]
