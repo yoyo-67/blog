@@ -5,7 +5,11 @@ const Allocator = mem.Allocator;
 
 const zir_mod = @import("zir.zig");
 const ast_mod = @import("ast.zig");
-const Value = @import("types.zig").Value;
+const sema_mod = @import("sema.zig");
+const lower_mod = @import("lower.zig");
+const Operand = lower_mod.Operand;
+const LoweredInst = lower_mod.LoweredInst;
+const LoweredFunction = lower_mod.LoweredFunction;
 
 const Gen = @This();
 
@@ -32,39 +36,6 @@ const Reg = struct {
     /// Scratch registers for materialization
     const scratch0: u8 = 16; // w16 - for LHS operand
     const scratch1: u8 = 17; // w17 - for RHS operand
-
-    fn isArgReg(r: u8) bool {
-        return r <= arg7;
-    }
-
-    fn isTempReg(r: u8) bool {
-        return r >= temp_start and r <= temp_end;
-    }
-};
-
-// ============================================================================
-// Operand - Value Location
-// ============================================================================
-
-const Operand = union(enum) {
-    imm: i64,
-    reg: u8,
-
-    fn isImm(self: Operand) bool {
-        return self == .imm;
-    }
-
-    fn isReg(self: Operand) bool {
-        return self == .reg;
-    }
-
-    fn inReg(r: u8) Operand {
-        return .{ .reg = r };
-    }
-
-    fn immediate(v: i64) Operand {
-        return .{ .imm = v };
-    }
 };
 
 // ============================================================================
@@ -73,18 +44,15 @@ const Operand = union(enum) {
 
 output: std.ArrayListUnmanaged(u8),
 allocator: Allocator,
-values: std.AutoHashMap(u32, Operand),
+/// Maps instruction index -> register where result lives
+locs: [256]u8,
 
 pub fn init(allocator: Allocator) Gen {
     return .{
         .output = .empty,
         .allocator = allocator,
-        .values = std.AutoHashMap(u32, Operand).init(allocator),
+        .locs = undefined,
     };
-}
-
-pub fn deinit(self: *Gen) void {
-    self.values.deinit();
 }
 
 // ============================================================================
@@ -93,30 +61,32 @@ pub fn deinit(self: *Gen) void {
 
 pub fn generate(self: *Gen, program: zir_mod.Program) ![]const u8 {
     for (program.functions()) |function| {
-        try self.generateFunction(function);
+        const sema_result = try sema_mod.analyzeFunction(self.allocator, function);
+        const lowered = try lower_mod.lower(self.allocator, sema_result.function);
+        try self.emitFunction(lowered);
         try self.write("\n");
     }
     return self.output.toOwnedSlice(self.allocator);
 }
 
 pub fn generateSingleFunction(self: *Gen, function: zir_mod.Function) ![]const u8 {
-    try self.generateFunction(function);
+    const sema_result = try sema_mod.analyzeFunction(self.allocator, function);
+    const lowered = try lower_mod.lower(self.allocator, sema_result.function);
+    try self.emitFunction(lowered);
     return self.output.toOwnedSlice(self.allocator);
 }
 
 // ============================================================================
-// Function Generation
+// Function Emission
 // ============================================================================
 
-fn generateFunction(self: *Gen, function: zir_mod.Function) !void {
-    self.values.clearRetainingCapacity();
-
+fn emitFunction(self: *Gen, function: LoweredFunction) !void {
     try self.emitGlobal(function.name);
     try self.emitLabel(function.name);
     try self.emitPrologue();
 
-    for (function.instructions(), 0..) |inst, idx| {
-        try self.generateInstruction(inst, @intCast(idx), function);
+    for (function.instructions, 0..) |inst, idx| {
+        try self.emitInstruction(inst, @intCast(idx));
     }
 }
 
@@ -131,159 +101,86 @@ fn emitEpilogue(self: *Gen) !void {
 }
 
 // ============================================================================
-// Instruction Generation
+// Instruction Emission - just iterate and emit!
 // ============================================================================
 
-fn generateInstruction(self: *Gen, inst: zir_mod.Instruction, idx: u32, function: zir_mod.Function) !void {
+fn emitInstruction(self: *Gen, inst: LoweredInst, idx: u32) !void {
     switch (inst) {
-        .literal => |lit| try self.genLiteral(idx, lit.value),
-        .param_ref => |ref| try self.genParamRef(idx, ref.value),
-        .decl => |decl| try self.genDecl(idx, decl.value),
-        .decl_ref => |ref| try self.genDeclRef(idx, ref.name, function),
-        .add => |op| try self.genBinaryOp(idx, .add, op.lhs, op.rhs),
-        .sub => |op| try self.genBinaryOp(idx, .sub, op.lhs, op.rhs),
-        .mul => |op| try self.genBinaryOp(idx, .mul, op.lhs, op.rhs),
-        .div => |op| try self.genBinaryOp(idx, .div, op.lhs, op.rhs),
-        .return_stmt => |ret| try self.genReturn(ret.value),
-        .call => |call| try self.genCall(idx, call.name, call.args),
+        .add => |op| try self.emitBinaryOp(idx, "add", op.lhs, op.rhs, true),
+        .sub => |op| try self.emitBinaryOp(idx, "sub", op.lhs, op.rhs, true),
+        .mul => |op| try self.emitBinaryOp(idx, "mul", op.lhs, op.rhs, false),
+        .div => |op| try self.emitBinaryOp(idx, "sdiv", op.lhs, op.rhs, false),
+        .ret => |op| try self.emitReturn(op),
+        .call => |c| try self.emitCall(idx, c.name, c.args),
     }
 }
 
-fn genLiteral(self: *Gen, idx: u32, value: Value) !void {
-    const val: i64 = switch (value) {
-        .int => |v| v,
-        .float => |v| @intFromFloat(v),
-        .boolean => |v| if (v) 1 else 0,
-    };
-    try self.values.put(idx, Operand.immediate(val));
-}
-
-fn genParamRef(self: *Gen, idx: u32, param_idx: u32) !void {
-    // Parameters live in w0-w7 per ARM64 calling convention
-    std.debug.assert(param_idx <= Reg.arg7);
-    try self.values.put(idx, Operand.inReg(@intCast(param_idx)));
-}
-
-fn genDecl(self: *Gen, idx: u32, value_ref: u32) !void {
-    const source = self.values.get(value_ref) orelse unreachable;
-    try self.values.put(idx, source);
-}
-
-fn genDeclRef(self: *Gen, idx: u32, name: []const u8, function: zir_mod.Function) !void {
-    if (self.findDecl(function, name, idx)) |decl_value_ref| {
-        const source = self.values.get(decl_value_ref) orelse unreachable;
-        try self.values.put(idx, source);
-    }
-}
-
-const BinaryOp = enum {
-    add,
-    sub,
-    mul,
-    div,
-
-    fn mnemonic(self: BinaryOp) []const u8 {
-        return switch (self) {
-            .add => "add",
-            .sub => "sub",
-            .mul => "mul",
-            .div => "sdiv",
-        };
-    }
-
-    /// add/sub can use immediate as RHS operand
-    fn supportsImmediateRhs(self: BinaryOp) bool {
-        return switch (self) {
-            .add, .sub => true,
-            .mul, .div => false,
-        };
-    }
-};
-
-fn genBinaryOp(self: *Gen, idx: u32, op: BinaryOp, lhs_ref: u32, rhs_ref: u32) !void {
+fn emitBinaryOp(self: *Gen, idx: u32, mnemonic: []const u8, lhs: Operand, rhs: Operand, imm_rhs_ok: bool) !void {
     const dest = self.allocTempReg(idx);
-    const lhs = self.values.get(lhs_ref) orelse unreachable;
-    const rhs = self.values.get(rhs_ref) orelse unreachable;
+    self.locs[idx] = dest;
 
-    // LHS must always be in a register
+    // LHS must be in register
     const lhs_reg = try self.materialize(lhs, Reg.scratch0);
 
-    if (op.supportsImmediateRhs() and rhs.isImm()) {
-        try self.emitInstr(op.mnemonic(), "w{d}, w{d}, #{d}", .{ dest, lhs_reg, rhs.imm });
+    // RHS can be immediate for add/sub
+    if (imm_rhs_ok and rhs == .imm) {
+        try self.emitInstr(mnemonic, "w{d}, w{d}, #{d}", .{ dest, lhs_reg, rhs.imm });
     } else {
         const rhs_reg = try self.materialize(rhs, Reg.scratch1);
-        try self.emitInstr(op.mnemonic(), "w{d}, w{d}, w{d}", .{ dest, lhs_reg, rhs_reg });
+        try self.emitInstr(mnemonic, "w{d}, w{d}, w{d}", .{ dest, lhs_reg, rhs_reg });
     }
-
-    try self.values.put(idx, Operand.inReg(dest));
 }
 
-fn genReturn(self: *Gen, value_ref: u32) !void {
-    const value = self.values.get(value_ref) orelse unreachable;
-    try self.moveToReg(Reg.arg0, value);
+fn emitReturn(self: *Gen, op: Operand) !void {
+    try self.moveToReg(Reg.arg0, op);
     try self.emitEpilogue();
 }
 
-fn genCall(self: *Gen, idx: u32, name: []const u8, args: []const u32) !void {
-    // Move arguments to arg registers (w0-w7)
-    for (args, 0..) |arg_ref, i| {
-        const arg = self.values.get(arg_ref) orelse unreachable;
+fn emitCall(self: *Gen, idx: u32, name: []const u8, args: []const Operand) !void {
+    // Move args to arg registers
+    for (args, 0..) |arg, i| {
         try self.moveToReg(@intCast(i), arg);
     }
 
     try self.emitInstr("bl", "_{s}", .{name});
 
-    // Return value is in w0, save it to a temp register
-    // (so it doesn't get clobbered by subsequent calls)
+    // Save return value (w0) to temp register
     const dest = self.allocTempReg(idx);
-    try self.emitMov(dest, Reg.arg0); // dest <- w0
-    try self.values.put(idx, Operand.inReg(dest));
+    self.locs[idx] = dest;
+    try self.emitMov(dest, Reg.arg0);
 }
 
 // ============================================================================
 // Register Allocation
 // ============================================================================
 
-/// Allocate a temp register for instruction result (simple: round-robin w8-w15)
 fn allocTempReg(self: *Gen, idx: u32) u8 {
     _ = self;
     return Reg.temp_start + @as(u8, @intCast(idx % Reg.temp_count));
 }
 
-/// Ensure operand is in a register; load immediate into scratch if needed
+/// Get register for operand; load immediate into scratch if needed
 fn materialize(self: *Gen, op: Operand, scratch: u8) !u8 {
-    switch (op) {
+    return switch (op) {
         .imm => |v| {
             try self.emitInstr("mov", "w{d}, #{d}", .{ scratch, v });
             return scratch;
         },
-        .reg => |r| return r,
-    }
+        .param => |i| i, // params are in w0-w7
+        .inst => |i| self.locs[i], // look up where instruction result lives
+    };
 }
 
-/// Move operand to specific register (skip if already there)
+/// Move operand to specific register
 fn moveToReg(self: *Gen, dest: u8, op: Operand) !void {
     switch (op) {
         .imm => |v| try self.emitInstr("mov", "w{d}, #{d}", .{ dest, v }),
-        .reg => |r| if (r != dest) try self.emitInstr("mov", "w{d}, w{d}", .{ dest, r }),
+        .param => |i| if (i != dest) try self.emitInstr("mov", "w{d}, w{d}", .{ dest, i }),
+        .inst => |i| {
+            const src = self.locs[i];
+            if (src != dest) try self.emitInstr("mov", "w{d}, w{d}", .{ dest, src });
+        },
     }
-}
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-fn findDecl(self: *Gen, function: zir_mod.Function, name: []const u8, before_idx: u32) ?u32 {
-    _ = self;
-    var i = before_idx;
-    while (i > 0) {
-        i -= 1;
-        const inst = function.instructionAt(i);
-        if (inst.* == .decl and mem.eql(u8, inst.decl.name, name)) {
-            return inst.decl.value;
-        }
-    }
-    return null;
 }
 
 // ============================================================================
@@ -298,7 +195,6 @@ fn emitLabel(self: *Gen, name: []const u8) !void {
     try std.fmt.format(self.writer(), "_{s}:\n", .{name});
 }
 
-/// Emit: mov wDst, wSrc  (dst <- src)
 fn emitMov(self: *Gen, dst: u8, src: u8) !void {
     if (dst != src) {
         try self.emitInstr("mov", "w{d}, w{d}", .{ dst, src });
@@ -370,8 +266,8 @@ test "return with arithmetic" {
         \\    stp x29, x30, [sp, #-16]!
         \\    mov x29, sp
         \\    mov w16, #1
-        \\    add w10, w16, #2
-        \\    mov w0, w10
+        \\    add w8, w16, #2
+        \\    mov w0, w8
         \\    ldp x29, x30, [sp], #16
         \\    ret
         \\
@@ -388,8 +284,8 @@ test "function with parameter" {
         \\_square:
         \\    stp x29, x30, [sp, #-16]!
         \\    mov x29, sp
-        \\    mul w10, w0, w0
-        \\    mov w0, w10
+        \\    mul w8, w0, w0
+        \\    mov w0, w8
         \\    ldp x29, x30, [sp], #16
         \\    ret
         \\
@@ -406,8 +302,8 @@ test "function with two parameters" {
         \\_add:
         \\    stp x29, x30, [sp, #-16]!
         \\    mov x29, sp
-        \\    add w10, w0, w1
-        \\    mov w0, w10
+        \\    add w8, w0, w1
+        \\    mov w0, w8
         \\    ldp x29, x30, [sp], #16
         \\    ret
         \\
@@ -424,8 +320,8 @@ test "subtraction" {
         \\_sub:
         \\    stp x29, x30, [sp, #-16]!
         \\    mov x29, sp
-        \\    sub w10, w0, w1
-        \\    mov w0, w10
+        \\    sub w8, w0, w1
+        \\    mov w0, w8
         \\    ldp x29, x30, [sp], #16
         \\    ret
         \\
@@ -442,8 +338,8 @@ test "division" {
         \\_div:
         \\    stp x29, x30, [sp, #-16]!
         \\    mov x29, sp
-        \\    sdiv w10, w0, w1
-        \\    mov w0, w10
+        \\    sdiv w8, w0, w1
+        \\    mov w0, w8
         \\    ldp x29, x30, [sp], #16
         \\    ret
         \\
@@ -515,8 +411,8 @@ test "function call with args" {
         \\_add:
         \\    stp x29, x30, [sp, #-16]!
         \\    mov x29, sp
-        \\    add w10, w0, w1
-        \\    mov w0, w10
+        \\    add w8, w0, w1
+        \\    mov w0, w8
         \\    ldp x29, x30, [sp], #16
         \\    ret
         \\
@@ -527,8 +423,8 @@ test "function call with args" {
         \\    mov w0, #3
         \\    mov w1, #5
         \\    bl _add
-        \\    mov w10, w0
-        \\    mov w0, w10
+        \\    mov w8, w0
+        \\    mov w0, w8
         \\    ldp x29, x30, [sp], #16
         \\    ret
         \\

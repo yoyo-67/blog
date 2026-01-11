@@ -9,6 +9,43 @@ const Instruction = zir_mod.Instruction;
 const Node = zir_mod.Node;
 const Token = @import("token.zig");
 const Type = @import("types.zig").Type;
+const Value = @import("types.zig").Value;
+
+// ============================================================================
+// Typed IR - output of semantic analysis, input to codegen
+// ============================================================================
+
+/// Typed instruction - all references are resolved, codegen needs no lookups
+pub const TypedInst = union(enum) {
+    /// Literal value
+    literal: Value,
+    /// Reference to function parameter by index
+    param_ref: u32,
+    /// Variable declaration - binds name to value
+    decl: struct { name: []const u8, value: u32 },
+    /// Variable reference - resolved to the declared value
+    decl_ref: struct { name: []const u8, value: u32 },
+    /// Binary operations
+    add: BinaryOp,
+    sub: BinaryOp,
+    mul: BinaryOp,
+    div: BinaryOp,
+    /// Return statement
+    ret: u32,
+    /// Function call
+    call: struct { name: []const u8, args: []const u32 },
+
+    pub const BinaryOp = struct { lhs: u32, rhs: u32 };
+};
+
+/// Analyzed function ready for codegen
+pub const TypedFunction = struct {
+    name: []const u8,
+    params: []const zir_mod.Node.Param,
+    return_type: ?Type,
+    instructions: []const TypedInst,
+    types: []const Type,
+};
 
 const assert = std.debug.assert;
 
@@ -165,14 +202,16 @@ fn analyzeProgram(allocator: Allocator, program: zir_mod.Program) ![]Error {
     return errors.toOwnedSlice(allocator);
 }
 
-const AnalyzeFunctionResult = struct {
+pub const AnalyzeFunctionResult = struct {
     errors: []Error,
-    types: []Type,
+    function: TypedFunction,
 };
 
-fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) !AnalyzeFunctionResult {
+pub fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) !AnalyzeFunctionResult {
     var errors: std.ArrayListUnmanaged(Error) = .empty;
     var scope = Scope.init();
+    var declared: std.StringArrayHashMapUnmanaged(u32) = .empty;
+    var typed_insts: std.ArrayListUnmanaged(TypedInst) = .empty;
 
     for (function.instructions()) |instruction| {
         switch (instruction) {
@@ -183,39 +222,66 @@ fn analyzeFunction(allocator: Allocator, function: zir_mod.Function) !AnalyzeFun
                     const value_type = scope.types.items[inst.value];
                     try scope.declare(allocator, inst.name, value_type);
                     try scope.types.append(allocator, value_type);
+                    try declared.put(allocator, inst.name, inst.value);
                 }
+                try typed_insts.append(allocator, .{ .decl = .{ .name = inst.name, .value = inst.value } });
             },
             .decl_ref => |inst| {
                 if (Error.checkUndefined(inst.name, &scope)) {
                     try errors.append(allocator, .{ .undefined = .{ .name = inst.name, .node = inst.node } });
                 }
-
                 const value_type = scope.getType(inst.name) orelse .undefined;
                 try scope.types.append(allocator, value_type);
+                const value_ref = declared.get(inst.name) orelse 0;
+                try typed_insts.append(allocator, .{ .decl_ref = .{ .name = inst.name, .value = value_ref } });
             },
             .literal => |lit| {
                 try scope.types.append(allocator, lit.value.getType());
+                try typed_insts.append(allocator, .{ .literal = lit.value });
             },
-            .add, .div, .mul, .sub => {
+            .add => |op| {
                 try scope.types.append(allocator, .i32);
+                try typed_insts.append(allocator, .{ .add = .{ .lhs = op.lhs, .rhs = op.rhs } });
+            },
+            .sub => |op| {
+                try scope.types.append(allocator, .i32);
+                try typed_insts.append(allocator, .{ .sub = .{ .lhs = op.lhs, .rhs = op.rhs } });
+            },
+            .mul => |op| {
+                try scope.types.append(allocator, .i32);
+                try typed_insts.append(allocator, .{ .mul = .{ .lhs = op.lhs, .rhs = op.rhs } });
+            },
+            .div => |op| {
+                try scope.types.append(allocator, .i32);
+                try typed_insts.append(allocator, .{ .div = .{ .lhs = op.lhs, .rhs = op.rhs } });
             },
             .param_ref => |inst| {
                 const param = function.params[inst.value];
                 try scope.types.append(allocator, param.type);
+                try typed_insts.append(allocator, .{ .param_ref = inst.value });
             },
             .return_stmt => |inst| {
                 const return_type = scope.types.items[inst.value];
                 try scope.types.append(allocator, return_type);
+                try typed_insts.append(allocator, .{ .ret = inst.value });
             },
-            .call => {
-                // For now, assume all function calls return i32
-                // TODO: look up function return type from program
+            .call => |c| {
                 try scope.types.append(allocator, .i32);
+                try typed_insts.append(allocator, .{ .call = .{ .name = c.name, .args = c.args } });
             },
         }
     }
 
-    return .{ .errors = try errors.toOwnedSlice(allocator), .types = try scope.types.toOwnedSlice(allocator) };
+    return .{
+        .errors = try errors.toOwnedSlice(allocator),
+        .function = .{
+            .name = function.name,
+            .params = function.params,
+            .return_type = function.return_type,
+            .instructions = try typed_insts.toOwnedSlice(allocator),
+            .types = try scope.types.toOwnedSlice(allocator),
+        },
+    };
 }
 
 fn errorsToString(allocator: Allocator, errors: []Error, source: []const u8) ![]const u8 {
@@ -375,9 +441,9 @@ test "infer type - constant is i32" {
 
     // %0 = literal(42) -> i32
     // %1 = ret(%0)      -> i32
-    try testing.expectEqual(@as(usize, 2), result.types.len);
-    try testing.expectEqual(.i32, result.types[0]); // constant
-    try testing.expectEqual(.i32, result.types[1]); // return
+    try testing.expectEqual(@as(usize, 2), result.function.types.len);
+    try testing.expectEqual(.i32, result.function.types[0]); // constant
+    try testing.expectEqual(.i32, result.function.types[1]); // return
 }
 
 test "infer type - param_ref uses param type" {
@@ -394,9 +460,9 @@ test "infer type - param_ref uses param type" {
 
     // %0 = param_ref(0) -> i32 (from param x: i32)
     // %1 = ret(%0)      -> i32
-    try testing.expectEqual(@as(usize, 2), result.types.len);
-    try testing.expectEqual(.i32, result.types[0]); // param_ref
-    try testing.expectEqual(.i32, result.types[1]); // return
+    try testing.expectEqual(@as(usize, 2), result.function.types.len);
+    try testing.expectEqual(.i32, result.function.types[0]); // param_ref
+    try testing.expectEqual(.i32, result.function.types[1]); // return
 }
 
 test "infer type - arithmetic expressions are i32" {
@@ -417,8 +483,8 @@ test "infer type - arithmetic expressions are i32" {
     // %3 = mul(%1, %2)     -> i32
     // %4 = add(%0, %3)     -> i32
     // %5 = ret(%4)         -> i32
-    try testing.expectEqual(@as(usize, 6), result.types.len);
-    for (result.types) |t| {
+    try testing.expectEqual(@as(usize, 6), result.function.types.len);
+    for (result.function.types) |t| {
         try testing.expectEqual(.i32, t);
     }
 }
@@ -444,11 +510,11 @@ test "infer type - variable declaration inherits value type" {
     // %1 = decl("x", %0)   -> i32 (inherits from constant)
     // %2 = decl_ref("x")   -> i32 (looks up from scope)
     // %3 = ret(%2)         -> i32
-    try testing.expectEqual(@as(usize, 4), result.types.len);
-    try testing.expectEqual(.i32, result.types[0]); // constant
-    try testing.expectEqual(.i32, result.types[1]); // decl
-    try testing.expectEqual(.i32, result.types[2]); // decl_ref
-    try testing.expectEqual(.i32, result.types[3]); // return
+    try testing.expectEqual(@as(usize, 4), result.function.types.len);
+    try testing.expectEqual(.i32, result.function.types[0]); // constant
+    try testing.expectEqual(.i32, result.function.types[1]); // decl
+    try testing.expectEqual(.i32, result.function.types[2]); // decl_ref
+    try testing.expectEqual(.i32, result.function.types[3]); // return
 }
 
 test "infer type - undefined variable has type_error" {
@@ -465,9 +531,9 @@ test "infer type - undefined variable has type_error" {
 
     // %0 = decl_ref("x")   -> undefined (undefined)
     // %1 = ret(%0)         ->undefined
-    try testing.expectEqual(@as(usize, 2), result.types.len);
-    try testing.expectEqual(.undefined, result.types[0]); // undefined decl_ref
-    try testing.expectEqual(.undefined, result.types[1]); // return inherits type_error
+    try testing.expectEqual(@as(usize, 2), result.function.types.len);
+    try testing.expectEqual(.undefined, result.function.types[0]); // undefined decl_ref
+    try testing.expectEqual(.undefined, result.function.types[1]); // return inherits type_error
 }
 
 fn typedZirToString(allocator: Allocator, function: zir_mod.Function, types: []const Type) ![]const u8 {
@@ -492,7 +558,7 @@ test "typed zir - constant returns i32" {
     const program = try zir_mod.generateProgram(allocator, &tree);
     const function = program.functions()[0];
     const result = try analyzeFunction(allocator, function);
-    const typed_zir = try typedZirToString(allocator, function, result.types);
+    const typed_zir = try typedZirToString(allocator, function, result.function.types);
 
     try testing.expectEqualStrings(
         \\%0 = literal(42) : i32
@@ -512,7 +578,7 @@ test "typed zir - param and arithmetic" {
     const program = try zir_mod.generateProgram(allocator, &tree);
     const function = program.functions()[0];
     const result = try analyzeFunction(allocator, function);
-    const typed_zir = try typedZirToString(allocator, function, result.types);
+    const typed_zir = try typedZirToString(allocator, function, result.function.types);
 
     try testing.expectEqualStrings(
         \\%0 = param_ref(0) : i32
@@ -540,7 +606,7 @@ test "typed zir - variable declaration and reference" {
     const program = try zir_mod.generateProgram(allocator, &tree);
     const function = program.functions()[0];
     const result = try analyzeFunction(allocator, function);
-    const typed_zir = try typedZirToString(allocator, function, result.types);
+    const typed_zir = try typedZirToString(allocator, function, result.function.types);
 
     try testing.expectEqualStrings(
         \\%0 = literal(10) : i32
@@ -564,7 +630,7 @@ test "typed zir - undefined variable shows undefined type" {
     const program = try zir_mod.generateProgram(allocator, &tree);
     const function = program.functions()[0];
     const result = try analyzeFunction(allocator, function);
-    const typed_zir = try typedZirToString(allocator, function, result.types);
+    const typed_zir = try typedZirToString(allocator, function, result.function.types);
 
     try testing.expectEqualStrings(
         \\%0 = decl_ref("unknown_var") : undefined
@@ -589,7 +655,7 @@ test "typed zir - float literal" {
     const program = try zir_mod.generateProgram(allocator, &tree);
     const function = program.functions()[0];
     const result = try analyzeFunction(allocator, function);
-    const typed_zir = try typedZirToString(allocator, function, result.types);
+    const typed_zir = try typedZirToString(allocator, function, result.function.types);
 
     try testing.expectEqualStrings(
         \\%0 = literal(3.14) : f64
